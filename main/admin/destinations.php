@@ -1,0 +1,227 @@
+<?php
+require_once __DIR__ . '/../includes/functions.php';
+requireAdmin();
+$pageTitle = 'Quản lý điểm đến - Admin';
+$db = getDB();
+
+// Xử lý xoá
+if (isset($_GET['delete'])) {
+  $stmt = $db->prepare("DELETE FROM destinations WHERE id = ?");
+  $stmt->execute([(int) $_GET['delete']]);
+  header('Location: ' . url('/admin/destinations.php'));
+  exit;
+}
+
+// Xử lý thêm/sửa
+$editing = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $id = (int) ($_POST['id'] ?? 0);
+  $name = trim($_POST['name'] ?? '');
+  $slug = trim($_POST['slug'] ?? '') ?: strtolower(preg_replace('/[^a-z0-9]+/i', '-', $name));
+  $shortDesc = trim($_POST['short_desc'] ?? '');
+  $description = trim($_POST['description'] ?? '');
+  $categoryId = (int) ($_POST['category_id'] ?? 0) ?: null;
+  $avgHours = (float) ($_POST['avg_visit_hours'] ?? 2);
+  $priceLevel = $_POST['price_level'] ?? 'low';
+  $tags = trim($_POST['tags'] ?? '');
+  $imageUrl = trim($_POST['image_url'] ?? '');
+  $latitude = ($_POST['latitude'] ?? '') !== '' ? (float) $_POST['latitude'] : null;
+  $longitude = ($_POST['longitude'] ?? '') !== '' ? (float) $_POST['longitude'] : null;
+
+  if ($id > 0) {
+    // ✅ $id > 0 → đang SỬA → dùng UPDATE
+    $stmt = $db->prepare(
+      "UPDATE destinations SET name=?, slug=?, short_desc=?, description=?, category_id=?, avg_visit_hours=?, price_level=?, tags=?, image_url=?, latitude=?, longitude=? WHERE id=?"
+    );
+    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude, $id]);
+  } else {
+    // ✅ $id == 0 → đang THÊM MỚI → dùng INSERT
+    $stmt = $db->prepare(
+      "INSERT INTO destinations (name, slug, short_desc, description, category_id, avg_visit_hours, price_level, tags, image_url, latitude, longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+    );
+    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude]);
+  }
+
+  header('Location: ' . url('/admin/destinations.php'));
+  exit;
+}
+
+if (isset($_GET['edit'])) {
+  $stmt = $db->prepare("SELECT * FROM destinations WHERE id = ?");
+  $stmt->execute([(int) $_GET['edit']]);
+  $editing = $stmt->fetch();
+}
+
+$categories = getAllCategories();
+$destinations = getAllDestinations();
+
+include __DIR__ . '/../includes/header.php';
+?>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<h1 class="section-title">Quản lý điểm đến (Admin)</h1>
+<p><a href="<?= url('/admin/destinations.php?logout=1') ?>">Đăng xuất</a></p>
+<?php if (isset($_GET['logout'])) {
+  unset($_SESSION['user']);
+  header('Location: ' . url('/admin/login.php'));
+  exit;
+} ?>
+
+<div class="form-box">
+  <h3><?= $editing ? 'Sửa điểm đến' : 'Thêm điểm đến mới' ?></h3>
+  <form method="post">
+    <input type="hidden" name="id" value="<?= e((string) ($editing['id'] ?? '')) ?>">
+    <div class="form-group">
+      <label>Tên điểm đến</label>
+      <input type="text" name="name" required value="<?= e($editing['name'] ?? '') ?>">
+    </div>
+    <div class="form-group">
+      <label>Slug (để trống để tự tạo)</label>
+      <input type="text" name="slug" value="<?= e($editing['slug'] ?? '') ?>">
+    </div>
+    <div class="form-group">
+      <label>Danh mục</label>
+      <select name="category_id">
+        <option value="">-- Chọn danh mục --</option>
+        <?php foreach ($categories as $c): ?>
+          <option value="<?= e((string) $c['id']) ?>" <?= ($editing['category_id'] ?? null) == $c['id'] ? 'selected' : '' ?>>
+            <?= e($c['name']) ?>
+          </option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Mô tả ngắn</label>
+      <input type="text" name="short_desc" value="<?= e($editing['short_desc'] ?? '') ?>">
+    </div>
+    <div class="form-group">
+      <label>Mô tả chi tiết</label>
+      <textarea name="description" rows="4"><?= e($editing['description'] ?? '') ?></textarea>
+    </div>
+    <div class="form-group">
+      <label>Thời gian tham quan (giờ)</label>
+      <input type="number" step="0.5" name="avg_visit_hours"
+        value="<?= e((string) ($editing['avg_visit_hours'] ?? 2)) ?>">
+    </div>
+    <div class="form-group">
+      <label>Mức chi phí</label>
+      <select name="price_level">
+        <?php foreach (['free', 'low', 'medium', 'high'] as $pl): ?>
+          <option value="<?= $pl ?>" <?= ($editing['price_level'] ?? '') === $pl ? 'selected' : '' ?>><?= $pl ?></option>
+        <?php endforeach; ?>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tags (phân cách bởi dấu phẩy)</label>
+      <input type="text" name="tags" value="<?= e($editing['tags'] ?? '') ?>">
+    </div>
+    <div class="form-group">
+      <label>URL hình ảnh</label>
+      <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="https://...">
+      <?php if (!empty($editing['image_url'])): ?>
+        <img src="<?= e($editing['image_url']) ?>" style="margin-top:8px;max-width:200px;border-radius:8px;">
+      <?php endif; ?>
+    </div>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <div class="form-group" style="flex: 1; min-width: 200px;">
+        <label>Vĩ độ (Latitude)</label>
+        <input type="number" step="any" name="latitude" id="lat-input" value="<?= e((string) ($editing['latitude'] ?? '')) ?>" placeholder="Vd: 12.6667">
+      </div>
+      <div class="form-group" style="flex: 1; min-width: 200px;">
+        <label>Kinh độ (Longitude)</label>
+        <input type="number" step="any" name="longitude" id="lng-input" value="<?= e((string) ($editing['longitude'] ?? '')) ?>" placeholder="Vd: 108.0500">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Chọn vị trí trên bản đồ</label>
+      <div id="admin-map" style="height: 300px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>
+      <p style="font-size: 12px; color: #666; margin-top: 4px;">Click chọn vị trí trên bản đồ hoặc kéo marker để tự động cập nhật tọa độ.</p>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const defaultLat = 12.6667;
+      const defaultLng = 108.0500;
+      
+      const latInput = document.getElementById('lat-input');
+      const lngInput = document.getElementById('lng-input');
+      
+      let latVal = latInput.value;
+      let lngVal = lngInput.value;
+      
+      const mapLat = latVal ? parseFloat(latVal) : defaultLat;
+      const mapLng = lngVal ? parseFloat(lngVal) : defaultLng;
+      const zoom = latVal && lngVal ? 14 : 11;
+      
+      const map = L.map('admin-map').setView([mapLat, mapLng], zoom);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      
+      let marker;
+      if (latVal && lngVal) {
+        marker = L.marker([mapLat, mapLng], { draggable: true }).addTo(map);
+      }
+      
+      function updateCoords(lat, lng) {
+        latInput.value = lat.toFixed(6);
+        lngInput.value = lng.toFixed(6);
+      }
+      
+      map.on('click', function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        
+        if (marker) {
+          marker.setLatLng(e.latlng);
+        } else {
+          marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+          setupMarkerEvents(marker);
+        }
+        updateCoords(lat, lng);
+      });
+      
+      function setupMarkerEvents(m) {
+        m.on('dragend', function(evt) {
+          const pos = evt.target.getLatLng();
+          updateCoords(pos.lat, pos.lng);
+        });
+      }
+      
+      if (marker) {
+        setupMarkerEvents(marker);
+      }
+    });
+    </script>
+
+    <button type="submit" class="btn"><?= $editing ? 'Lưu thay đổi' : 'Thêm điểm đến' ?></button>
+  </form>
+</div>
+
+<h3 class="section-title">Danh sách điểm đến</h3>
+<table style="width:100%;background:white;border-radius:14px;overflow:hidden;border-collapse:collapse;">
+  <tr style="background:#f1f1f1;text-align:left;">
+    <th style="padding:10px;">Tên</th>
+    <th style="padding:10px;">Danh mục</th>
+    <th style="padding:10px;">Rating</th>
+    <th style="padding:10px;">Hành động</th>
+  </tr>
+  <?php foreach ($destinations as $d): ?>
+    <tr style="border-top:1px solid #eee;">
+      <td style="padding:10px;"><?= e($d['name']) ?></td>
+      <td style="padding:10px;"><?= e((string) ($d['category_id'] ?? '-')) ?></td>
+      <td style="padding:10px;"><?= e((string) $d['rating']) ?></td>
+      <td style="padding:10px;">
+        <a href="<?= url('/admin/destinations.php') ?>?edit=<?= e((string) $d['id']) ?>">Sửa</a> |
+        <a href="<?= url('/admin/destinations.php') ?>?delete=<?= e((string) $d['id']) ?>"
+          onclick="return confirm('Xoá điểm đến này?')">Xoá</a>
+      </td>
+    </tr>
+  <?php endforeach; ?>
+</table>
+
+<?php include __DIR__ . '/../includes/footer.php'; ?>
