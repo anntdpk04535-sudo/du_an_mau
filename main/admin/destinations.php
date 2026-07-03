@@ -61,7 +61,11 @@ include __DIR__ . '/../includes/header.php';
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <h1 class="section-title">Quản lý điểm đến (Admin)</h1>
-<p><a href="<?= url('/admin/destinations.php?logout=1') ?>">Đăng xuất</a></p>
+<p>
+  <a href="<?= url('/admin/contacts.php') ?>">📬 Liên hệ</a> ·
+  <a href="<?= url('/admin/reviews.php') ?>">⭐ Đánh giá</a> ·
+  <a href="<?= url('/admin/destinations.php?logout=1') ?>">Đăng xuất</a>
+</p>
 <?php if (isset($_GET['logout'])) {
   unset($_SESSION['user']);
   header('Location: ' . url('/admin/login.php'));

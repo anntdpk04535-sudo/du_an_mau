@@ -6,6 +6,21 @@ $categories = getAllCategories();
 $catId = isset($_GET['cat']) ? (int) $_GET['cat'] : null;
 $destinations = getAllDestinations($catId);
 
+/**
+ * Render ★☆ stars HTML từ rating số thực (1–5).
+ * @param float|null $rating  Điểm trung bình, NULL = chưa ai đánh giá
+ * @param int        $count   Số lượng đánh giá
+ */
+function renderStarsBadge(?float $rating, int $count): string
+{
+    if ($rating === null || $count === 0) {
+        return '<span class="badge badge-norating">★ Chưa có đánh giá</span>';
+    }
+    $full  = (int) round($rating);
+    $stars = str_repeat('★', $full) . str_repeat('☆', 5 - $full);
+    return '<span class="badge badge-rating">' . $stars . ' ' . number_format($rating, 1) . ' <span class="rev-cnt">(' . $count . ')</span></span>';
+}
+
 include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,6 +28,25 @@ include __DIR__ . '/../includes/header.php';
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<style>
+.badge-rating {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.badge-norating {
+  background: #f3f4f6;
+  color: #9ca3af;
+  font-weight: 500;
+}
+.rev-cnt {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: .75;
+}
+</style>
 
 <h1 class="section-title">Điểm đến tại Đắk Lắk</h1>
 <p class="section-sub">Lọc theo danh mục để tìm điểm đến phù hợp</p>
@@ -34,14 +68,15 @@ $mapDestinations = [];
 foreach ($destinations as $d) {
     if (!empty($d['latitude']) && !empty($d['longitude'])) {
         $mapDestinations[] = [
-            'name' => $d['name'],
-            'slug' => $d['slug'],
-            'short_desc' => $d['short_desc'],
-            'lat' => (float)$d['latitude'],
-            'lng' => (float)$d['longitude'],
-            'rating' => (float)$d['rating'],
+            'name'            => $d['name'],
+            'slug'            => $d['slug'],
+            'short_desc'      => $d['short_desc'],
+            'lat'             => (float)$d['latitude'],
+            'lng'             => (float)$d['longitude'],
+            'rating'          => $d['avg_rating'] !== null ? round((float)$d['avg_rating'], 1) : null,
+            'review_count'    => (int)$d['review_count'],
             'avg_visit_hours' => (float)$d['avg_visit_hours'],
-            'price_level' => $d['price_level']
+            'price_level'     => $d['price_level']
         ];
     }
 }
@@ -95,7 +130,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="padding:0 2px;">
           <p style="margin:0 0 8px;font-size:12px;color:#555;line-height:1.4;">${d.short_desc}</p>
           <div style="font-size:11px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
-            <span style="background:#d8f3dc;color:#1b4332;padding:2px 7px;border-radius:10px;">⭐ ${d.rating}</span>
+            ${d.rating !== null
+              ? `<span style="background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border:1px solid #f59e0b;padding:2px 8px;border-radius:10px;font-weight:700;">
+                  ${'★'.repeat(Math.round(d.rating))}${'☆'.repeat(5-Math.round(d.rating))} ${d.rating.toFixed(1)} <span style="opacity:.65">(${d.review_count})</span>
+                 </span>`
+              : `<span style="background:#f3f4f6;color:#9ca3af;padding:2px 8px;border-radius:10px;">★ Chưa có đánh giá</span>`
+            }
             <span style="background:#f1f1f1;padding:2px 7px;border-radius:10px;">~${d.avg_visit_hours}h</span>
             <span style="background:#fff3e0;color:#b45309;padding:2px 7px;border-radius:10px;">💰 ${getPriceLabelVi(d.price_level)}</span>
           </div>
@@ -158,7 +198,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="card-body">
         <h3><?= e($d['name']) ?></h3>
         <p><?= e($d['short_desc']) ?></p>
-        <span class="badge">⭐ <?= e((string) $d['rating']) ?></span>
+        <?= renderStarsBadge(
+            $d['avg_rating'] !== null ? (float)$d['avg_rating'] : null,
+            (int)$d['review_count']
+        ) ?>
         <span class="badge">~<?= e((string) $d['avg_visit_hours']) ?>h</span>
         <span class="badge"><?= e(priceLevelVi($d['price_level'])) ?></span>
       </div>

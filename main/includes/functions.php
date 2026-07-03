@@ -4,7 +4,9 @@ require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../config/ai.php';
 
 
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
@@ -48,18 +50,35 @@ function getAllCategories(): array
 function getAllDestinations(?int $categoryId = null): array
 {
     $db = getDB();
+    $sql = "
+        SELECT d.*,
+               COALESCE(AVG(r.rating), d.rating)          AS display_rating,
+               ROUND(AVG(r.rating), 1)                    AS avg_rating,
+               COUNT(r.id)                                AS review_count
+        FROM destinations d
+        LEFT JOIN reviews r ON r.destination_id = d.id
+    ";
     if ($categoryId) {
-        $stmt = $db->prepare("SELECT * FROM destinations WHERE category_id = ? ORDER BY rating DESC");
+        $stmt = $db->prepare($sql . " WHERE d.category_id = ? GROUP BY d.id ORDER BY display_rating DESC");
         $stmt->execute([$categoryId]);
         return $stmt->fetchAll();
     }
-    return $db->query("SELECT * FROM destinations ORDER BY rating DESC")->fetchAll();
+    return $db->query($sql . " GROUP BY d.id ORDER BY display_rating DESC")->fetchAll();
 }
 
 function getDestinationBySlug(string $slug): ?array
 {
     $db = getDB();
-    $stmt = $db->prepare("SELECT * FROM destinations WHERE slug = ?");
+    $stmt = $db->prepare("
+        SELECT d.*,
+               COALESCE(AVG(r.rating), d.rating)  AS display_rating,
+               ROUND(AVG(r.rating), 1)             AS avg_rating,
+               COUNT(r.id)                         AS review_count
+        FROM destinations d
+        LEFT JOIN reviews r ON r.destination_id = d.id
+        WHERE d.slug = ?
+        GROUP BY d.id
+    ");
     $stmt->execute([$slug]);
     $row = $stmt->fetch();
     return $row ?: null;
