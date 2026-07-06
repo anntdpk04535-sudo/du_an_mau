@@ -61,6 +61,54 @@ $starsHtml    = $avgRating !== null
   <?php endif; ?>
 </div>
 
+<?php
+// Hiển thị cảnh báo an toàn theo loại địa hình (category_id)
+$warningHtml = '';
+switch ((int)$d['category_id']) {
+    case 1: // Thác nước
+        $warningHtml = '<div style="background:#fef2f2; border:1px solid #fecaca; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong style="color:#b91c1c; display:flex; align-items:center; gap:6px;">⚠️ Cảnh báo an toàn (Thác nước)</strong>
+            <ul style="margin:10px 0 0; padding-left:22px; color:#991b1b; font-size:14px; line-height:1.6;">
+                <li>Cẩn thận đá trơn trượt quanh khu vực thác, nên đi giày có độ bám tốt.</li>
+                <li>Chỉ bơi lội/tắm ở khu vực được cho phép, tuyệt đối không bơi vào dòng nước xoáy chân thác.</li>
+                <li>Nếu thấy nước bất ngờ đục ngầu hoặc có tiếng ù ù, hãy di chuyển lên cao ngay (dấu hiệu lũ quét).</li>
+            </ul>
+        </div>';
+        break;
+    case 2: // Hồ
+        $warningHtml = '<div style="background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #3b82f6; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong style="color:#1d4ed8; display:flex; align-items:center; gap:6px;">🌊 Cảnh báo an toàn (Khu vực Hồ / Sông)</strong>
+            <ul style="margin:10px 0 0; padding-left:22px; color:#1e40af; font-size:14px; line-height:1.6;">
+                <li>Bắt buộc mặc áo phao khi tham gia chèo thuyền, đi thuyền độc mộc.</li>
+                <li>Không bơi một mình; hồ tự nhiên thường có dòng chảy ngầm và đáy lún bất ngờ.</li>
+                <li>Nếu trời chuyển mây đen, giông lốc, phải lập tức di chuyển vào bờ.</li>
+            </ul>
+        </div>';
+        break;
+    case 3: // Buôn làng
+        $warningHtml = '<div style="background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #d946ef; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong style="color:#a21caf; display:flex; align-items:center; gap:6px;">🛖 Lưu ý văn hóa (Buôn làng bản địa)</strong>
+            <ul style="margin:10px 0 0; padding-left:22px; color:#86198f; font-size:14px; line-height:1.6;">
+                <li>Nên xin phép người dân hoặc già làng trước khi chụp ảnh, đi sâu vào khu vực sinh hoạt.</li>
+                <li>Tôn trọng không gian cộng đồng, tuyệt đối không tự ý sờ/chạm vào các vật thờ cúng tâm linh.</li>
+                <li>Ăn mặc lịch sự, kín đáo khi vào thăm nhà dài truyền thống.</li>
+            </ul>
+        </div>';
+        break;
+    case 4: // Vườn quốc gia
+        $warningHtml = '<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #22c55e; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <strong style="color:#15803d; display:flex; align-items:center; gap:6px;">🌲 Cảnh báo an toàn (Rừng & Vườn Quốc Gia)</strong>
+            <ul style="margin:10px 0 0; padding-left:22px; color:#166534; font-size:14px; line-height:1.6;">
+                <li>Luôn đi cùng hướng dẫn viên/người bản địa, tuyệt đối không tự ý đi lạc khỏi đường mòn.</li>
+                <li>Đề phòng côn trùng, rắn rết (mặc quần áo dài tay, dùng bình xịt côn trùng, dùng gậy khua bụi cỏ).</li>
+                <li>Đề phòng cháy rừng trong mùa khô: Không vứt tàn thuốc, không đốt lửa bừa bãi.</li>
+            </ul>
+        </div>';
+        break;
+}
+echo $warningHtml;
+?>
+
 <style>
 .meta-rating {
   display: flex;
@@ -92,6 +140,47 @@ $starsHtml    = $avgRating !== null
   <h3>Giới thiệu</h3>
   <p><?= nl2br(e($d['description'])) ?></p>
 </div>
+
+<?php if (!empty($d['latitude']) && !empty($d['longitude'])): ?>
+<div class="form-box" id="dest-weather-box" style="display:none; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);">
+  <h3 style="margin-top:0; color:#0369a1; display:flex; align-items:center; gap:8px;">🌤️ Thời tiết hiện tại ở khu vực này</h3>
+  <div style="display:flex; align-items:center; gap:24px; margin-top:12px;">
+      <div id="dw-temp" style="font-size:38px; font-weight:800; color:#0284c7; line-height:1;">--°C</div>
+      <div style="border-left: 2px solid #bae6fd; padding-left: 20px;">
+          <div id="dw-status" style="font-size:16px; font-weight:700; color:#0369a1; margin-bottom:6px;">Đang tải...</div>
+          <div id="dw-wind" style="font-size:13px; color:#0c4a6e; background: #fff; padding: 2px 8px; border-radius: 12px; display:inline-block;">Gió: -- km/h</div>
+      </div>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    const lat = <?= (float)$d['latitude'] ?>;
+    const lng = <?= (float)$d['longitude'] ?>;
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`);
+        const data = await res.json();
+        if (data.current_weather) {
+            document.getElementById('dest-weather-box').style.display = 'block';
+            document.getElementById('dw-temp').textContent = data.current_weather.temperature + '°C';
+            document.getElementById('dw-wind').textContent = '💨 Gió: ' + data.current_weather.windspeed + ' km/h';
+            
+            let code = data.current_weather.weathercode;
+            let status = 'Trời trong xanh';
+            let icon = '☀️';
+            if (code >= 95) { status = 'Có mưa dông'; icon = '⛈️'; }
+            else if (code >= 61) { status = 'Có mưa'; icon = '🌧️'; }
+            else if (code >= 51) { status = 'Mưa phùn'; icon = '🌦️'; }
+            else if (code >= 45) { status = 'Sương mù'; icon = '🌫️'; }
+            else if (code >= 1) { status = 'Có mây'; icon = '⛅'; }
+            
+            document.getElementById('dw-status').innerHTML = icon + ' ' + status;
+        }
+    } catch(e) {
+        console.error("Lỗi tải thời tiết", e);
+    }
+});
+</script>
+<?php endif; ?>
 
 <?php if (!empty($d['latitude']) && !empty($d['longitude'])): ?>
 <div class="form-box">

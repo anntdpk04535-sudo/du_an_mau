@@ -30,13 +30,13 @@ include __DIR__ . '/../includes/header.php';
     <p class="section-sub">Các lịch trình bạn đã tạo gần đây</p>
     <div class="grid">
       <?php foreach ($myItineraries as $it): ?>
-        <div class="card">
+        <a href="<?= url('/public/itinerary_view.php?id=' . $it['id']) ?>" class="card" style="text-decoration:none;">
           <div class="card-body">
-            <h3><?= e($it['title']) ?></h3>
+            <h3 style="color:var(--green-900);"><?= e($it['title']) ?></h3>
             <p>📅 <?= e((string) $it['days']) ?> ngày<?= $it['preferences'] ? ' · ' . e($it['preferences']) : '' ?></p>
             <span class="badge"><?= e(date('d/m/Y', strtotime($it['created_at']))) ?></span>
           </div>
-        </div>
+        </a>
       <?php endforeach; ?>
     </div>
   <?php else: ?>
@@ -54,6 +54,46 @@ include __DIR__ . '/../includes/header.php';
     </div>
   </section>
 <?php endif; ?>
+
+<div id="weather-widget" style="background: linear-gradient(135deg, #e0f2fe, #bae6fd); border-radius: var(--radius); padding: 16px 24px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,.05);">
+  <div style="display: flex; align-items: center; gap: 12px;">
+    <div id="weather-icon" style="font-size: 32px;">⛅</div>
+    <div>
+      <h3 style="margin: 0; color: #0369a1; font-size: 16px;">Thời tiết Buôn Ma Thuột</h3>
+      <p id="weather-desc" style="margin: 2px 0 0; color: #0284c7; font-size: 13px;">Đang tải dữ liệu...</p>
+    </div>
+  </div>
+  <div style="text-align: right;">
+    <div id="weather-temp" style="font-size: 28px; font-weight: 800; color: #0369a1; line-height: 1;">--°C</div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.6667&longitude=108.0500&current_weather=true');
+    const data = await res.json();
+    if (data.current_weather) {
+      const temp = Math.round(data.current_weather.temperature);
+      const code = data.current_weather.weathercode;
+      document.getElementById('weather-temp').textContent = temp + '°C';
+      
+      let icon = '⛅';
+      let desc = 'Có mây';
+      if (code === 0) { icon = '☀️'; desc = 'Trời quang đãng'; }
+      else if (code >= 1 && code <= 3) { icon = '⛅'; desc = 'Nhiều mây'; }
+      else if (code >= 51 && code <= 67) { icon = '🌧️'; desc = 'Có mưa nhỏ'; }
+      else if (code >= 71 && code <= 82) { icon = '🌧️'; desc = 'Có mưa rào'; }
+      else if (code >= 95) { icon = '⛈️'; desc = 'Mưa dông'; }
+      
+      document.getElementById('weather-icon').textContent = icon;
+      document.getElementById('weather-desc').textContent = desc;
+    }
+  } catch (err) {
+    document.getElementById('weather-desc').textContent = 'Không thể tải thời tiết';
+  }
+});
+</script>
 
 <h2 class="section-title">Điểm đến nổi bật</h2>
 <p class="section-sub">Những địa danh không thể bỏ qua khi đến Đắk Lắk</p>

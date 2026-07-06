@@ -1,12 +1,94 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Lịch trình AI - Đắk Lắk Travel AI';
-$prefill = $_GET['prefill'] ?? '';
+
+$user = currentUser();
+if (!$user) {
+    header('Location: ' . url('/public/login.php'));
+    exit;
+}
+
+$id = $_GET['id'] ?? null;
+if (!$id) {
+    header('Location: ' . url('/public/profile.php'));
+    exit;
+}
+
+$db = getDB();
+
+// Fetch itinerary
+$stmt = $db->prepare("SELECT * FROM itineraries WHERE id = ? AND user_id = ?");
+$stmt->execute([$id, $user['id']]);
+$itinerary = $stmt->fetch();
+
+if (!$itinerary) {
+    http_response_code(404);
+    die('Không tìm thấy lịch trình hoặc bạn không có quyền xem.');
+}
+
+// Fetch itinerary items with destination coords
+$stmt = $db->prepare("
+    SELECT i.*, d.slug, d.latitude, d.longitude 
+    FROM itinerary_items i
+    LEFT JOIN destinations d ON i.destination_id = d.id
+    WHERE i.itinerary_id = ?
+    ORDER BY i.day_number ASC, i.sort_order ASC
+");
+$stmt->execute([$id]);
+$items = $stmt->fetchAll();
+
+// Construct data structure for JS
+$daysData = [];
+foreach ($items as $item) {
+    $dayNum = (int)$item['day_number'];
+    if (!isset($daysData[$dayNum])) {
+        $daysData[$dayNum] = [
+            'dayNum' => $dayNum,
+            'title' => '', // Assuming title is empty, or can parse from somewhere
+            'points' => [],
+            'itemsHtml' => []
+        ];
+    }
+    
+    // Add to points if has coords
+    if (!empty($item['latitude']) && !empty($item['longitude'])) {
+        $daysData[$dayNum]['points'][] = [
+            'lat' => (float)$item['latitude'],
+            'lng' => (float)$item['longitude'],
+            'time' => $item['time_slot'] ?? '',
+            'activity' => $item['activity'] ?? '',
+            'address' => $item['address'] ?? '',
+            'slug' => $item['slug'] ?? '',
+            'price' => '' // Price not saved in DB currently
+        ];
+    }
+    
+    $daysData[$dayNum]['itemsHtml'][] = $item;
+}
+
+// Re-index map data for JSON
+$mapData = [];
+$colors = ['#2d6a4f','#e76f51','#3a86c8','#8338ec','#ff006e'];
+$colorIdx = 0;
+foreach ($daysData as $dayNum => $dayInfo) {
+    if (count($dayInfo['points']) > 0) {
+        $mapData[] = [
+            'dayNum' => $dayNum,
+            'title' => '',
+            'color' => $colors[$colorIdx % count($colors)],
+            'points' => $dayInfo['points']
+        ];
+        $colorIdx++;
+    }
+}
+
+$pageTitle = $itinerary['title'] . ' - Đắk Lắk Travel AI';
 include __DIR__ . '/../includes/header.php';
 ?>
+<!-- html2pdf.js for PDF export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <style>
 .map-stats-bar { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
@@ -33,63 +115,82 @@ include __DIR__ . '/../includes/header.php';
 .day-separator { background:linear-gradient(135deg,var(--green-100),#fff); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; color:var(--green-700); margin:8px 0 4px; display:flex; align-items:center; gap:8px; }
 </style>
 
-<h1 class="section-title">🧭 Lên lịch trình du lịch Đắk Lắk bằng AI</h1>
-<p class="section-sub">Chọn số ngày và sở thích, AI sẽ gợi ý lịch trình chi tiết theo từng ngày, từng buổi.</p>
-
-<div class="form-box">
-  <form id="itinerary-form">
-    <div class="form-group">
-      <label>Số ngày du lịch</label>
-      <select name="days" id="days">
-        <option value="1">1 ngày</option>
-        <option value="2" selected>2 ngày</option>
-        <option value="3">3 ngày</option>
-        <option value="4">4 ngày</option>
-        <option value="5">5 ngày</option>
-      </select>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+    <div>
+        <a href="<?= url('/public/profile.php') ?>" style="text-decoration:none; color:#666;">← Quay lại Trang cá nhân</a>
+        <h1 class="section-title" style="margin-bottom:0; margin-top:10px;"><?= e($itinerary['title']) ?></h1>
     </div>
-    <div class="form-group">
-      <label>Sở thích / phong cách du lịch</label>
-      <div class="checkbox-group">
-        <label><input type="checkbox" name="prefs[]" value="thiên nhiên"> Thiên nhiên</label>
-        <label><input type="checkbox" name="prefs[]" value="văn hoá"> Văn hoá - bản địa</label>
-        <label><input type="checkbox" name="prefs[]" value="ẩm thực"> Ẩm thực</label>
-        <label><input type="checkbox" name="prefs[]" value="trekking"> Trekking/mạo hiểm</label>
-        <label><input type="checkbox" name="prefs[]" value="cà phê"> Cà phê</label>
-        <label><input type="checkbox" name="prefs[]" value="gia đình"> Gia đình có trẻ nhỏ</label>
-        <label><input type="checkbox" name="prefs[]" value="chụp ảnh"> Chụp ảnh</label>
-      </div>
+    <button onclick="exportPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
+        📄 Xuất PDF
+    </button>
+</div>
+
+<div id="pdf-content">
+    <div style="display:none;" id="pdf-header">
+        <h1 style="color: #2d6a4f; margin-bottom: 5px;"><?= e($itinerary['title']) ?></h1>
+        <p style="color: #666;">Tạo ngày: <?= date('d/m/Y', strtotime($itinerary['created_at'])) ?> | Thời lượng: <?= $itinerary['days'] ?> ngày</p>
+        <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
     </div>
-    <div class="form-group">
-      <label>Yêu cầu thêm (tuỳ chọn)</label>
-      <textarea name="notes" rows="3" placeholder="Ví dụ: đi cùng người lớn tuổi, ngân sách thấp, muốn nghỉ trưa dài..."><?= $prefill ? 'Muốn ghé: ' . e($prefill) : '' ?></textarea>
+
+    <div id="stats-bar" class="map-stats-bar" style="display:none;">
+        <div class="map-stat"><div class="map-stat-icon">📍</div><div class="map-stat-info"><div class="label">Điểm tham quan</div><div class="value" id="stat-points">—</div></div></div>
+        <div class="map-stat"><div class="map-stat-icon">🛣️</div><div class="map-stat-info"><div class="label">Tổng quãng đường</div><div class="value" id="stat-distance">—</div></div></div>
+        <div class="map-stat"><div class="map-stat-icon">🕐</div><div class="map-stat-info"><div class="label">Thời gian di chuyển</div><div class="value" id="stat-duration">—</div></div></div>
+        <div class="map-stat"><div class="map-stat-icon">📅</div><div class="map-stat-info"><div class="label">Số ngày</div><div class="value" id="stat-days"><?= $itinerary['days'] ?> ngày</div></div></div>
     </div>
-    <button type="submit" class="btn">✨ Tạo lịch trình bằng AI</button>
-  </form>
-</div>
 
-<div id="stats-bar" class="map-stats-bar" style="display:none;">
-  <div class="map-stat"><div class="map-stat-icon">📍</div><div class="map-stat-info"><div class="label">Điểm tham quan</div><div class="value" id="stat-points">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">🛣️</div><div class="map-stat-info"><div class="label">Tổng quãng đường</div><div class="value" id="stat-distance">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">🕐</div><div class="map-stat-info"><div class="label">Thời gian di chuyển</div><div class="value" id="stat-duration">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">📅</div><div class="map-stat-info"><div class="label">Số ngày</div><div class="value" id="stat-days">—</div></div></div>
-</div>
+    <div id="map-container" class="map-wrap" style="display:none;">
+        <div id="itinerary-map"></div>
+        <div class="map-day-legend" id="map-legend"></div>
+    </div>
 
-<div id="map-container" class="map-wrap" style="display:none;">
-  <div id="itinerary-map"></div>
-  <div class="map-day-legend" id="map-legend"></div>
-</div>
+    <div id="route-panel" class="route-info-panel" style="display:none;" data-html2canvas-ignore="true">
+        <h3>🗺️ Chi tiết lộ trình (Bản đồ)</h3>
+        <div class="route-steps" id="route-steps-list"></div>
+    </div>
 
-<div id="route-panel" class="route-info-panel" style="display:none;">
-  <h3>🗺️ Chi tiết lộ trình</h3>
-  <div class="route-steps" id="route-steps-list"></div>
+    <div id="result">
+        <?php foreach ($daysData as $dayNum => $day): ?>
+            <div class="day-block">
+                <h3>Ngày <?= $dayNum ?></h3>
+                <?php foreach ($day['itemsHtml'] as $item): ?>
+                    <div class="time-slot">
+                        <strong><?= e($item['time_slot']) ?>:</strong> <?= e($item['activity']) ?>
+                        <?php if ($item['address']): ?>
+                            <div class="time-slot-address">📍 <?= e($item['address']) ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($item['transport'])): ?>
+                            <div class="time-slot-transport" style="font-size:13px;color:var(--green-700);margin-top:4px;font-weight:500;">🛵 <?= e($item['transport']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
 </div>
-
-<div id="result"></div>
 
 <script>
-const form = document.getElementById('itinerary-form');
-const resultBox = document.getElementById('result');
+// --- PDF Export ---
+function exportPDF() {
+    const element = document.getElementById('pdf-content');
+    const header = document.getElementById('pdf-header');
+    header.style.display = 'block';
+    
+    const opt = {
+        margin:       [10, 10, 10, 10],
+        filename:     'Lich_trinh_Dak_Lak_<?= date('Ymd', strtotime($itinerary['created_at'])) ?>.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        header.style.display = 'none';
+    });
+}
+
+// --- Map Logic ---
+const mapData = <?= json_encode($mapData, JSON_UNESCAPED_UNICODE) ?>;
 const DAY_COLORS = ['#2d6a4f','#e76f51','#3a86c8','#8338ec','#ff006e'];
 
 function createNumberedIcon(num, color) {
@@ -122,61 +223,9 @@ function getShortName(activity) {
   return clean.length > 28 ? clean.substring(0, 26) + '…' : clean;
 }
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const days  = document.getElementById('days').value;
-  const prefs = Array.from(form.querySelectorAll('input[name="prefs[]"]:checked')).map(c => c.value);
-  const notes = form.querySelector('textarea[name="notes"]').value;
-
-  resultBox.innerHTML = '<p class="loading-dots">🤖 AI đang lên lịch trình cho bạn, vui lòng đợi giây lát...</p>';
-  document.getElementById('stats-bar').style.display     = 'none';
-  document.getElementById('map-container').style.display = 'none';
-  document.getElementById('route-panel').style.display   = 'none';
-  if (window.itineraryMap) { window.itineraryMap.remove(); window.itineraryMap = null; }
-
-  try {
-    const res  = await fetch('<?= url('/api/generate_itinerary.php') ?>', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ days, prefs, notes })
-    });
-    const data = await res.json();
-    if (!data.success) { resultBox.innerHTML = '<p style="color:red;">❌ ' + (data.message || 'Có lỗi xảy ra.') + '</p>'; return; }
-
-    // Render lịch trình text
-    let html = `
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <h2 class="section-title" style="margin:0;">Lịch trình gợi ý của bạn</h2>
-        <button onclick="exportItineraryPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
-          📄 Xuất PDF
-        </button>
-      </div>
-      <div id="pdf-export-content" style="margin-top:20px;">
-    `;
-    data.itinerary.forEach(day => {
-      html += `<div class="day-block"><h3>Ngày ${day.day}${day.title ? ': ' + day.title : ''}</h3>`;
-      day.items.forEach(item => {
-        const addr  = item.address  ? `<div class="time-slot-address">📍 ${item.address}</div>` : '';
-        const trans = item.transport? `<div class="time-slot-transport" style="font-size:13px;color:var(--green-700);margin-top:4px;font-weight:500;">🛵 ${item.transport}</div>` : '';
-        const price = item.price    ? `<div class="time-slot-price">💰 <strong>Chi phí:</strong> ${item.price}</div>` : '';
-        html += `<div class="time-slot"><strong>${item.time || ''}:</strong> ${item.activity}${addr}${trans}${price}</div>`;
-      });
-      html += '</div>';
-    });
-    html += '</div>'; // End pdf-export-content
-    resultBox.innerHTML = html;
-
-    // Chuẩn bị mapData
-    const mapData = [];
-    data.itinerary.forEach((day, di) => {
-      const pts = [];
-      day.items.forEach(item => {
-        if (item.lat && item.lng) pts.push({ lat: item.lat, lng: item.lng, time: item.time||'', activity: item.activity||'', address: item.address||'', slug: item.slug||'', price: item.price||'' });
-      });
-      if (pts.length > 0) mapData.push({ dayNum: day.day, title: day.title||'', color: DAY_COLORS[di % DAY_COLORS.length], points: pts });
-    });
+document.addEventListener('DOMContentLoaded', async function() {
     if (mapData.length === 0) return;
 
-    // Khởi tạo bản đồ
     document.getElementById('map-container').style.display = 'block';
     window.itineraryMap = L.map('itinerary-map', { zoomControl: true });
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -191,7 +240,6 @@ form.addEventListener('submit', async (e) => {
       legendHtml.push(`<div class="map-day-legend-item"><div class="map-day-legend-dot" style="background:${day.color}"></div>Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
       stepsHtml.push(`<div class="day-separator">📅 Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
 
-      // Lộ trình thực OSRM
       if (day.points.length > 1) {
         const route = await fetchRealRoute(day.points);
         if (route) {
@@ -217,7 +265,6 @@ form.addEventListener('submit', async (e) => {
             <div style="padding:0 2px;">
               <div style="font-weight:600;font-size:14px;line-height:1.4;margin-bottom:6px;">${pt.activity}</div>
               ${pt.address ? `<div style="color:#666;font-size:12px;margin-bottom:4px;">📍 ${pt.address}</div>` : ''}
-              ${pt.price   ? `<div style="font-size:12px;color:#b45309;font-weight:600;margin-bottom:6px;">💰 ${pt.price}</div>` : ''}
               <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
                 ${linkHtml}
                 <a href="${dirUrl}" target="_blank" style="display:inline-block;background:#e8f4fd;color:#1a56db;padding:3px 8px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 Chỉ đường</a>
@@ -235,7 +282,6 @@ form.addEventListener('submit', async (e) => {
               <div class="step-time">${pt.time}</div>
               <div class="step-name">${sName}</div>
               ${pt.address ? `<div class="step-addr">📍 ${pt.address}</div>` : ''}
-              ${pt.price   ? `<div class="step-addr">💰 ${pt.price}</div>` : ''}
             </div>
           </div>`);
         if (i < day.points.length - 1) stepsHtml.push(`<div class="route-step-divider">→ Di chuyển đến điểm tiếp theo</div>`);
@@ -253,13 +299,11 @@ form.addEventListener('submit', async (e) => {
     document.getElementById('stat-points').textContent   = totalPoints + ' điểm';
     document.getElementById('stat-distance').textContent = fmtDist;
     document.getElementById('stat-duration').textContent = fmtDur;
-    document.getElementById('stat-days').textContent     = mapData.length + ' ngày';
     document.getElementById('stats-bar').style.display   = 'flex';
 
     document.getElementById('route-steps-list').innerHTML = stepsHtml.join('');
     document.getElementById('route-panel').style.display  = 'block';
 
-    // Click route steps => focus map marker
     document.querySelectorAll('.route-step[data-idx]').forEach(el => {
       el.addEventListener('click', () => {
         const idx = +el.dataset.idx;
@@ -271,26 +315,7 @@ form.addEventListener('submit', async (e) => {
         setTimeout(() => el.style.background = '', 1500);
       });
     });
-
-  } catch (err) {
-    resultBox.innerHTML = '<p style="color:red;">❌ Lỗi kết nối tới server.</p>';
-    console.error(err);
-  }
 });
-
-function exportItineraryPDF() {
-    const element = document.getElementById('pdf-export-content');
-    
-    const opt = {
-        margin:       [10, 10, 10, 10],
-        filename:     'Lich_trinh_Dak_Lak_AI.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(element).save();
-}
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -15,7 +15,9 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     <a href="<?= url('/public/index.php') ?>" class="logo">🌿 Đắk Lắk<span>Travel AI</span></a>
     <nav class="main-nav">
       <a href="<?= url('/public/index.php') ?>">Trang chủ</a>
+      <a href="<?= url('/public/safety.php') ?>">⚠️ An toàn</a>
       <a href="<?= url('/public/destinations.php') ?>">Điểm đến</a>
+      <a href="<?= url('/public/map.php') ?>">🗺️ Bản đồ</a>
       <a href="<?= url('/public/itinerary.php') ?>">Lịch trình AI</a>
       <a href="<?= url('/public/chatbot.php') ?>">Chatbot AI</a>
       <a href="<?= url('/public/reviews.php') ?>">⭐ Đánh giá</a>
@@ -25,7 +27,7 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     <div class="auth-area">
       <?php $__u = currentUser(); ?>
       <?php if ($__u): ?>
-        <span class="auth-greeting">👋 Xin chào, <strong><?= e($__u['full_name']) ?></strong></span>
+        <span class="auth-greeting">👋 Xin chào, <a href="<?= url('/public/profile.php') ?>" style="color:#fde68a;text-decoration:none;border-bottom:1px dashed #fde68a;" title="Đi tới Trang cá nhân"><strong><?= e($__u['full_name']) ?></strong></a></span>
         <?php if ($__u['role'] === 'admin'): ?>
           <a href="<?= url('/admin/destinations.php') ?>" class="btn secondary">🗺️ Quản trị</a>
           <a href="<?= url('/admin/contacts.php') ?>" class="btn secondary" style="position:relative;">
