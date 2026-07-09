@@ -1,19 +1,14 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Đăng nhập - Đắk Lắk Travel AI';
+$pageTitle = 'Đăng nhập Admin';
 $error = '';
-
-if (currentUser()) {
-    header('Location: ' . url('/public/index.php'));
-    exit;
-}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
     $db = getDB();
-    $stmt = $db->prepare("SELECT * FROM users WHERE email = ?");
+    $stmt = $db->prepare("SELECT * FROM users WHERE email = ? AND role = 'admin'");
     $stmt->execute([$email]);
     $u = $stmt->fetch();
 
@@ -21,12 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($u['status'] === 'banned') {
             $error = 'Tài khoản của bạn đã bị khóa.';
         } else {
-            $_SESSION['user'] = ['id' => $u['id'], 'full_name' => $u['full_name'], 'role' => $u['role'], 'avatar' => $u['avatar'] ?? null];
-            if ($u['role'] === 'admin') {
-                header('Location: ' . url('/admin/index.php'));
-            } else {
-                header('Location: ' . url('/public/index.php'));
-            }
+            $_SESSION['user'] = ['id' => $u['id'], 'full_name' => $u['full_name'], 'role' => $u['role']];
+            header('Location: ' . url('/admin/index.php'));
             exit;
         }
     } else {
@@ -37,8 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<h1 class="section-title"><?= __('login_title') ?></h1>
-<p class="section-sub"><?= __('login_sub') ?></p>
+<h1 class="section-title">Đăng nhập Quản trị</h1>
 
 <div class="form-box" style="max-width:400px;">
   <?php if ($error): ?><p style="color:red;"><?= e($error) ?></p><?php endif; ?>
@@ -54,7 +44,8 @@ include __DIR__ . '/../includes/header.php';
     <button type="submit" class="btn">Đăng nhập</button>
   </form>
   <p style="margin-top:14px;font-size:13px;color:#777;">
-    Chưa có tài khoản? <a href="<?= url('/public/register.php') ?>">Đăng ký ngay</a>
+    Tạo tài khoản admin bằng cách insert vào bảng <code>users</code> với
+    <code>role='admin'</code> và <code>password_hash</code> tạo bằng <code>password_hash()</code> của PHP.
   </p>
 </div>
 

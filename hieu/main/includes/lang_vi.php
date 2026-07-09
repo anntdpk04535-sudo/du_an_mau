@@ -142,11 +142,6 @@ return [
     'season_title' => 'Mùa du lịch',
     'invalid_verify_link' => 'Đường dẫn xác thực không hợp lệ',
     'verify_success' => 'Xác thực tài khoản thành công',
-    'virtual_tour_360' => 'Bản đồ 360',
-    'virtual_tour_title' => 'Trải nghiệm không gian 360',
-    'virtual_tour_sub' => 'Khám phá vẻ đẹp Đắk Lắk qua góc nhìn toàn cảnh',
-    'view_360' => 'Xem 360°',
-    'back_to_tours' => 'Quay lại danh sách',
     'footer_text' => 'Bản quyền thuộc về Đắk Lắk Travel AI',
 
     // Virtual Tour 360°

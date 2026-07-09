@@ -1,0 +1,11 @@
+# Thông tin nhạy cảm - không đẩy lên Git
+.env
+
+# File tạo admin đầu tiên - nên xoá khỏi server sau khi dùng, không cần lên Git
+database/create_admin.php
+
+# Common OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

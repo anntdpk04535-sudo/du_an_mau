@@ -17,8 +17,7 @@ foreach ($destinations as $d) {
             'review_count'    => (int)$d['review_count'],
             'avg_visit_hours' => (float)$d['avg_visit_hours'],
             'price_level'     => $d['price_level'],
-            'image_url'       => $d['image_url'],
-            'image_360_url'   => $d['image_360_url'] ?? null
+            'image_url'       => $d['image_url']
         ];
     }
 }
@@ -30,10 +29,6 @@ include __DIR__ . '/../includes/header.php';
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-<!-- Pannellum for 360 Viewer -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
-<script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
 
 <style>
 /* Override default container max-width to make map full screen width */
@@ -170,13 +165,6 @@ include __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
-<!-- 360 Viewer Modal -->
-<div id="pano-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:99999; background:black;">
-    <div id="pano-container" style="width:100%; height:100%;"></div>
-    <button onclick="close360()" style="position:absolute; top:20px; left:20px; z-index:100000; background:rgba(0,0,0,0.6); color:white; border:2px solid white; padding:10px 20px; border-radius:30px; font-weight:bold; cursor:pointer; font-size: 14px; transition: 0.2s;">⬅ Trở về Bản đồ</button>
-    <div id="pano-title" style="position:absolute; top:20px; left:50%; transform:translateX(-50%); z-index:100000; background:rgba(0,0,0,0.6); color:white; padding:10px 25px; border-radius:30px; font-weight:bold; font-size:16px; text-shadow: 0 1px 3px rgba(0,0,0,0.8);"></div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const destinations = <?= json_encode($mapDestinations, JSON_UNESCAPED_UNICODE) ?>;
@@ -199,11 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceLabelVi = { free: 'Miễn phí', low: 'Thấp', medium: 'Trung bình', high: 'Cao' };
     function getPriceLabelVi(lvl) { return priceLabelVi[lvl] || lvl; }
 
-    function createDestIcon(color, has360) {
-        let iconHtml = has360 ? '<span style="transform:rotate(45deg); display:block; font-size:14px; margin-left: 1px; margin-top: 1px;">🌐</span>' : '';
+    function createDestIcon(color) {
         return L.divIcon({
             className: '',
-            html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${color};border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,.3);transform:rotate(-45deg); display:flex; align-items:center; justify-content:center;">${iconHtml}</div>`,
+            html: `<div style="width:32px;height:32px;border-radius:50% 50% 50% 0;background:${color};border:3px solid white;box-shadow:0 4px 10px rgba(0,0,0,.3);transform:rotate(-45deg);"></div>`,
             iconSize: [32,32], iconAnchor: [16,32], popupAnchor: [0,-36], tooltipAnchor: [0,-36]
         });
     }
@@ -214,15 +201,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     destinations.forEach((d, index) => {
         const color = getPriceColor(d.price_level);
-        const has360 = !!d.image_360_url;
-        const marker = L.marker([d.lat, d.lng], { icon: createDestIcon(color, has360) });
+        const marker = L.marker([d.lat, d.lng], { icon: createDestIcon(color) });
         
         let popupContent = `
             <div style="font-family:inherit;min-width:220px;max-width:260px;">
-                <div style="background:${color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:14px; display:flex; justify-content:space-between;">
-                    <span>${d.name}</span>
-                    ${has360 ? '<span style="font-size: 16px;">🌐</span>' : ''}
-                </div>
+                <div style="background:${color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:14px;">${d.name}</div>
                 <div style="padding:0 2px;">
                     <img src="${d.image_url || 'https://via.placeholder.com/260x120?text=No+Image'}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px;">
                     <div style="font-size:12px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
@@ -233,8 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span style="background:#f1f1f1;padding:2px 7px;border-radius:8px;">~${d.avg_visit_hours}h</span>
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-                        <a href="<?= url('/public/destination.php') ?>?slug=${d.slug}" style="background:${color};color:white;padding:6px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;display:block;text-align:center;flex:1;">Chi tiết</a>
-                        ${has360 ? `<button onclick="open360('${d.image_360_url.startsWith('http') ? d.image_360_url : '<?= url('') ?>' + d.image_360_url}', '${d.name}')" style="background:#f59e0b;color:white;padding:6px 12px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;flex:1; display:flex; align-items:center; justify-content:center; gap:4px;"><span>🌐</span> 360°</button>` : ''}
+                        <a href="<?= url('/public/destination.php') ?>?slug=${d.slug}" style="background:${color};color:white;padding:5px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;display:block;text-align:center;flex:1;">Chi tiết</a>
                     </div>
                 </div>
             </div>`;
@@ -289,37 +271,6 @@ document.addEventListener('DOMContentLoaded', function() {
         map.fitBounds(group.getBounds().pad(0.1));
     }
 });
-
-// Global functions for 360 Viewer
-let panoViewer = null;
-
-window.open360 = function(url, title) {
-    document.getElementById('pano-modal').style.display = 'block';
-    document.getElementById('pano-title').innerText = title;
-    
-    if (panoViewer) {
-        panoViewer.destroy();
-    }
-    
-    panoViewer = pannellum.viewer('pano-container', {
-        "type": "equirectangular",
-        "panorama": url,
-        "autoLoad": true,
-        "autoRotate": -2,
-        "compass": true,
-        "hfov": 110,
-        "minHfov": 50,
-        "maxHfov": 120
-    });
-};
-
-window.close360 = function() {
-    document.getElementById('pano-modal').style.display = 'none';
-    if (panoViewer) {
-        panoViewer.destroy();
-        panoViewer = null;
-    }
-};
 </script>
 
 <?php 

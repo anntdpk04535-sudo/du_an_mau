@@ -142,11 +142,6 @@ return [
     'season_title' => 'Travel Season',
     'invalid_verify_link' => 'Invalid verification link',
     'verify_success' => 'Account verified successfully',
-    'virtual_tour_360' => '360 Virtual Tour',
-    'virtual_tour_title' => '360 Space Experience',
-    'virtual_tour_sub' => 'Discover the beauty of Dak Lak through panoramic views',
-    'view_360' => 'View 360°',
-    'back_to_tours' => 'Back to list',
     'footer_text' => 'Copyright by Dak Lak Travel AI',
 
     // Virtual Tour 360°

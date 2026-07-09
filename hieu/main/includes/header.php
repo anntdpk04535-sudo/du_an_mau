@@ -20,7 +20,6 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
         <div class="dropdown-content">
           <a href="<?= url('/public/destinations.php') ?>"><?= __('destinations') ?></a>
           <a href="<?= url('/public/map.php') ?>"><?= __('map') ?></a>
-          <a href="<?= url('/public/virtual_tours.php') ?>">🌐 <?= __('virtual_tour_360') ?></a>
           <a href="<?= url('/public/articles.php') ?>"><?= __('articles') ?></a>
         </div>
       </div>

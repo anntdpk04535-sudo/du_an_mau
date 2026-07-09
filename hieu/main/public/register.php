@@ -29,10 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Email này đã được đăng ký.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("INSERT INTO users (full_name, email, password_hash, role, is_verified, verification_token) VALUES (?, ?, ?, 'user', 1, NULL)");
-            $stmt->execute([$fullName, $email, $hash]);
+            $token = bin2hex(random_bytes(32));
+            
+            $stmt = $db->prepare("INSERT INTO users (full_name, email, password_hash, role, is_verified, verification_token) VALUES (?, ?, ?, 'user', 1, ?)");
+            $stmt->execute([$fullName, $email, $hash, $token]);
 
-            $success = 'Đăng ký thành công! Bạn có thể <a href="' . url('/public/login.php') . '">đăng nhập ngay</a> bây giờ.';
+            $success = 'Đăng ký thành công! Bạn có thể đăng nhập ngay.';
         }
     }
 }
