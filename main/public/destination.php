@@ -195,6 +195,62 @@ echo $warningHtml;
   <p><?= nl2br(e($d['description'])) ?></p>
 </div>
 
+<?php
+// ── VIRTUAL TOUR 360° CTA ──
+if (!empty($d['virtual_tour_enabled'])):
+    $vtStmt = getDB()->prepare("SELECT COUNT(*) FROM virtual_tour_scenes WHERE destination_id = ?");
+    $vtStmt->execute([$d['id']]);
+    $vtSceneCount = (int)$vtStmt->fetchColumn();
+    if ($vtSceneCount > 0):
+?>
+<a href="<?= url('/public/virtual-tour.php?id=' . (int)$d['id']) ?>" class="vt-tour-cta" id="vt-tour-cta">
+  <div class="vt-tour-cta-icon">🌐</div>
+  <div class="vt-tour-cta-content">
+    <h3><?= __('vt_cta_title') ?></h3>
+    <p><?= __('vt_cta_desc') ?> (<?= $vtSceneCount ?> <?= __('vt_scenes_count') ?>)</p>
+  </div>
+  <div class="vt-tour-cta-arrow">→</div>
+</a>
+<style>
+/* Virtual Tour CTA inline styles */
+.vt-tour-cta {
+  display: flex; align-items: center; gap: 12px;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  border: 1px solid rgba(99,102,241,0.3); border-radius: 16px;
+  padding: 20px 24px; margin: 20px 0;
+  cursor: pointer; text-decoration: none; color: #fff;
+  transition: all 0.3s; position: relative; overflow: hidden;
+}
+.vt-tour-cta::before {
+  content: ''; position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%);
+  animation: vtCtaGlow 4s ease-in-out infinite;
+}
+@keyframes vtCtaGlow {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10%, 10%); }
+}
+.vt-tour-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(99,102,241,0.3);
+  border-color: rgba(99,102,241,0.5);
+}
+.vt-tour-cta-icon { font-size: 36px; flex-shrink: 0; position: relative; z-index: 1; }
+.vt-tour-cta-content { position: relative; z-index: 1; }
+.vt-tour-cta-content h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; }
+.vt-tour-cta-content p { margin: 0; font-size: 13px; color: #a5b4fc; }
+.vt-tour-cta-arrow {
+  margin-left: auto; font-size: 22px; position: relative; z-index: 1;
+  transition: transform 0.2s;
+}
+.vt-tour-cta:hover .vt-tour-cta-arrow { transform: translateX(4px); }
+</style>
+<?php
+    endif;
+endif;
+?>
+
 <?php if (!empty($d['latitude']) && !empty($d['longitude'])): ?>
 <div class="form-box" id="dest-weather-box" style="display:none; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);">
   <h3 style="margin-top:0; color:#0369a1; display:flex; align-items:center; gap:8px;">🌤️ Thời tiết hiện tại ở khu vực này</h3>

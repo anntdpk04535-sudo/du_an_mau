@@ -38,5 +38,6 @@ $currentPath = basename($_SERVER['SCRIPT_NAME']);
     <a href="<?= url('/admin/articles.php') ?>" class="<?= $currentPath == 'articles.php' ? 'active' : '' ?>">📝 Cẩm nang</a>
     <a href="<?= url('/admin/contacts.php') ?>" class="<?= $currentPath == 'contacts.php' ? 'active' : '' ?>">📬 Liên hệ</a>
     <a href="<?= url('/admin/reviews.php') ?>" class="<?= $currentPath == 'reviews.php' ? 'active' : '' ?>">⭐ Đánh giá</a>
+    <a href="<?= url('/admin/virtual_tours.php') ?>" class="<?= $currentPath == 'virtual_tours.php' ? 'active' : '' ?>">🌐 Tour 360°</a>
     <a href="<?= url('/admin/destinations.php?logout=1') ?>" style="margin-left: auto; background: #fee2e2; color: #991b1b;">Đăng xuất</a>
 </div>
