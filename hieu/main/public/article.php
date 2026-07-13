@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $slug = $_GET['slug'] ?? '';
 if (!$slug) {
-    header('Location: ' . url('/public/articles.php'));
+    header('Location: ' . url('/cam-nang'));
     exit;
 }
 
@@ -19,7 +19,7 @@ if (!$article) {
     http_response_code(404);
     $pageTitle = 'Không tìm thấy bài viết';
     include __DIR__ . '/../includes/header.php';
-    echo '<div style="text-align:center; padding:100px 20px;"><h2>Không tìm thấy bài viết</h2><a href="'.url('/public/articles.php').'" class="btn">Quay lại cẩm nang</a></div>';
+    echo '<div style="text-align:center; padding:100px 20px;"><h2>Không tìm thấy bài viết</h2><a href="'.url('/cam-nang').'" class="btn">Quay lại cẩm nang</a></div>';
     include __DIR__ . '/../includes/footer.php';
     exit;
 }
@@ -60,6 +60,7 @@ $stmt->execute([$article['id']]);
 $comments = $stmt->fetchAll();
 
 $pageTitle = $article['title'] . ' - Đắk Lắk Travel AI';
+$metaDescription = $article['summary'] ?? '';
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -282,7 +283,7 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="article-nav">
-    <a href="<?= url('/public/articles.php') ?>" class="btn secondary"><?= __('view_all_articles') ?></a>
+    <a href="<?= url('/cam-nang') ?>" class="btn secondary"><?= __('view_all_articles') ?></a>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -1,0 +1,19 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent loop if file or directory exists
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Danh sách điểm đến
+    RewriteRule ^diem-den/?$ public/destinations.php [L,QSA]
+    
+    # Chi tiết điểm đến (slug)
+    RewriteRule ^diem-den/([a-zA-Z0-9_-]+)/?$ public/destination.php?slug=$1 [L,QSA]
+
+    # Danh sách cẩm nang
+    RewriteRule ^cam-nang/?$ public/articles.php [L,QSA]
+
+    # Chi tiết cẩm nang (slug)
+    RewriteRule ^cam-nang/([a-zA-Z0-9_-]+)/?$ public/article.php?slug=$1 [L,QSA]
+</IfModule>

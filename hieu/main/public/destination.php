@@ -15,6 +15,7 @@ if (!$d) {
 }
 
 $pageTitle = $d['name'] . ' - Đắk Lắk Travel AI';
+$metaDescription = $d['short_desc'] ?? '';
 include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />

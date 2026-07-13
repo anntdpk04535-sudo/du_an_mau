@@ -63,9 +63,9 @@ include __DIR__ . '/../includes/header.php';
 <p class="section-sub"><?= __('dest_sub') ?></p>
 
 <div class="pills" style="margin-bottom: 10px;">
-  <a href="<?= url('/public/destinations.php') ?>" class="pill <?= $catId === null ? 'active' : '' ?>"><?= __('all_categories') ?></a>
+  <a href="<?= url('/diem-den') ?>" class="pill <?= $catId === null ? 'active' : '' ?>"><?= __('all_categories') ?></a>
   <?php foreach ($categories as $c): ?>
-    <a href="<?= url('/public/destinations.php') ?>?cat=<?= e((string) $c['id']) ?>"
+    <a href="<?= url('/diem-den') ?>?cat=<?= e((string) $c['id']) ?>"
       class="pill <?= $catId === (int) $c['id'] ? 'active' : '' ?>">
       <?= e($c['name']) ?>
     </a>
@@ -74,7 +74,7 @@ include __DIR__ . '/../includes/header.php';
 
 <!-- Bộ lọc nâng cao -->
 <div style="background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px;">
-  <form method="get" action="<?= url('/public/destinations.php') ?>" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+  <form method="get" action="<?= url('/diem-den') ?>" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
     <?php if ($catId): ?>
       <input type="hidden" name="cat" value="<?= $catId ?>">
     <?php endif; ?>
@@ -106,7 +106,7 @@ include __DIR__ . '/../includes/header.php';
 
     <button type="submit" class="btn" style="padding: 8px 20px;"><?= __('search_btn') ?></button>
     <?php if ($keyword || $priceLevel || $minRating > 0): ?>
-      <a href="<?= url('/public/destinations.php' . ($catId ? '?cat='.$catId : '')) ?>" class="btn secondary" style="padding: 8px 15px;"><?= __('clear_filter') ?></a>
+      <a href="<?= url('/diem-den' . ($catId ? '?cat='.$catId : '')) ?>" class="btn secondary" style="padding: 8px 15px;"><?= __('clear_filter') ?></a>
     <?php endif; ?>
   </form>
 </div>
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span style="background:#fff3e0;color:#b45309;padding:2px 7px;border-radius:10px;">💰 ${getPriceLabelVi(d.price_level)}</span>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <a href="<?= url('/public/destination.php') ?>?slug=${d.slug}" style="background:${color};color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;"><?= __('view_details') ?> →</a>
+            <a href="<?= url('/diem-den/') ?>${d.slug}" style="background:${color};color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;"><?= __('view_details') ?> →</a>
             <a href="${dirUrl}" target="_blank" style="background:#e8f4fd;color:#1a56db;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 <?= __('directions') ?></a>
           </div>
         </div>
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <p><?= __('no_dest') ?></p>
   <?php endif; ?>
   <?php foreach ($destinations as $d): ?>
-    <a href="<?= url('/public/destination.php') ?>?slug=<?= e($d['slug']) ?>" class="card">
+    <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card">
       <div class="card-img">
         <?php if (!empty($d['image_url'])): ?>
           <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" style="width:100%;height:100%;object-fit:cover;">

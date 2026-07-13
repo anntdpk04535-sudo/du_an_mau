@@ -5,6 +5,11 @@ require_once __DIR__ . '/../config/ai.php';
 
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'httponly' => true,
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -31,10 +36,11 @@ function __(string $key): string
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
 if (!defined('BASE_URL')) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-    // Các trang nằm trong /public hoặc /admin (1 cấp dưới gốc project)
     $base = preg_replace('#/(public|admin)$#', '', $scriptDir);
-    define('BASE_URL', rtrim($base, '/'));
+    define('BASE_URL', $protocol . $host . rtrim($base, '/'));
 }
 
 function url(string $path): string

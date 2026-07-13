@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 <div class="grid">
   <?php foreach ($featured as $d): ?>
-    <a href="<?= url('/public/destination.php') ?>?slug=<?= e($d['slug']) ?>" class="card">
+    <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card">
       <div class="card-img">
         <?php if (!empty($d['image_url'])): ?>
           <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" style="width:100%;height:100%;object-fit:cover;">
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 </div>
 
 <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-    <a href="<?= url('/public/destinations.php') ?>" class="btn secondary" style="padding: 10px 25px; border-radius: 30px; font-weight: 600;"><?= __('view_all_dest') ?></a>
+    <a href="<?= url('/diem-den') ?>" class="btn secondary" style="padding: 10px 25px; border-radius: 30px; font-weight: 600;"><?= __('view_all_dest') ?></a>
 </div>
 
 
