@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Cẩm Nang An Toàn Du Lịch - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_safety');
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -193,8 +193,8 @@ include __DIR__ . '/../includes/header.php';
 <h2 class="section-title">🌤️ <?= __('weather_title') ?></h2>
 <p class="section-sub"><?= __('weather_sub') ?></p>
 <div class="weather-safe-box">
-    <h3 id="weather-safety-title">✅ AN TOÀN — Thời tiết bình thường</h3>
-    <p id="weather-safety-desc">Không có cảnh báo đặc biệt cho khu vực này. Tuy nhiên luôn chuẩn bị đầy đủ trước khi tham quan.</p>
+    <h3 id="weather-safety-title">✅ <?= __('safety_weather_normal') ?></h3>
+    <p id="weather-safety-desc"><?= __('safety_weather_desc') ?></p>
     <?php 
     $m = (int)date('m'); 
     $isRainy = ($m >= 5 && $m <= 10);
@@ -242,44 +242,44 @@ document.addEventListener('DOMContentLoaded', async function() {
 <p class="section-sub"><?= __('emergency_sub') ?></p>
 <div class="emergency-grid">
     <div class="emergency-card">
-        <h4>🚑 Cấp cứu y tế</h4>
+        <h4>🚑 <?= __('emer_medical') ?></h4>
         <div class="number">115</div>
-        <p>Gọi khi có tai nạn, ngất xỉu, hoặc cần sơ cứu khẩn cấp.</p>
+        <p><?= __('emer_medical_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🚒 Cứu hỏa</h4>
+        <h4>🚒 <?= __('emer_fire') ?></h4>
         <div class="number">114</div>
-        <p>Gọi khi phát hiện cháy rừng, cháy nhà hoặc cần cứu hộ.</p>
+        <p><?= __('emer_fire_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🚓 Công an (Cứu nạn)</h4>
+        <h4>🚓 <?= __('emer_police') ?></h4>
         <div class="number">113</div>
-        <p>Gọi khi gặp tình huống mất an ninh, tai nạn giao thông.</p>
+        <p><?= __('emer_police_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🏥 Bệnh viện Đa khoa TP. BMT</h4>
+        <h4>🏥 <?= __('emer_hospital') ?></h4>
         <div class="number">0262 385 2258</div>
-        <p>Y tế, TP. Buôn Ma Thuột — cơ sở y tế lớn nhất tỉnh.</p>
+        <p><?= __('emer_hospital_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🌲 Ban quản lý VQG Yok Đôn</h4>
+        <h4>🌲 <?= __('emer_yokdon') ?></h4>
         <div class="number">0262 378 3053</div>
-        <p>Liên hệ khi cần hỗ trợ trong khu vực Vườn quốc gia Yok Đôn.</p>
+        <p><?= __('emer_yokdon_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🐘 Ban quản lý KDL Buôn Đôn</h4>
+        <h4>🐘 <?= __('emer_buondon') ?></h4>
         <div class="number">0262 378 6111</div>
-        <p>Hỗ trợ du khách trong khu du lịch sinh thái Buôn Đôn.</p>
+        <p><?= __('emer_buondon_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🌊 Ban quản lý Thác Dray Nur</h4>
+        <h4>🌊 <?= __('emer_draynur') ?></h4>
         <div class="number">0262 363 6789</div>
-        <p>Liên hệ khi cần hỗ trợ tại khu vực Thác Dray Nur - Dray Sáp.</p>
+        <p><?= __('emer_draynur_desc') ?></p>
     </div>
     <div class="emergency-card">
-        <h4>🚕 Taxi Mai Linh Đắk Lắk</h4>
+        <h4>🚕 <?= __('emer_taxi') ?></h4>
         <div class="number">0262 383 8383</div>
-        <p>Gọi taxi khi cần di chuyển khẩn cấp hoặc không có phương tiện.</p>
+        <p><?= __('emer_taxi_desc') ?></p>
     </div>
 </div>
 
@@ -287,37 +287,37 @@ document.addEventListener('DOMContentLoaded', async function() {
 <p class="section-sub"><?= __('terrain_sub') ?></p>
 <div class="terrain-list">
     <div class="terrain-card">
-        <h3>🌊 Thác Nước (Dray Nur, Dray Sáp)</h3>
+        <h3>🌊 <?= __('terrain_waterfall') ?></h3>
         <ul>
-            <li><strong>Nhận biết lũ quét:</strong> Nước suối chuyển màu đục đột ngột, có tiếng ù ù hoặc rác từ thượng nguồn đổ về — đây là dấu hiệu lũ quét sắp tới. Lập tức di chuyển lên vùng đất cao.</li>
-            <li><strong>Đường đá trơn trượt:</strong> Mùa mưa các bậc đá xuống thác cực kỳ trơn. Luôn mang giày leo núi có độ bám cao, KHÔNG đi dép lê hoặc giày cao gót. Bám chặt tay vịn và đi chậm từng bước.</li>
-            <li><strong>Tắm thác an toàn:</strong> Chỉ tắm ở khu vực cho phép, có cứu hộ. Không bao giờ bơi vào vùng nước xoáy dưới chân thác — lực hút cực mạnh có thể kéo người xuống đáy.</li>
-            <li><strong>Bảo vệ thiết bị:</strong> Bọc điện thoại, máy ảnh trong túi chống nước. Bụi nước ở gần thác rất mạnh, dễ gây hỏng thiết bị điện tử.</li>
+            <li><strong><?= __('terrain_wf_1_title') ?>:</strong> <?= __('terrain_wf_1_desc') ?></li>
+            <li><strong><?= __('terrain_wf_2_title') ?>:</strong> <?= __('terrain_wf_2_desc') ?></li>
+            <li><strong><?= __('terrain_wf_3_title') ?>:</strong> <?= __('terrain_wf_3_desc') ?></li>
+            <li><strong><?= __('terrain_wf_4_title') ?>:</strong> <?= __('terrain_wf_4_desc') ?></li>
         </ul>
     </div>
     <div class="terrain-card">
-        <h3>🌲 Rừng & Vườn Quốc Gia (Yok Đôn)</h3>
+        <h3>🌲 <?= __('terrain_forest') ?></h3>
         <ul>
-            <li><strong>Luôn có hướng dẫn viên:</strong> Rừng Yok Đôn rộng hơn 115.000 ha, rất dễ lạc đường. Tuyệt đối KHÔNG tự ý đi sâu vào rừng khi không có người dẫn đường bản địa.</li>
-            <li><strong>Phòng tránh cháy rừng:</strong> Mùa khô (Tháng 11 - 4), rừng khộp cực kỳ khô nóng. Không đốt lửa, không vứt tàn thuốc, không mang các vật dễ cháy. Nếu phát hiện khói hoặc lửa, gọi ngay 114.</li>
-            <li><strong>Côn trùng & rắn:</strong> Mặc quần áo dài tay, xịt thuốc chống côn trùng. Khi đi bộ trong rừng, dùng gậy gõ nhẹ vào bụi cây phía trước để xua rắn. Nếu bị rắn cắn, giữ bình tĩnh, bất động chi bị cắn và gọi cấp cứu 115 ngay.</li>
-            <li><strong>Nước uống:</strong> Mang tối thiểu 2 lít nước/người. KHÔNG uống nước suối trong rừng khi chưa qua xử lý — nguy cơ nhiễm ký sinh trùng.</li>
+            <li><strong><?= __('terrain_fr_1_title') ?>:</strong> <?= __('terrain_fr_1_desc') ?></li>
+            <li><strong><?= __('terrain_fr_2_title') ?>:</strong> <?= __('terrain_fr_2_desc') ?></li>
+            <li><strong><?= __('terrain_fr_3_title') ?>:</strong> <?= __('terrain_fr_3_desc') ?></li>
+            <li><strong><?= __('terrain_fr_4_title') ?>:</strong> <?= __('terrain_fr_4_desc') ?></li>
         </ul>
     </div>
     <div class="terrain-card">
-        <h3>🛶 Hồ & Sông (Hồ Lắk, Hồ Ea Kao)</h3>
+        <h3>🛶 <?= __('terrain_lake') ?></h3>
         <ul>
-            <li><strong>Mặc áo phao:</strong> Bắt buộc mặc áo phao khi đi thuyền độc mộc hoặc chèo kayak. Đặc biệt quan trọng với trẻ em và người không biết bơi.</li>
-            <li><strong>Không bơi một mình:</strong> Luôn bơi theo nhóm hoặc có người quan sát. Nhiều hồ tự nhiên có đáy bùn bất ngờ và dòng chảy ngầm mà mắt thường không nhìn thấy.</li>
-            <li><strong>Giông lốc bất ngờ:</strong> Mùa mưa, giông lốc thường ập đến rất nhanh vào buổi chiều. Nếu thấy mây đen kéo tới, gió giật, lập tức chèo thuyền vào bờ ngay.</li>
+            <li><strong><?= __('terrain_lk_1_title') ?>:</strong> <?= __('terrain_lk_1_desc') ?></li>
+            <li><strong><?= __('terrain_lk_2_title') ?>:</strong> <?= __('terrain_lk_2_desc') ?></li>
+            <li><strong><?= __('terrain_lk_3_title') ?>:</strong> <?= __('terrain_lk_3_desc') ?></li>
         </ul>
     </div>
     <div class="terrain-card">
-        <h3>🛖 Buôn Làng & Văn Hoá Bản Địa</h3>
+        <h3>🛖 <?= __('terrain_village') ?></h3>
         <ul>
-            <li><strong>Xin phép khi vào buôn:</strong> Nên hỏi ý kiến người dân hoặc già làng trước khi đi sâu vào khu vực sinh hoạt. Tôn trọng không gian riêng tư của cộng đồng.</li>
-            <li><strong>Không sờ vào vật thờ cúng:</strong> Người Ê Đê và M'nông có nhiều vật dụng thờ cúng tâm linh trong nhà dài. Không tự ý chạm, chụp ảnh vật thờ khi chưa được phép.</li>
-            <li><strong>Uống rượu cần:</strong> Nếu được mời tham gia uống rượu cần, hãy uống một ít theo lễ nghi. Từ chối lịch sự nếu không uống được cồn — người bản địa rất hiểu và tôn trọng.</li>
+            <li><strong><?= __('terrain_vl_1_title') ?>:</strong> <?= __('terrain_vl_1_desc') ?></li>
+            <li><strong><?= __('terrain_vl_2_title') ?>:</strong> <?= __('terrain_vl_2_desc') ?></li>
+            <li><strong><?= __('terrain_vl_3_title') ?>:</strong> <?= __('terrain_vl_3_desc') ?></li>
         </ul>
     </div>
 </div>
@@ -325,23 +325,23 @@ document.addEventListener('DOMContentLoaded', async function() {
 <h2 class="section-title">📅 <?= __('season_title') ?></h2>
 <div class="season-grid">
     <div class="season-card rain">
-        <h3>🌧️ Mùa Mưa (Tháng 5 – 10)</h3>
+        <h3>🌧️ <?= __('season_rainy_title') ?></h3>
         <ul>
-            <li>Mang áo mưa cánh dơi (gọn nhẹ, che được balo)</li>
-            <li>Giày leo núi chống trượt — KHÔNG mang giày vải</li>
-            <li>Túi zip/bao bọc điện thoại, giấy tờ cá nhân</li>
-            <li>Kiểm tra thời tiết trước mỗi chuyến di chuyển</li>
-            <li>Mang theo quần áo thay — ướt là chuyện bình thường!</li>
+            <li><?= __('season_rainy_1') ?></li>
+            <li><?= __('season_rainy_2') ?></li>
+            <li><?= __('season_rainy_3') ?></li>
+            <li><?= __('season_rainy_4') ?></li>
+            <li><?= __('season_rainy_5') ?></li>
         </ul>
     </div>
     <div class="season-card dry">
-        <h3>☀️ Mùa Khô (Tháng 11 – 4)</h3>
+        <h3>☀️ <?= __('season_dry_title') ?></h3>
         <ul>
-            <li>Kem chống nắng SPF50+ và mũ rộng vành</li>
-            <li>Mang tối thiểu 2 lít nước/người/buổi tham quan</li>
-            <li>Quần áo dài tay thoáng mát — chống nắng + côn trùng</li>
-            <li>Kính mát UV400 bảo vệ mắt</li>
-            <li>Bình xịt đuổi côn trùng (muỗi rừng rất nhiều buổi chiều tối)</li>
+            <li><?= __('season_dry_1') ?></li>
+            <li><?= __('season_dry_2') ?></li>
+            <li><?= __('season_dry_3') ?></li>
+            <li><?= __('season_dry_4') ?></li>
+            <li><?= __('season_dry_5') ?></li>
         </ul>
     </div>
 </div>

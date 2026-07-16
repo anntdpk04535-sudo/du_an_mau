@@ -41,6 +41,7 @@ function callGemini(array $messages, string $system = '', int $maxTokens = 1024,
         'generationConfig' => [
             'maxOutputTokens' => $maxTokens,
             'temperature' => $temperature,
+            'responseMimeType' => 'application/json',
             // Tắt "thinking" để model không tốn token suy nghĩ ngầm,
             // tránh bị cắt cụt phần trả lời thực tế (đặc biệt khi yêu cầu JSON dài).
             'thinkingConfig' => ['thinkingBudget' => 0],
@@ -60,7 +61,7 @@ function callGemini(array $messages, string $system = '', int $maxTokens = 1024,
         CURLOPT_HTTPHEADER => [
             'Content-Type: application/json',
         ],
-        CURLOPT_TIMEOUT => 60,
+        CURLOPT_TIMEOUT => 120,
     ]);
 
     $response = curl_exec($ch);

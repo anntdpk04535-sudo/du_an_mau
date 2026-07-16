@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Lịch trình AI - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_itinerary');
 $prefill = $_GET['prefill'] ?? '';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -33,46 +33,49 @@ include __DIR__ . '/../includes/header.php';
 .day-separator { background:linear-gradient(135deg,var(--green-100),#fff); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; color:var(--green-700); margin:8px 0 4px; display:flex; align-items:center; gap:8px; }
 </style>
 
-<h1 class="section-title">🧭 Lên lịch trình du lịch Đắk Lắk bằng AI</h1>
-<p class="section-sub">Chọn số ngày và sở thích, AI sẽ gợi ý lịch trình chi tiết theo từng ngày, từng buổi.</p>
+<h1 class="section-title">🧭 <?= __('iti_form_title') ?></h1>
+<p class="section-sub"><?= __('iti_form_sub') ?></p>
 
 <div class="form-box">
   <form id="itinerary-form">
     <div class="form-group">
-      <label>Số ngày du lịch</label>
+      <label><?= __('iti_form_days') ?></label>
       <select name="days" id="days">
-        <option value="1">1 ngày</option>
-        <option value="2" selected>2 ngày</option>
-        <option value="3">3 ngày</option>
-        <option value="4">4 ngày</option>
-        <option value="5">5 ngày</option>
+        <option value="1">1 <?= __('days') ?></option>
+        <option value="2" selected>2 <?= __('days') ?></option>
+        <option value="3">3 <?= __('days') ?></option>
+        <option value="4">4 <?= __('days') ?></option>
+        <option value="5">5 <?= __('days') ?></option>
       </select>
     </div>
     <div class="form-group">
-      <label>Sở thích / phong cách du lịch</label>
+      <label><?= __('iti_form_prefs') ?></label>
       <div class="checkbox-group">
-        <label><input type="checkbox" name="prefs[]" value="thiên nhiên"> Thiên nhiên</label>
-        <label><input type="checkbox" name="prefs[]" value="văn hoá"> Văn hoá - bản địa</label>
-        <label><input type="checkbox" name="prefs[]" value="ẩm thực"> Ẩm thực</label>
-        <label><input type="checkbox" name="prefs[]" value="trekking"> Trekking/mạo hiểm</label>
-        <label><input type="checkbox" name="prefs[]" value="cà phê"> Cà phê</label>
-        <label><input type="checkbox" name="prefs[]" value="gia đình"> Gia đình có trẻ nhỏ</label>
-        <label><input type="checkbox" name="prefs[]" value="chụp ảnh"> Chụp ảnh</label>
+        <label><input type="checkbox" name="prefs[]" value="thiên nhiên"> <?= __('iti_pref_nature') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="văn hoá"> <?= __('iti_pref_culture') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="ẩm thực"> <?= __('iti_pref_food') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="trekking"> <?= __('iti_pref_trekking') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="cà phê"> <?= __('iti_pref_coffee') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="gia đình"> <?= __('iti_pref_family') ?></label>
+        <label><input type="checkbox" name="prefs[]" value="chụp ảnh"> <?= __('iti_pref_photo') ?></label>
       </div>
     </div>
     <div class="form-group">
-      <label>Yêu cầu thêm (tuỳ chọn)</label>
-      <textarea name="notes" rows="3" placeholder="Ví dụ: đi cùng người lớn tuổi, ngân sách thấp, muốn nghỉ trưa dài..."><?= $prefill ? 'Muốn ghé: ' . e($prefill) : '' ?></textarea>
+      <label><?= __('iti_form_extra') ?></label>
+      <div style="display:flex; gap:10px;">
+        <textarea name="notes" id="notes" rows="3" style="flex:1" placeholder="<?= __('iti_form_extra_ph') ?>"><?= $prefill ? __('iti_prefill_prefix') . ' ' . e($prefill) : '' ?></textarea>
+        <button type="button" id="mic-btn" class="btn secondary" style="align-self:flex-start; padding:10px 14px; min-width:48px;" title="<?= __('iti_mic_title') ?>">🎤</button>
+      </div>
     </div>
-    <button type="submit" class="btn">✨ Tạo lịch trình bằng AI</button>
+    <button type="submit" class="btn">✨ <?= __('iti_form_submit') ?></button>
   </form>
 </div>
 
 <div id="stats-bar" class="map-stats-bar" style="display:none;">
-  <div class="map-stat"><div class="map-stat-icon">📍</div><div class="map-stat-info"><div class="label">Điểm tham quan</div><div class="value" id="stat-points">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">🛣️</div><div class="map-stat-info"><div class="label">Tổng quãng đường</div><div class="value" id="stat-distance">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">🕐</div><div class="map-stat-info"><div class="label">Thời gian di chuyển</div><div class="value" id="stat-duration">—</div></div></div>
-  <div class="map-stat"><div class="map-stat-icon">📅</div><div class="map-stat-info"><div class="label">Số ngày</div><div class="value" id="stat-days">—</div></div></div>
+  <div class="map-stat"><div class="map-stat-icon">📍</div><div class="map-stat-info"><div class="label"><?= __('iti_stat_points') ?></div><div class="value" id="stat-points">—</div></div></div>
+  <div class="map-stat"><div class="map-stat-icon">🛣️</div><div class="map-stat-info"><div class="label"><?= __('iti_stat_distance') ?></div><div class="value" id="stat-distance">—</div></div></div>
+  <div class="map-stat"><div class="map-stat-icon">🕐</div><div class="map-stat-info"><div class="label"><?= __('iti_stat_duration') ?></div><div class="value" id="stat-duration">—</div></div></div>
+  <div class="map-stat"><div class="map-stat-icon">📅</div><div class="map-stat-info"><div class="label"><?= __('iti_stat_days') ?></div><div class="value" id="stat-days">—</div></div></div>
 </div>
 
 <div id="map-container" class="map-wrap" style="display:none;">
@@ -81,7 +84,7 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <div id="route-panel" class="route-info-panel" style="display:none;">
-  <h3>🗺️ Chi tiết lộ trình</h3>
+  <h3>🗺️ <?= __('iti_route_details') ?></h3>
   <div class="route-steps" id="route-steps-list"></div>
 </div>
 
@@ -128,7 +131,7 @@ form.addEventListener('submit', async (e) => {
   const prefs = Array.from(form.querySelectorAll('input[name="prefs[]"]:checked')).map(c => c.value);
   const notes = form.querySelector('textarea[name="notes"]').value;
 
-  resultBox.innerHTML = '<p class="loading-dots">🤖 AI đang lên lịch trình cho bạn, vui lòng đợi giây lát...</p>';
+  resultBox.innerHTML = '<p class="loading-dots">🤖 <?= __('iti_loading') ?></p>';
   document.getElementById('stats-bar').style.display     = 'none';
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('route-panel').style.display   = 'none';
@@ -140,25 +143,43 @@ form.addEventListener('submit', async (e) => {
       body: JSON.stringify({ days, prefs, notes })
     });
     const data = await res.json();
-    if (!data.success) { resultBox.innerHTML = '<p style="color:red;">❌ ' + (data.message || 'Có lỗi xảy ra.') + '</p>'; return; }
+    if (!data.success) { resultBox.innerHTML = '<p style="color:red;">❌ ' + (data.message || '<?= __('dest_error_occurred') ?>') + '</p>'; return; }
+    
+    window.lastItineraryData = data;
+    await renderItinerary(data);
 
-    // Render lịch trình text
+  } catch (err) {
+    resultBox.innerHTML = '<p style="color:red;">❌ <?= __('dest_network_error') ?></p>';
+    console.error(err);
+  }
+});
+
+async function renderItinerary(data) {
     let html = `
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <h2 class="section-title" style="margin:0;">Lịch trình gợi ý của bạn</h2>
-        <button onclick="exportItineraryPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
-          📄 Xuất PDF
-        </button>
+        <h2 class="section-title" style="margin:0;"><?= __('iti_suggested_title') ?></h2>
+        <div style="display:flex; gap:10px;">
+          <button type="button" onclick="simulateRain()" class="btn" style="background:#dc2626; display:flex; align-items:center; gap:6px;">
+            <?= __('iti_reroute_btn') ?>
+          </button>
+          <button type="button" onclick="exportItineraryPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
+            📄 <?= __('iti_export_pdf') ?>
+          </button>
+        </div>
       </div>
       <div id="pdf-export-content" style="margin-top:20px;">
     `;
     data.itinerary.forEach(day => {
-      html += `<div class="day-block"><h3>Ngày ${day.day}${day.title ? ': ' + day.title : ''}</h3>`;
+      html += `<div class="day-block"><h3><?= __('iti_day') ?> ${day.day}${day.title ? ': ' + day.title : ''}</h3>`;
       day.items.forEach(item => {
         const addr  = item.address  ? `<div class="time-slot-address">📍 ${item.address}</div>` : '';
         const trans = item.transport? `<div class="time-slot-transport" style="font-size:13px;color:var(--green-700);margin-top:4px;font-weight:500;">🛵 ${item.transport}</div>` : '';
-        const price = item.price    ? `<div class="time-slot-price">💰 <strong>Chi phí:</strong> ${item.price}</div>` : '';
-        html += `<div class="time-slot"><strong>${item.time || ''}:</strong> ${item.activity}${addr}${trans}${price}</div>`;
+        const price = item.price    ? `<div class="time-slot-price">🎟️ <strong><?= __('iti_cost') ?>:</strong> ${item.price}</div>` : '';
+        const sugg  = item.suggestion ? `<div class="time-slot-suggestion" style="margin-top:8px; padding:8px 12px; background-color:#fffbea; border-left:4px solid #f59e0b; color:#92400e; font-size:13px; border-radius:6px;"><?= __('iti_suggestion') ?>${item.suggestion}</div>` : '';
+        const reason = item.reason ? `<div class="time-slot-reason" style="margin-top:8px; padding:6px 10px; background-color:#e8f4fd; border-left:4px solid #3b82f6; color:#1e40af; font-size:13px; border-radius:6px;"><?= __('iti_reason') ?>${item.reason}</div>` : '';
+        const impact = item.community_impact ? `<div class="time-slot-impact" style="margin-top:6px; padding:6px 10px; background-color:#dcfce7; border-left:4px solid #22c55e; color:#166534; font-size:13px; border-radius:6px;"><?= __('iti_community_impact') ?>${item.community_impact}</div>` : '';
+        
+        html += `<div class="time-slot"><strong>${item.time || ''}:</strong> ${item.activity}${reason}${impact}${sugg}${addr}${trans}${price}</div>`;
       });
       html += '</div>';
     });
@@ -188,8 +209,8 @@ form.addEventListener('submit', async (e) => {
     const stepsHtml = [], legendHtml = [];
 
     for (const day of mapData) {
-      legendHtml.push(`<div class="map-day-legend-item"><div class="map-day-legend-dot" style="background:${day.color}"></div>Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
-      stepsHtml.push(`<div class="day-separator">📅 Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
+      legendHtml.push(`<div class="map-day-legend-item"><div class="map-day-legend-dot" style="background:${day.color}"></div><?= __('iti_day') ?> ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
+      stepsHtml.push(`<div class="day-separator">📅 <?= __('iti_day') ?> ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
 
       // Lộ trình thực OSRM
       if (day.points.length > 1) {
@@ -210,17 +231,17 @@ form.addEventListener('submit', async (e) => {
         const sName  = getShortName(pt.activity);
         marker.bindTooltip(sName, { permanent: true, direction: 'top', offset: [0,-36], className: `map-label map-label--day${day.dayNum}` });
         const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`;
-        const linkHtml = pt.slug ? `<a href="<?= url('/public/destination.php') ?>?slug=${pt.slug}" target="_blank" style="display:inline-block;color:var(--green-700);font-weight:600;font-size:12px;text-decoration:none;">Xem chi tiết →</a>` : '';
+        const linkHtml = pt.slug ? `<a href="<?= url('/public/destination.php') ?>?slug=${pt.slug}" target="_blank" style="display:inline-block;color:var(--green-700);font-weight:600;font-size:12px;text-decoration:none;"><?= __('dest_view_details') ?> →</a>` : '';
         marker.bindPopup(`
           <div style="font-family:inherit;font-size:13px;min-width:200px;max-width:240px;">
-            <div style="background:${day.color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:12px;">📅 Ngày ${day.dayNum} &nbsp;·&nbsp; ${pt.time}</div>
+            <div style="background:${day.color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:12px;">📅 <?= __('iti_day') ?> ${day.dayNum} &nbsp;·&nbsp; ${pt.time}</div>
             <div style="padding:0 2px;">
               <div style="font-weight:600;font-size:14px;line-height:1.4;margin-bottom:6px;">${pt.activity}</div>
               ${pt.address ? `<div style="color:#666;font-size:12px;margin-bottom:4px;">📍 ${pt.address}</div>` : ''}
               ${pt.price   ? `<div style="font-size:12px;color:#b45309;font-weight:600;margin-bottom:6px;">💰 ${pt.price}</div>` : ''}
               <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
                 ${linkHtml}
-                <a href="${dirUrl}" target="_blank" style="display:inline-block;background:#e8f4fd;color:#1a56db;padding:3px 8px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 Chỉ đường</a>
+                <a href="${dirUrl}" target="_blank" style="display:inline-block;background:#e8f4fd;color:#1a56db;padding:3px 8px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 <?= __('directions') ?></a>
               </div>
             </div>
           </div>`, { maxWidth: 260 });
@@ -238,7 +259,7 @@ form.addEventListener('submit', async (e) => {
               ${pt.price   ? `<div class="step-addr">💰 ${pt.price}</div>` : ''}
             </div>
           </div>`);
-        if (i < day.points.length - 1) stepsHtml.push(`<div class="route-step-divider">→ Di chuyển đến điểm tiếp theo</div>`);
+        if (i < day.points.length - 1) stepsHtml.push(`<div class="route-step-divider">→ <?= __('iti_move_to_next') ?></div>`);
       });
     }
 
@@ -249,11 +270,11 @@ form.addEventListener('submit', async (e) => {
     document.getElementById('map-legend').innerHTML = legendHtml.join('');
 
     const fmtDist = totalDistance > 0 ? (totalDistance >= 1000 ? (totalDistance/1000).toFixed(1)+' km' : Math.round(totalDistance)+' m') : '—';
-    const fmtDur  = totalDuration > 0 ? (() => { const h=Math.floor(totalDuration/3600),m=Math.round((totalDuration%3600)/60); return h>0?`${h}h ${m}m`:`${m} phút`; })() : '—';
-    document.getElementById('stat-points').textContent   = totalPoints + ' điểm';
+    const fmtDur  = totalDuration > 0 ? (() => { const h=Math.floor(totalDuration/3600),m=Math.round((totalDuration%3600)/60); return h>0?`${h}h ${m}m`:`${m} <?= __('iti_minutes') ?>`; })() : '—';
+    document.getElementById('stat-points').textContent   = totalPoints + ' <?= __('iti_points') ?>';
     document.getElementById('stat-distance').textContent = fmtDist;
     document.getElementById('stat-duration').textContent = fmtDur;
-    document.getElementById('stat-days').textContent     = mapData.length + ' ngày';
+    document.getElementById('stat-days').textContent     = mapData.length + ' <?= __('days') ?>';
     document.getElementById('stats-bar').style.display   = 'flex';
 
     document.getElementById('route-steps-list').innerHTML = stepsHtml.join('');
@@ -272,11 +293,7 @@ form.addEventListener('submit', async (e) => {
       });
     });
 
-  } catch (err) {
-    resultBox.innerHTML = '<p style="color:red;">❌ Lỗi kết nối tới server.</p>';
-    console.error(err);
-  }
-});
+}
 
 function exportItineraryPDF() {
     const element = document.getElementById('pdf-export-content');
@@ -291,6 +308,73 @@ function exportItineraryPDF() {
 
     html2pdf().set(opt).from(element).save();
 }
+
+// Giả lập mưa lớn
+async function simulateRain() {
+    const data = window.lastItineraryData;
+    if (!data) return alert('<?= __('iti_reroute_need_iti') ?>');
+    
+    resultBox.innerHTML = '<p class="loading-dots"><?= __('iti_rerouting_loading') ?></p>';
+    
+    try {
+        const res = await fetch('<?= url('/api/reroute_itinerary.php') ?>', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const reData = await res.json();
+        if(reData.success) {
+            renderItinerary(reData); // Cần refactor để tái sử dụng
+            alert('<?= __('iti_reroute_success') ?>');
+        } else {
+            alert('Lỗi: ' + reData.message);
+        }
+    } catch (e) {
+        alert('Lỗi kết nối');
+    }
+}
+
+// Voice input
+const micBtn = document.getElementById('mic-btn');
+const notesEl = document.getElementById('notes');
+if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'vi-VN';
+  recognition.interimResults = false;
+  
+  micBtn.addEventListener('click', () => {
+    if (micBtn.textContent === '🔴') {
+        recognition.stop();
+        return;
+    }
+    micBtn.textContent = '🔴';
+    recognition.start();
+  });
+  
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    notesEl.value += (notesEl.value ? ' ' : '') + transcript;
+  };
+  
+  recognition.onerror = (event) => {
+    console.error('Speech recognition error detected: ' + event.error);
+    if (event.error === 'not-allowed') {
+        alert('<?= __('iti_mic_blocked') ?>');
+    } else if (event.error === 'network') {
+        alert('<?= __('iti_mic_network') ?>');
+    } else {
+        alert('<?= __('iti_mic_error') ?>' + event.error + '<?= __('iti_mic_try_again') ?>');
+    }
+    micBtn.textContent = '🎤';
+  };
+  
+  recognition.onend = () => {
+    micBtn.textContent = '🎤';
+  };
+} else {
+  micBtn.style.display = 'none';
+}
+
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

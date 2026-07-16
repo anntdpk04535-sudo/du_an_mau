@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Cẩm nang du lịch - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_articles');
 $db = getDB();
 
 $search = trim($_GET['q'] ?? '');
@@ -109,7 +109,7 @@ include __DIR__ . '/../includes/header.php';
     <p class="section-sub"><?= __('articles_sub') ?></p>
 </div>
 
-<form method="get" action="<?= url('/public/articles.php') ?>" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 40px;">
+<form method="get" action="<?= url('/cam-nang') ?>" style="display: flex; gap: 15px; justify-content: center; margin-bottom: 40px;">
     <input type="text" name="q" value="<?= e($search) ?>" placeholder="<?= __('search_articles') ?>" style="width: 400px; max-width: 100%; padding: 12px 20px; border: 1px solid #ddd; border-radius: 30px; font-size: 15px; outline: none;">
     <button type="submit" class="btn" style="border-radius: 30px; padding: 10px 25px;"><?= __('search_btn') ?></button>
 </form>
@@ -120,13 +120,13 @@ include __DIR__ . '/../includes/header.php';
         <h3 style="margin: 0 0 10px;"><?= __('no_articles') ?></h3>
         <p style="color: #64748b; margin: 0;"><?= __('no_articles_sub') ?></p>
         <?php if ($search): ?>
-            <a href="<?= url('/public/articles.php') ?>" class="btn secondary" style="margin-top: 15px; display: inline-block;"><?= __('clear_search') ?></a>
+            <a href="<?= url('/cam-nang') ?>" class="btn secondary" style="margin-top: 15px; display: inline-block;"><?= __('clear_search') ?></a>
         <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="article-grid">
         <?php foreach ($articles as $a): ?>
-            <a href="<?= url('/public/article.php?slug=' . urlencode($a['slug'])) ?>" class="article-card">
+            <a href="<?= url('/cam-nang/' . urlencode($a['slug'])) ?>" class="article-card">
                 <?php if ($a['image_url']): ?>
                     <img src="<?= e($a['image_url']) ?>" alt="<?= e($a['title']) ?>" class="article-img">
                 <?php else: ?>

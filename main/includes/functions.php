@@ -5,6 +5,11 @@ require_once __DIR__ . '/../config/ai.php';
 
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'httponly' => true,
+        'secure' => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -31,10 +36,11 @@ function __(string $key): string
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
 if (!defined('BASE_URL')) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-    // Các trang nằm trong /public hoặc /admin (1 cấp dưới gốc project)
-    $base = preg_replace('#/(public|admin)$#', '', $scriptDir);
-    define('BASE_URL', rtrim($base, '/'));
+    $base = preg_replace('#/(public|admin|api)$#', '', $scriptDir);
+    define('BASE_URL', $protocol . $host . rtrim($base, '/'));
 }
 
 function url(string $path): string
@@ -72,6 +78,58 @@ function translateDbRow(array $row, array $fields): array
         }
     }
     return $row;
+}
+
+function translateItineraryDynamic(array $itinerary): array
+{
+    if (($_SESSION['lang'] ?? 'vi') === 'en') {
+        $title = $itinerary['title'] ?? '';
+        // Translate title
+        $title = str_replace('Lịch trình', 'Itinerary', $title);
+        $title = str_replace('ngày', 'days', $title);
+        $title = str_replace('Thiên nhiên', 'Nature', $title);
+        $title = str_replace('Văn hoá - bản địa', 'Culture', $title);
+        $title = str_replace('Văn hoá', 'Culture', $title);
+        $title = str_replace('Ẩm thực', 'Food', $title);
+        $title = str_replace('Trekking/mạo hiểm', 'Trekking/Adventure', $title);
+        $title = str_replace('Cà phê', 'Coffee', $title);
+        $title = str_replace('Gia đình có trẻ nhỏ', 'Family with kids', $title);
+        $title = str_replace('Chụp ảnh', 'Photography', $title);
+        // Lowercase matches
+        $title = str_replace('thiên nhiên', 'nature', $title);
+        $title = str_replace('văn hoá - bản địa', 'culture', $title);
+        $title = str_replace('văn hoá', 'culture', $title);
+        $title = str_replace('ẩm thực', 'food', $title);
+        $title = str_replace('cà phê', 'coffee', $title);
+        $title = str_replace('gia đình có trẻ nhỏ', 'family with kids', $title);
+        $title = str_replace('chụp ảnh', 'photography', $title);
+        
+        $itinerary['title'] = $title;
+
+        // Translate preferences
+        if (!empty($itinerary['preferences'])) {
+            $pref = $itinerary['preferences'];
+            $pref = str_replace('Thiên nhiên', 'Nature', $pref);
+            $pref = str_replace('Văn hoá - bản địa', 'Culture', $pref);
+            $pref = str_replace('Văn hoá', 'Culture', $pref);
+            $pref = str_replace('Ẩm thực', 'Food', $pref);
+            $pref = str_replace('Trekking/mạo hiểm', 'Trekking/Adventure', $pref);
+            $pref = str_replace('Cà phê', 'Coffee', $pref);
+            $pref = str_replace('Gia đình có trẻ nhỏ', 'Family with kids', $pref);
+            $pref = str_replace('Chụp ảnh', 'Photography', $pref);
+
+            $pref = str_replace('thiên nhiên', 'nature', $pref);
+            $pref = str_replace('văn hoá - bản địa', 'culture', $pref);
+            $pref = str_replace('văn hoá', 'culture', $pref);
+            $pref = str_replace('ẩm thực', 'food', $pref);
+            $pref = str_replace('cà phê', 'coffee', $pref);
+            $pref = str_replace('gia đình có trẻ nhỏ', 'family with kids', $pref);
+            $pref = str_replace('chụp ảnh', 'photography', $pref);
+            
+            $itinerary['preferences'] = $pref;
+        }
+    }
+    return $itinerary;
 }
 
 function getAllCategories(): array
@@ -206,7 +264,8 @@ function getDestinationsSummaryForAI(): string
     $lines = [];
     foreach ($destinations as $d) {
         $lines[] = sprintf(
-            "- %s (slug:%s): %s | địa chỉ: %s | thời gian tham quan ~%sh | mức chi phí: %s | rating %s | tags: %s",
+            "- ID: %d | %s (slug:%s): %s | địa chỉ: %s | thời gian tham quan ~%sh | mức chi phí: %s | rating %s | tags: %s",
+            $d['id'],
             $d['name'],
             $d['slug'],
             $d['short_desc'],

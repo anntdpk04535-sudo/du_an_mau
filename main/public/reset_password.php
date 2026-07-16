@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 
-$pageTitle = 'Đặt lại mật khẩu - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_reset');
 $message = '';
 $error = '';
 $tokenValid = false;
@@ -17,13 +17,13 @@ if ($token) {
         if (strtotime($user['reset_token_expires']) > time()) {
             $tokenValid = true;
         } else {
-            $error = 'Link đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu link mới.';
+            $error = __('reset_link_expired');
         }
     } else {
-        $error = 'Link không hợp lệ.';
+        $error = __('reset_link_invalid');
     }
 } else {
-    $error = 'Không tìm thấy token.';
+    $error = __('reset_no_token');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
@@ -31,15 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
     $passwordConfirm = $_POST['password_confirm'] ?? '';
     
     if (strlen($password) < 6) {
-        $error = 'Mật khẩu cần tối thiểu 6 ký tự.';
+        $error = __('reset_password_min');
     } elseif ($password !== $passwordConfirm) {
-        $error = 'Mật khẩu nhập lại không khớp.';
+        $error = __('reset_password_mismatch');
     } else {
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $update = $db->prepare("UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?");
         $update->execute([$hash, $user['id']]);
         
-        $message = 'Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới.';
+        $message = __('reset_success');
         $tokenValid = false; // Ẩn form
     }
 }
@@ -65,7 +65,7 @@ include __DIR__ . '/../includes/header.php';
         </div>
         <?php if (!$tokenValid && !$message): ?>
             <div style="text-align:center; margin-top:16px;">
-                <a href="<?= url('/public/forgot_password.php') ?>" style="color:var(--green-700); font-weight:600; text-decoration:none;">Quay lại Quên mật khẩu</a>
+                <a href="<?= url('/public/forgot_password.php') ?>" style="color:var(--green-700); font-weight:600; text-decoration:none;"><?= __('reset_back_forgot') ?></a>
             </div>
         <?php endif; ?>
     <?php endif; ?>

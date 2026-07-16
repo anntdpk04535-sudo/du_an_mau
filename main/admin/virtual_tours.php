@@ -6,7 +6,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
 
-$pageTitle = 'Quản lý Tour 360° - Admin';
+$pageTitle = __('admin_vt_title');
 $db = getDB();
 
 // ── Xử lý toggle bật/tắt virtual tour ──
@@ -97,34 +97,34 @@ include __DIR__ . '/../includes/header.php';
 
 <?php include __DIR__ . '/nav.php'; ?>
 
-<h1 style="display:flex; align-items:center; gap:10px;">🌐 Quản lý Tour 360°</h1>
+<h1 style="display:flex; align-items:center; gap:10px;">🌐 <?= __('admin_vt_heading') ?></h1>
 
 <!-- ── Analytics Cards ── -->
 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:24px;">
   <div style="background: linear-gradient(135deg, #ede9fe, #ddd6fe); padding:18px 20px; border-radius:14px; border:1px solid #c4b5fd;">
     <div style="font-size:28px; font-weight:800; color:#6d28d9;"><?= number_format($totalViews) ?></div>
-    <div style="font-size:13px; color:#7c3aed; font-weight:600;">👁️ Lượt xem tour</div>
+    <div style="font-size:13px; color:#7c3aed; font-weight:600;">👁️ <?= __('admin_vt_views') ?></div>
   </div>
   <div style="background: linear-gradient(135deg, #fef3c7, #fde68a); padding:18px 20px; border-radius:14px; border:1px solid #fbbf24;">
     <div style="font-size:28px; font-weight:800; color:#b45309;"><?= number_format($totalAudio) ?></div>
-    <div style="font-size:13px; color:#d97706; font-weight:600;">🔊 Nghe thuyết minh</div>
+    <div style="font-size:13px; color:#d97706; font-weight:600;">🔊 <?= __('admin_vt_audio') ?></div>
   </div>
   <div style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); padding:18px 20px; border-radius:14px; border:1px solid #6ee7b7;">
     <div style="font-size:28px; font-weight:800; color:#065f46;"><?= number_format($totalComplete) ?></div>
-    <div style="font-size:13px; color:#059669; font-weight:600;">✅ Hoàn thành tour</div>
+    <div style="font-size:13px; color:#059669; font-weight:600;">✅ <?= __('admin_vt_complete') ?></div>
   </div>
 </div>
 
 <!-- ── Danh sách điểm đến ── -->
 <div class="form-box">
-  <h3>📍 Điểm đến & Trạng thái Tour 360°</h3>
+  <h3>📍 <?= __('admin_vt_dest_status') ?></h3>
   <table style="width:100%; border-collapse:collapse; font-size:14px;">
     <thead>
       <tr style="background:#f1f5f9; text-align:left;">
-        <th style="padding:10px 12px;">Điểm đến</th>
-        <th style="padding:10px 12px; text-align:center;">Số cảnh</th>
-        <th style="padding:10px 12px; text-align:center;">Trạng thái</th>
-        <th style="padding:10px 12px; text-align:center;">Thao tác</th>
+        <th style="padding:10px 12px;"><?= __('admin_vt_th_dest') ?></th>
+        <th style="padding:10px 12px; text-align:center;"><?= __('admin_vt_th_scenes') ?></th>
+        <th style="padding:10px 12px; text-align:center;"><?= __('admin_vt_th_status') ?></th>
+        <th style="padding:10px 12px; text-align:center;"><?= __('admin_vt_th_action') ?></th>
       </tr>
     </thead>
     <tbody>
@@ -138,9 +138,9 @@ include __DIR__ . '/../includes/header.php';
         </td>
         <td style="padding:10px 12px; text-align:center;">
           <?php if ($dest['virtual_tour_enabled']): ?>
-            <span style="background:#d1fae5; color:#065f46; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:700;">✅ Đang bật</span>
+            <span style="background:#d1fae5; color:#065f46; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:700;">✅ <?= __('admin_vt_status_on') ?></span>
           <?php else: ?>
-            <span style="background:#fee2e2; color:#991b1b; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:700;">⏸ Tắt</span>
+            <span style="background:#fee2e2; color:#991b1b; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:700;">⏸ <?= __('admin_vt_status_off') ?></span>
           <?php endif; ?>
         </td>
         <td style="padding:10px 12px; text-align:center;">
@@ -148,11 +148,11 @@ include __DIR__ . '/../includes/header.php';
              style="text-decoration:none; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600;
                     background:<?= $dest['virtual_tour_enabled'] ? '#fee2e2' : '#d1fae5' ?>;
                     color:<?= $dest['virtual_tour_enabled'] ? '#991b1b' : '#065f46' ?>;">
-            <?= $dest['virtual_tour_enabled'] ? '⏸ Tắt' : '▶ Bật' ?>
+            <?= $dest['virtual_tour_enabled'] ? '⏸ ' . __('admin_vt_status_off') : '▶ ' . __('admin_vt_btn_on') ?>
           </a>
           <a href="<?= url('/admin/virtual_tours.php?dest=' . $dest['id']) ?>"
              style="text-decoration:none; padding:5px 12px; border-radius:8px; font-size:12px; font-weight:600; background:#e0e7ff; color:#3730a3; margin-left:4px;">
-            🎬 Quản lý cảnh
+            🎬 <?= __('admin_vt_manage_scenes') ?>
           </a>
         </td>
       </tr>
@@ -165,7 +165,7 @@ include __DIR__ . '/../includes/header.php';
 <!-- ── Quản lý Scenes ── -->
 <div class="form-box" style="margin-top:20px;">
   <h3 style="display:flex; align-items:center; justify-content:space-between;">
-    <span>🎬 Danh sách cảnh
+    <span>🎬 <?= __('admin_vt_scene_list') ?>
     <?php
       $destName = '';
       foreach ($destinations as $dd) { if ($dd['id'] == $selectedDest) { $destName = $dd['name']; break; } }
@@ -173,12 +173,12 @@ include __DIR__ . '/../includes/header.php';
     — <?= e($destName) ?></span>
     <a href="<?= url('/admin/virtual_tours.php?dest=' . $selectedDest . '&edit_scene=0') ?>"
        style="background:var(--green-700); color:white; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none;">
-      + Thêm cảnh mới
+      + <?= __('admin_vt_add_scene') ?>
     </a>
   </h3>
 
   <?php if (empty($scenes) && !$editingScene): ?>
-    <p style="color:#94a3b8; text-align:center; padding:30px;">Chưa có cảnh nào. Hãy thêm cảnh đầu tiên!</p>
+    <p style="color:#94a3b8; text-align:center; padding:30px;"><?= __('admin_vt_no_scenes') ?></p>
   <?php else: ?>
     <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap:14px;">
       <?php foreach ($scenes as $scene): ?>
@@ -190,21 +190,21 @@ include __DIR__ . '/../includes/header.php';
           <div style="font-weight:700; font-size:14px; margin-bottom:4px;">
             <?= e($scene['title']) ?>
             <?php if ($scene['is_default']): ?>
-              <span style="background:#fde68a; color:#92400e; font-size:10px; padding:1px 6px; border-radius:8px;">Mặc định</span>
+              <span style="background:#fde68a; color:#92400e; font-size:10px; padding:1px 6px; border-radius:8px;"><?= __('admin_vt_default_badge') ?></span>
             <?php endif; ?>
           </div>
           <div style="font-size:12px; color:#64748b; margin-bottom:8px;">
-            Key: <?= e($scene['scene_key']) ?> | Thứ tự: <?= $scene['sort_order'] ?>
+            <?= __('admin_vt_key') ?> <?= e($scene['scene_key']) ?> | <?= __('admin_vt_sort_order') ?> <?= $scene['sort_order'] ?>
           </div>
           <div style="display:flex; gap:6px;">
             <a href="<?= url('/admin/virtual_tours.php?dest=' . $selectedDest . '&edit_scene=' . $scene['id']) ?>"
                style="flex:1; text-align:center; padding:6px; background:#e0e7ff; color:#3730a3; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none;">
-              ✏️ Sửa
+              ✏️ <?= __('admin_vt_edit_btn') ?>
             </a>
             <a href="<?= url('/admin/virtual_tours.php?dest=' . $selectedDest . '&delete_scene=' . $scene['id']) ?>"
-               onclick="return confirm('Xoá cảnh này?')"
+               onclick="return confirm('<?= __('admin_vt_delete_confirm') ?>')"
                style="flex:1; text-align:center; padding:6px; background:#fee2e2; color:#991b1b; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none;">
-              🗑️ Xoá
+              🗑️ <?= __('admin_vt_delete_btn') ?>
             </a>
           </div>
         </div>
@@ -217,7 +217,7 @@ include __DIR__ . '/../includes/header.php';
 <!-- ── Form thêm/sửa Scene ── -->
 <?php if (isset($_GET['edit_scene'])): ?>
 <div class="form-box" style="margin-top:20px;">
-  <h3><?= $editingScene ? '✏️ Sửa cảnh: ' . e($editingScene['title']) : '➕ Thêm cảnh mới' ?></h3>
+  <h3><?= $editingScene ? '✏️ ' . __('admin_vt_edit_scene_title') . e($editingScene['title']) : '➕ ' . __('admin_vt_add_scene_title') ?></h3>
   <form method="POST" action="<?= url('/admin/virtual_tours.php') ?>">
     <input type="hidden" name="save_scene" value="1">
     <input type="hidden" name="scene_id" value="<?= $editingScene['id'] ?? 0 ?>">
@@ -225,61 +225,61 @@ include __DIR__ . '/../includes/header.php';
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
       <div>
-        <label style="font-weight:600; font-size:13px;">Scene Key (duy nhất)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_scene_key_label') ?></label>
         <input type="text" name="scene_key" value="<?= e($editingScene['scene_key'] ?? '') ?>" required
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;"
-               placeholder="VD: ho_lak_1">
+               placeholder="<?= __('admin_vt_scene_key_ph') ?>">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Thứ tự hiển thị</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_sort_order_label') ?></label>
         <input type="number" name="sort_order" value="<?= $editingScene['sort_order'] ?? 0 ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Tên cảnh (Tiếng Việt)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_title_vi') ?></label>
         <input type="text" name="title" value="<?= e($editingScene['title'] ?? '') ?>" required
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Tên cảnh (English)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_title_en') ?></label>
         <input type="text" name="title_en" value="<?= e($editingScene['title_en'] ?? '') ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div style="grid-column: span 2;">
-        <label style="font-weight:600; font-size:13px;">URL ảnh Panorama 360° (equirectangular)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_pano_url') ?></label>
         <input type="url" name="panorama_url" value="<?= e($editingScene['panorama_url'] ?? '') ?>" required
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;"
                placeholder="https://example.com/panorama.jpg">
       </div>
       <div style="grid-column: span 2;">
-        <label style="font-weight:600; font-size:13px;">URL ảnh Thumbnail (tùy chọn)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_thumb_url') ?></label>
         <input type="url" name="thumbnail_url" value="<?= e($editingScene['thumbnail_url'] ?? '') ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Mô tả (Tiếng Việt)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_desc_vi') ?></label>
         <textarea name="description" rows="3"
                   style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px; resize:vertical;"
         ><?= e($editingScene['description'] ?? '') ?></textarea>
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Mô tả (English)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_desc_en') ?></label>
         <textarea name="description_en" rows="3"
                   style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px; resize:vertical;"
         ><?= e($editingScene['description_en'] ?? '') ?></textarea>
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Pitch (góc dọc mặc định)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_pitch') ?></label>
         <input type="number" step="0.01" name="pitch" value="<?= $editingScene['pitch'] ?? 0 ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">Yaw (góc ngang mặc định)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_yaw') ?></label>
         <input type="number" step="0.01" name="yaw" value="<?= $editingScene['yaw'] ?? 0 ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
       <div>
-        <label style="font-weight:600; font-size:13px;">HFOV (tầm nhìn)</label>
+        <label style="font-weight:600; font-size:13px;"><?= __('admin_vt_hfov') ?></label>
         <input type="number" name="hfov" value="<?= $editingScene['hfov'] ?? 110 ?>"
                style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; margin-top:4px;">
       </div>
@@ -287,7 +287,7 @@ include __DIR__ . '/../includes/header.php';
         <label style="display:flex; align-items:center; gap:8px; padding:10px 0; cursor:pointer;">
           <input type="checkbox" name="is_default" <?= ($editingScene['is_default'] ?? 0) ? 'checked' : '' ?>
                  style="width:18px; height:18px;">
-          <span style="font-weight:600; font-size:13px;">Đặt làm cảnh mặc định</span>
+          <span style="font-weight:600; font-size:13px;"><?= __('admin_vt_set_default') ?></span>
         </label>
       </div>
     </div>
@@ -295,11 +295,11 @@ include __DIR__ . '/../includes/header.php';
     <div style="margin-top:16px; display:flex; gap:10px;">
       <button type="submit" class="btn"
               style="background:var(--green-700); color:white; border:none; padding:10px 24px; border-radius:8px; font-weight:700; cursor:pointer;">
-        💾 <?= $editingScene ? 'Cập nhật' : 'Thêm cảnh' ?>
+        💾 <?= $editingScene ? __('admin_vt_update_btn') : __('admin_vt_add_btn') ?>
       </button>
       <a href="<?= url('/admin/virtual_tours.php?dest=' . $selectedDest) ?>"
          style="padding:10px 24px; border-radius:8px; background:#f1f5f9; color:#334155; text-decoration:none; font-weight:600;">
-        Huỷ
+        <?= __('admin_vt_cancel_btn') ?>
       </a>
     </div>
   </form>

@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
-$pageTitle = 'Quản lý Người dùng - Admin';
+$pageTitle = __('admin_users_title');
 $db = getDB();
 
 // Handle actions
@@ -119,14 +119,14 @@ include __DIR__ . '/../includes/header.php';
 .action-btn.unban:hover { background: #bbf7d0; }
 </style>
 
-<h1 class="section-title">Quản lý Người dùng</h1>
+<h1 class="section-title"><?= __('admin_users_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 
 <form method="get" style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <input type="text" name="q" value="<?= e($search) ?>" placeholder="Tìm kiếm tên, email..." style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; width: 300px;">
-    <button type="submit" class="btn">🔍 Tìm kiếm</button>
+    <input type="text" name="q" value="<?= e($search) ?>" placeholder="<?= __('admin_users_search_ph') ?>" style="padding: 10px; border: 1px solid #ccc; border-radius: 8px; width: 300px;">
+    <button type="submit" class="btn"><?= __('admin_btn_search') ?></button>
     <?php if ($search): ?>
-        <a href="<?= url('/admin/users.php') ?>" class="btn secondary">✕ Xóa lọc</a>
+        <a href="<?= url('/admin/users.php') ?>" class="btn secondary"><?= __('admin_btn_clear') ?></a>
     <?php endif; ?>
 </form>
 
@@ -134,12 +134,12 @@ include __DIR__ . '/../includes/header.php';
     <thead>
         <tr>
             <th>ID</th>
-            <th>Họ Tên</th>
-            <th>Email</th>
-            <th>Vai Trò</th>
-            <th>Trạng Thái</th>
-            <th>Ngày Đăng Ký</th>
-            <th>Hành Động</th>
+            <th><?= __('admin_th_fullname') ?></th>
+            <th><?= __('admin_th_email') ?></th>
+            <th><?= __('admin_th_role') ?></th>
+            <th><?= __('admin_th_status') ?></th>
+            <th><?= __('admin_th_registered') ?></th>
+            <th><?= __('admin_th_action') ?></th>
         </tr>
     </thead>
     <tbody>
@@ -156,17 +156,17 @@ include __DIR__ . '/../includes/header.php';
                         <form method="post" style="display:inline;">
                             <input type="hidden" name="action" value="toggle_role">
                             <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                            <button type="submit" class="action-btn role" onclick="return confirm('Bạn muốn đổi quyền admin/user cho người này?')">Đổi quyền</button>
+                            <button type="submit" class="action-btn role" onclick="return confirm('<?= __('admin_confirm_role') ?>')"><?= __('admin_btn_role') ?></button>
                         </form>
                         <form method="post" style="display:inline;">
                             <input type="hidden" name="action" value="toggle_status">
                             <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                            <button type="submit" class="action-btn <?= $u['status'] === 'active' ? 'ban' : 'unban' ?>" onclick="return confirm('Bạn chắc chắn muốn thay đổi trạng thái tài khoản này?')">
-                                <?= $u['status'] === 'active' ? 'Khóa TK' : 'Mở Khóa' ?>
+                            <button type="submit" class="action-btn <?= $u['status'] === 'active' ? 'ban' : 'unban' ?>" onclick="return confirm('<?= __('admin_confirm_status') ?>')">
+                                <?= $u['status'] === 'active' ? __('admin_btn_ban') : __('admin_btn_unban') ?>
                             </button>
                         </form>
                     <?php else: ?>
-                        <span style="color:#94a3b8; font-style:italic; font-size:12px;">(Bạn)</span>
+                        <span style="color:#94a3b8; font-style:italic; font-size:12px;"><?= __('admin_you') ?></span>
                     <?php endif; ?>
                 </td>
             </tr>

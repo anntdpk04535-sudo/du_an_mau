@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
-$pageTitle = 'Tổng quan hệ thống - Admin';
+$pageTitle = __('admin_dashboard_title');
 $db = getDB();
 
 // Thống kê tổng quan
@@ -79,34 +79,34 @@ include __DIR__ . '/../includes/header.php';
 </style>
 <?php include __DIR__ . '/nav.php'; ?>
 
-<h1 class="section-title">Dashboard Tổng Quan</h1>
+<h1 class="section-title"><?= __('admin_dashboard_heading') ?></h1>
 
 <div class="dashboard-grid">
     <div class="stat-card">
         <div class="stat-icon">👥</div>
         <div class="stat-info">
             <h3><?= $totalUsers ?></h3>
-            <p>Tổng Người Dùng</p>
+            <p><?= __('admin_total_users') ?></p>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">🗺️</div>
         <div class="stat-info">
             <h3><?= $totalItineraries ?></h3>
-            <p>Lượt tạo Lịch trình AI</p>
+            <p><?= __('admin_total_itineraries') ?></p>
         </div>
     </div>
     <div class="stat-card">
         <div class="stat-icon">💬</div>
         <div class="stat-info">
             <h3><?= $totalChatSessions ?></h3>
-            <p>Phiên Chat AI</p>
+            <p><?= __('admin_total_chat_sessions') ?></p>
         </div>
     </div>
 </div>
 
 <div class="chart-container">
-    <h3 style="margin-top:0;">Top 5 Điểm đến được đánh giá cao nhất</h3>
+    <h3 style="margin-top:0;"><?= __('admin_top_destinations') ?></h3>
     <canvas id="topDestinationsChart" height="100"></canvas>
 </div>
 
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", function() {
         data: {
             labels: <?= json_encode($destNames) ?>,
             datasets: [{
-                label: 'Điểm đánh giá trung bình',
+                label: '<?= __('admin_avg_rating_label') ?>',
                 data: <?= json_encode($destRatings) ?>,
                 backgroundColor: 'rgba(34, 197, 94, 0.6)',
                 borderColor: 'rgba(34, 197, 94, 1)',

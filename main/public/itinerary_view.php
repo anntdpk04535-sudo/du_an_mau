@@ -19,10 +19,13 @@ $db = getDB();
 $stmt = $db->prepare("SELECT * FROM itineraries WHERE id = ? AND user_id = ?");
 $stmt->execute([$id, $user['id']]);
 $itinerary = $stmt->fetch();
+if ($itinerary) {
+    $itinerary = translateItineraryDynamic($itinerary);
+}
 
 if (!$itinerary) {
     http_response_code(404);
-    die('Không tìm thấy lịch trình hoặc bạn không có quyền xem.');
+    die(__('iti_not_found'));
 }
 
 // Fetch itinerary items with destination coords
@@ -128,7 +131,7 @@ include __DIR__ . '/../includes/header.php';
 <div id="pdf-content">
     <div style="display:none;" id="pdf-header">
         <h1 style="color: #2d6a4f; margin-bottom: 5px;"><?= e($itinerary['title']) ?></h1>
-        <p style="color: #666;">Tạo ngày: <?= date('d/m/Y', strtotime($itinerary['created_at'])) ?> | Thời lượng: <?= $itinerary['days'] ?> ngày</p>
+        <p style="color: #666;"><?= __('iti_created_date') ?>: <?= date('d/m/Y', strtotime($itinerary['created_at'])) ?> | <?= __('iti_duration') ?>: <?= $itinerary['days'] ?> <?= __('days') ?></p>
         <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
     </div>
 
@@ -152,7 +155,7 @@ include __DIR__ . '/../includes/header.php';
     <div id="result">
         <?php foreach ($daysData as $dayNum => $day): ?>
             <div class="day-block">
-                <h3>Ngày <?= $dayNum ?></h3>
+                <h3><?= __('iti_day') ?> <?= $dayNum ?></h3>
                 <?php foreach ($day['itemsHtml'] as $item): ?>
                     <div class="time-slot">
                         <strong><?= e($item['time_slot']) ?>:</strong> <?= e($item['activity']) ?>
@@ -237,8 +240,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     const stepsHtml = [], legendHtml = [];
 
     for (const day of mapData) {
-      legendHtml.push(`<div class="map-day-legend-item"><div class="map-day-legend-dot" style="background:${day.color}"></div>Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
-      stepsHtml.push(`<div class="day-separator">📅 Ngày ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
+      legendHtml.push(`<div class="map-day-legend-item"><div class="map-day-legend-dot" style="background:${day.color}"></div><?= __('iti_day') ?> ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
+      stepsHtml.push(`<div class="day-separator">📅 <?= __('iti_day') ?> ${day.dayNum}${day.title ? ': '+day.title : ''}</div>`);
 
       if (day.points.length > 1) {
         const route = await fetchRealRoute(day.points);
@@ -258,16 +261,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const sName  = getShortName(pt.activity);
         marker.bindTooltip(sName, { permanent: true, direction: 'top', offset: [0,-36], className: `map-label map-label--day${day.dayNum}` });
         const dirUrl = `https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`;
-        const linkHtml = pt.slug ? `<a href="<?= url('/public/destination.php') ?>?slug=${pt.slug}" target="_blank" style="display:inline-block;color:var(--green-700);font-weight:600;font-size:12px;text-decoration:none;">Xem chi tiết →</a>` : '';
+        const linkHtml = pt.slug ? `<a href="<?= url('/public/destination.php') ?>?slug=${pt.slug}" target="_blank" style="display:inline-block;color:var(--green-700);font-weight:600;font-size:12px;text-decoration:none;"><?= __('dest_view_details') ?> →</a>` : '';
         marker.bindPopup(`
           <div style="font-family:inherit;font-size:13px;min-width:200px;max-width:240px;">
-            <div style="background:${day.color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:12px;">📅 Ngày ${day.dayNum} &nbsp;·&nbsp; ${pt.time}</div>
+            <div style="background:${day.color};color:white;border-radius:6px 6px 0 0;padding:8px 12px;margin:-1px -1px 10px;font-weight:700;font-size:12px;">📅 <?= __('iti_day') ?> ${day.dayNum} &nbsp;·&nbsp; ${pt.time}</div>
             <div style="padding:0 2px;">
               <div style="font-weight:600;font-size:14px;line-height:1.4;margin-bottom:6px;">${pt.activity}</div>
               ${pt.address ? `<div style="color:#666;font-size:12px;margin-bottom:4px;">📍 ${pt.address}</div>` : ''}
               <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;">
                 ${linkHtml}
-                <a href="${dirUrl}" target="_blank" style="display:inline-block;background:#e8f4fd;color:#1a56db;padding:3px 8px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 Chỉ đường</a>
+                <a href="${dirUrl}" target="_blank" style="display:inline-block;background:#e8f4fd;color:#1a56db;padding:3px 8px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">🧭 <?= __('directions') ?></a>
               </div>
             </div>
           </div>`, { maxWidth: 260 });
@@ -284,7 +287,7 @@ document.addEventListener('DOMContentLoaded', async function() {
               ${pt.address ? `<div class="step-addr">📍 ${pt.address}</div>` : ''}
             </div>
           </div>`);
-        if (i < day.points.length - 1) stepsHtml.push(`<div class="route-step-divider">→ Di chuyển đến điểm tiếp theo</div>`);
+        if (i < day.points.length - 1) stepsHtml.push(`<div class="route-step-divider">→ <?= __('iti_move_next') ?></div>`);
       });
     }
 
@@ -295,8 +298,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('map-legend').innerHTML = legendHtml.join('');
 
     const fmtDist = totalDistance > 0 ? (totalDistance >= 1000 ? (totalDistance/1000).toFixed(1)+' km' : Math.round(totalDistance)+' m') : '—';
-    const fmtDur  = totalDuration > 0 ? (() => { const h=Math.floor(totalDuration/3600),m=Math.round((totalDuration%3600)/60); return h>0?`${h}h ${m}m`:`${m} phút`; })() : '—';
-    document.getElementById('stat-points').textContent   = totalPoints + ' điểm';
+    const fmtDur  = totalDuration > 0 ? (() => { const h=Math.floor(totalDuration/3600),m=Math.round((totalDuration%3600)/60); return h>0?`${h}h ${m}m`:`${m} <?= __('iti_minutes') ?>`; })() : '—';
+    document.getElementById('stat-points').textContent   = totalPoints + ' <?= __('iti_points_unit') ?>';
     document.getElementById('stat-distance').textContent = fmtDist;
     document.getElementById('stat-duration').textContent = fmtDur;
     document.getElementById('stats-bar').style.display   = 'flex';

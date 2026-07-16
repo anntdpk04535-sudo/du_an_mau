@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
-$pageTitle = 'Quản lý Đánh giá - Admin';
+$pageTitle = __('admin_reviews_title');
 $db = getDB();
 
 // Lấy lịch sử xóa gần đây (nếu bảng tồn tại)
@@ -252,10 +252,10 @@ include __DIR__ . '/../includes/header.php';
 </style>
 
 <?php if (isset($_GET['deleted'])): ?>
-<div class="alert-success">✅ Đã xóa đánh giá thành công.</div>
+<div class="alert-success"><?= __('admin_reviews_deleted_success') ?></div>
 <?php endif; ?>
 
-<h1 class="section-title">⭐ Quản lý Đánh giá</h1>
+<h1 class="section-title"><?= __('admin_reviews_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 
 <!-- Stats -->
@@ -263,32 +263,32 @@ include __DIR__ . '/../includes/header.php';
   <div class="stat-card highlight">
     <div class="stat-icon">⭐</div>
     <div class="stat-num"><?= $stats['total'] ?></div>
-    <div class="stat-label">Tổng đánh giá</div>
+    <div class="stat-label"><?= __('admin_reviews_total') ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">📊</div>
     <div class="stat-num"><?= $stats['avg_all'] ?? '—' ?></div>
-    <div class="stat-label">Điểm TB toàn hệ thống</div>
+    <div class="stat-label"><?= __('admin_reviews_avg') ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">🌐</div>
     <div class="stat-num"><?= $stats['cnt_website'] ?></div>
-    <div class="stat-label">Đánh giá website</div>
+    <div class="stat-label"><?= __('admin_reviews_web') ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">🗺️</div>
     <div class="stat-num"><?= $stats['cnt_dest'] ?></div>
-    <div class="stat-label">Đánh giá điểm đến</div>
+    <div class="stat-label"><?= __('admin_reviews_dest') ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">😍</div>
     <div class="stat-num"><?= $stats['cnt5'] ?></div>
-    <div class="stat-label">Đánh giá 5 sao</div>
+    <div class="stat-label"><?= __('admin_reviews_5star') ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-icon">⚠️</div>
     <div class="stat-num"><?= $stats['cnt_low'] ?></div>
-    <div class="stat-label">Đánh giá ≤ 3 sao</div>
+    <div class="stat-label"><?= __('admin_reviews_low') ?></div>
   </div>
 </div>
 
@@ -296,17 +296,17 @@ include __DIR__ . '/../includes/header.php';
 <form method="get" action="<?= url('/admin/reviews.php') ?>">
   <div class="filter-bar">
     <a href="<?= url('/admin/reviews.php') ?>?filter=all&q=<?= urlencode($search) ?>"
-       class="filter-btn <?= $filter === 'all' ? 'active' : '' ?>">🔍 Tất cả</a>
+       class="filter-btn <?= $filter === 'all' ? 'active' : '' ?>"><?= __('admin_reviews_filter_all') ?></a>
     <a href="<?= url('/admin/reviews.php') ?>?filter=website&q=<?= urlencode($search) ?>"
-       class="filter-btn <?= $filter === 'website' ? 'active' : '' ?>">🌐 Website</a>
+       class="filter-btn <?= $filter === 'website' ? 'active' : '' ?>"><?= __('admin_reviews_filter_web') ?></a>
     <a href="<?= url('/admin/reviews.php') ?>?filter=destination&q=<?= urlencode($search) ?>"
-       class="filter-btn <?= $filter === 'destination' ? 'active' : '' ?>">🗺️ Điểm đến</a>
+       class="filter-btn <?= $filter === 'destination' ? 'active' : '' ?>"><?= __('admin_reviews_filter_dest') ?></a>
     <input type="hidden" name="filter" value="<?= e($filter) ?>">
     <input class="filter-search" type="text" name="q" value="<?= e($search) ?>"
-           placeholder="🔍 Tìm tên người dùng hoặc nội dung...">
-    <button type="submit" class="filter-btn" style="background:var(--green-700);color:white;border-color:var(--green-700);">Tìm kiếm</button>
+           placeholder="<?= __('admin_reviews_search_ph') ?>">
+    <button type="submit" class="filter-btn" style="background:var(--green-700);color:white;border-color:var(--green-700);"><?= __('admin_reviews_btn_search') ?></button>
     <?php if ($search): ?>
-      <a href="<?= url('/admin/reviews.php') ?>?filter=<?= e($filter) ?>" class="filter-btn">✕ Xóa lọc</a>
+      <a href="<?= url('/admin/reviews.php') ?>?filter=<?= e($filter) ?>" class="filter-btn"><?= __('admin_reviews_btn_clear') ?></a>
     <?php endif; ?>
   </div>
 </form>
@@ -316,24 +316,24 @@ include __DIR__ . '/../includes/header.php';
   <?php if (empty($reviews)): ?>
     <div class="empty-state">
       <div class="icon">💬</div>
-      <p>Không có đánh giá nào<?= $search ? ' khớp với tìm kiếm' : '' ?>.</p>
+      <p><?= __('admin_reviews_no_data') ?><?= $search ? __('admin_reviews_match_search') : '' ?>.</p>
     </div>
   <?php else: ?>
   <table class="reviews-table">
     <thead>
       <tr>
         <th style="width:40px">#</th>
-        <th>Người dùng</th>
-        <th>Loại</th>
-        <th>Đánh giá</th>
-        <th>Nội dung nhận xét</th>
-        <th>Thời gian</th>
-        <th style="width:80px">Hành động</th>
+        <th><?= __('admin_reviews_th_user') ?></th>
+        <th><?= __('admin_reviews_th_type') ?></th>
+        <th><?= __('admin_reviews_th_rating') ?></th>
+        <th><?= __('admin_reviews_th_comment') ?></th>
+        <th><?= __('admin_reviews_th_time') ?></th>
+        <th style="width:80px"><?= __('admin_reviews_th_action') ?></th>
       </tr>
     </thead>
     <tbody>
       <?php foreach ($reviews as $i => $r):
-        $name = $r['full_name'] ?? 'Ẩn danh';
+        $name = $r['full_name'] ?? __('admin_reviews_anonymous');
         $initial = mb_strtoupper(mb_substr($name, 0, 1));
         $stars = str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5 - (int)$r['rating']);
         $ts = strtotime($r['created_at']);
@@ -356,18 +356,18 @@ include __DIR__ . '/../includes/header.php';
           <?php if ($r['destination_id']): ?>
             <span class="badge-dest">🗺️ <?= e($r['dest_name'] ?? 'Điểm đến') ?></span>
           <?php else: ?>
-            <span class="badge-web">🌐 Website</span>
+            <span class="badge-web"><?= __('admin_reviews_filter_web') ?></span>
           <?php endif; ?>
         </td>
         <td>
           <div class="stars-display"><?= $stars ?></div>
-          <div class="rating-num"><?= (int)$r['rating'] ?>/5 sao</div>
+          <div class="rating-num"><?= (int)$r['rating'] ?><?= __('admin_reviews_rating_out_of') ?></div>
         </td>
         <td class="comment-cell">
           <?php if ($r['comment']): ?>
             "<?= e(mb_substr($r['comment'], 0, 120)) ?><?= mb_strlen($r['comment']) > 120 ? '…' : '' ?>"
           <?php else: ?>
-            <em>Không có nhận xét</em>
+            <em><?= __('admin_reviews_no_comment') ?></em>
           <?php endif; ?>
         </td>
         <td class="time-cell">
@@ -380,14 +380,14 @@ include __DIR__ . '/../includes/header.php';
             data-name="<?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>"
             data-stars="<?= htmlspecialchars($stars, ENT_QUOTES, 'UTF-8') ?>"
             data-comment="<?= htmlspecialchars($commentPreview, ENT_QUOTES, 'UTF-8') ?>"
-          >🗑️ Xóa</button>
+          >🗑️ <?= __('admin_reviews_btn_del') ?></button>
         </td>
       </tr>
       <?php endforeach; ?>
     </tbody>
   </table>
   <div style="padding:12px 16px; font-size:12px; color:#aaa; border-top:1px solid #f0f0f0;">
-    Hiển thị <?= count($reviews) ?> đánh giá / Tổng <?= $totalReviews ?>
+    <?= __('admin_reviews_showing') ?><?= count($reviews) ?><?= __('admin_reviews_total_reviews') ?><?= $totalReviews ?>
   </div>
   <?php endif; ?>
 </div>
@@ -408,11 +408,11 @@ include __DIR__ . '/../includes/header.php';
     <thead>
       <tr>
         <th>#</th>
-        <th>Đánh giá bị xóa</th>
-        <th>Người đã đánh giá</th>
-        <th>Lý do xóa</th>
-        <th>Xóa bởi</th>
-        <th>Thời gian</th>
+        <th><?= __('admin_reviews_th_deleted_review') ?></th>
+        <th><?= __('admin_reviews_th_deleted_by_user') ?></th>
+        <th><?= __('admin_reviews_th_deleted_reason') ?></th>
+        <th><?= __('admin_reviews_th_deleted_by') ?></th>
+        <th><?= __('admin_reviews_th_time') ?></th>
       </tr>
     </thead>
     <tbody>
@@ -424,11 +424,11 @@ include __DIR__ . '/../includes/header.php';
           <?php if ($log['comment']): ?>
             <div style="color:#444;font-size:12px;margin-top:3px;">"<?= e(mb_substr($log['comment'], 0, 80)) ?><?= mb_strlen($log['comment']) > 80 ? '…' : '' ?>"</div>
           <?php else: ?>
-            <em style="color:#bbb;font-size:12px;">Không có nhận xét</em>
+            <em style="color:#bbb;font-size:12px;"><?= __('admin_reviews_no_comment') ?></em>
           <?php endif; ?>
         </td>
         <td>
-          <div style="font-weight:700;font-size:13px;"><?= e($log['reviewer_name'] ?? 'Ẩn danh') ?></div>
+          <div style="font-weight:700;font-size:13px;"><?= e($log['reviewer_name'] ?? __('admin_reviews_anonymous')) ?></div>
           <div style="font-size:11px;color:#9ca3af;">ID: <?= (int)$log['reviewer_user_id'] ?></div>
         </td>
         <td>
@@ -447,7 +447,7 @@ include __DIR__ . '/../includes/header.php';
     </tbody>
   </table>
   <div style="padding:10px 16px;font-size:12px;color:#aaa;border-top:1px solid #f0f0f0;">
-    <?= count($deletionLogs) ?> bản ghi xóa gần nhất
+    <?= count($deletionLogs) ?><?= __('admin_reviews_last_logs') ?>
   </div>
 </div>
 <?php endif; ?>
@@ -457,8 +457,8 @@ include __DIR__ . '/../includes/header.php';
   <div class="del-modal" id="delModalBox">
     <!-- Header -->
     <div class="del-modal-header">
-      <h3>🗑️ Xóa đánh giá</h3>
-      <p>Hành động này không thể hoàn tác. Vui lòng nhập lý do xóa để ghi vào lịch sử.</p>
+      <h3>🗑️ <?= __('admin_reviews_modal_title') ?></h3>
+      <p><?= __('admin_reviews_modal_desc') ?></p>
     </div>
     <!-- Review preview -->
     <div class="del-preview" id="delPreview">
@@ -468,23 +468,23 @@ include __DIR__ . '/../includes/header.php';
     </div>
     <!-- Body -->
     <div class="del-modal-body">
-      <label>💬 Lý do xóa <span style="color:#dc2626">*</span></label>
+      <label>💬 <?= __('admin_reviews_modal_reason') ?> <span style="color:#dc2626">*</span></label>
       <!-- Quick reason chips -->
       <div class="quick-reasons">
-        <span class="quick-reason-chip" data-text="Nội dung vi phạm quy định cộng đồng">⚠️ Vi phạm quy định</span>
-        <span class="quick-reason-chip" data-text="Nội dung spam hoặc quảng cáo">🚫 Spam / Quảng cáo</span>
-        <span class="quick-reason-chip" data-text="Ngôn ngữ không phù hợp, xúc phạm">🤬 Ngôn ngữ xúc phạm</span>
-        <span class="quick-reason-chip" data-text="Nội dung giả mạo hoặc sai sự thật">❌ Thông tin sai lệch</span>
-        <span class="quick-reason-chip" data-text="Nội dung không liên quan đến điểm đến">🔗 Không liên quan</span>
+        <span class="quick-reason-chip" data-text="<?= __('admin_reviews_reason_violation') ?>"><?= __('admin_reviews_reason_violation') ?></span>
+        <span class="quick-reason-chip" data-text="<?= __('admin_reviews_reason_spam') ?>"><?= __('admin_reviews_reason_spam') ?></span>
+        <span class="quick-reason-chip" data-text="<?= __('admin_reviews_reason_offensive') ?>"><?= __('admin_reviews_reason_offensive') ?></span>
+        <span class="quick-reason-chip" data-text="<?= __('admin_reviews_reason_fake') ?>"><?= __('admin_reviews_reason_fake') ?></span>
+        <span class="quick-reason-chip" data-text="<?= __('admin_reviews_reason_irrelevant') ?>"><?= __('admin_reviews_reason_irrelevant') ?></span>
       </div>
-      <textarea id="delReasonInput" placeholder="Nhập lý do xóa cụ thể (tối thiểu 10 ký tự)..."
+      <textarea id="delReasonInput" placeholder="<?= __('admin_reviews_reason_ph') ?>"
                 oninput="updateCharCount()"></textarea>
-      <div class="del-char-count"><span id="delCharCount">0</span> ký tự</div>
+      <div class="del-char-count"><span id="delCharCount">0</span><?= __('admin_reviews_char_count') ?></div>
       <div id="delModalErr" style="color:#dc2626;font-size:13px;margin-top:6px;min-height:18px;"></div>
     </div>
     <div class="del-modal-footer">
-      <button class="del-modal-cancel" id="delCancelBtn">↩ Hủy bỏ</button>
-      <button class="del-modal-confirm" id="delConfirmBtn">🗑️ Xác nhận xóa</button>
+      <button class="del-modal-cancel" id="delCancelBtn">↩ <?= __('admin_reviews_btn_cancel') ?></button>
+      <button class="del-modal-confirm" id="delConfirmBtn">🗑️ <?= __('admin_reviews_btn_confirm') ?></button>
     </div>
   </div>
 </div>
@@ -519,7 +519,7 @@ function openDelModal(reviewId, userName, stars, comment) {
   document.getElementById('delCharCount').style.color = '#9ca3af';
   document.getElementById('delModalErr').textContent = '';
   document.getElementById('delConfirmBtn').disabled = false;
-  document.getElementById('delConfirmBtn').innerHTML = '🗑️ Xác nhận xóa';
+  document.getElementById('delConfirmBtn').innerHTML = '🗑️ ' + <?= json_encode(__('admin_reviews_btn_confirm')) ?>;
   // Bỏ chọn tất cả chip
   document.querySelectorAll('.quick-reason-chip').forEach(c => c.classList.remove('selected'));
   // Mở modal
@@ -579,18 +579,18 @@ document.getElementById('delConfirmBtn').addEventListener('click', async functio
   const errEl  = document.getElementById('delModalErr');
 
   if (!reason) {
-    errEl.textContent = '⚠️ Vui lòng nhập lý do xóa hoặc chọn lý do gợi ý.';
+    errEl.textContent = <?= json_encode(__('admin_reviews_err_reason_empty')) ?>;
     document.getElementById('delReasonInput').focus();
     return;
   }
   if (reason.length < 10) {
-    errEl.textContent = '⚠️ Lý do phải có ít nhất 10 ký tự.';
+    errEl.textContent = <?= json_encode(__('admin_reviews_err_reason_length')) ?>;
     document.getElementById('delReasonInput').focus();
     return;
   }
 
   this.disabled = true;
-  this.innerHTML = '<span style="animation:spin .7s linear infinite;display:inline-block">⏳</span> Đang xóa...';
+  this.innerHTML = '<span style="animation:spin .7s linear infinite;display:inline-block">⏳</span> ' + <?= json_encode(__('admin_reviews_deleting')) ?>;
   errEl.textContent = '';
 
   const fd = new FormData();
@@ -619,14 +619,14 @@ document.getElementById('delConfirmBtn').addEventListener('click', async functio
         location.reload();
       }
     } else {
-      errEl.textContent = '❌ ' + (data.error || 'Lỗi không xác định');
+      errEl.textContent = '❌ ' + (data.error || <?= json_encode(__('admin_reviews_err_unknown')) ?>);
       this.disabled = false;
-      this.innerHTML = '🗑️ Xác nhận xóa';
+      this.innerHTML = '🗑️ ' + <?= json_encode(__('admin_reviews_btn_confirm')) ?>;
     }
   } catch(ex) {
-    errEl.textContent = '❌ Lỗi kết nối mạng.';
+    errEl.textContent = <?= json_encode(__('admin_reviews_err_network')) ?>;
     this.disabled = false;
-    this.innerHTML = '🗑️ Xác nhận xóa';
+    this.innerHTML = '🗑️ ' + <?= json_encode(__('admin_reviews_btn_confirm')) ?>;
   }
 });
 

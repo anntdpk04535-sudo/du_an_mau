@@ -31,13 +31,15 @@
 $currentPath = basename($_SERVER['SCRIPT_NAME']);
 ?>
 <div class="admin-nav">
-    <a href="<?= url('/admin/index.php') ?>" class="<?= $currentPath == 'index.php' ? 'active' : '' ?>">📊 Tổng quan</a>
-    <a href="<?= url('/admin/users.php') ?>" class="<?= $currentPath == 'users.php' ? 'active' : '' ?>">👥 Người dùng</a>
-    <a href="<?= url('/admin/destinations.php') ?>" class="<?= $currentPath == 'destinations.php' ? 'active' : '' ?>">📍 Điểm đến</a>
-    <a href="<?= url('/admin/categories.php') ?>" class="<?= $currentPath == 'categories.php' ? 'active' : '' ?>">🏷️ Danh mục</a>
-    <a href="<?= url('/admin/articles.php') ?>" class="<?= $currentPath == 'articles.php' ? 'active' : '' ?>">📝 Cẩm nang</a>
-    <a href="<?= url('/admin/contacts.php') ?>" class="<?= $currentPath == 'contacts.php' ? 'active' : '' ?>">📬 Liên hệ</a>
-    <a href="<?= url('/admin/reviews.php') ?>" class="<?= $currentPath == 'reviews.php' ? 'active' : '' ?>">⭐ Đánh giá</a>
-    <a href="<?= url('/admin/virtual_tours.php') ?>" class="<?= $currentPath == 'virtual_tours.php' ? 'active' : '' ?>">🌐 Tour 360°</a>
-    <a href="<?= url('/admin/destinations.php?logout=1') ?>" style="margin-left: auto; background: #fee2e2; color: #991b1b;">Đăng xuất</a>
+    <a href="<?= url('/admin/index.php') ?>" class="<?= $currentPath == 'index.php' ? 'active' : '' ?>">📊 <?= __('admin_nav_dashboard') ?></a>
+    <a href="<?= url('/admin/dashboard_ai.php') ?>" class="<?= $currentPath == 'dashboard_ai.php' ? 'active' : '' ?>" style="background:var(--green-100); color:var(--green-900);"><?= __('admin_nav_dashboard_ai') ?></a>
+    <a href="<?= url('/admin/users.php') ?>" class="<?= $currentPath == 'users.php' ? 'active' : '' ?>">👥 <?= __('admin_nav_users') ?></a>
+    <a href="<?= url('/admin/destinations.php') ?>" class="<?= $currentPath == 'destinations.php' ? 'active' : '' ?>">📍 <?= __('admin_nav_destinations') ?></a>
+    <a href="<?= url('/admin/categories.php') ?>" class="<?= $currentPath == 'categories.php' ? 'active' : '' ?>">🏷️ <?= __('admin_nav_categories') ?></a>
+    <a href="<?= url('/admin/articles.php') ?>" class="<?= $currentPath == 'articles.php' ? 'active' : '' ?>">📝 <?= __('admin_nav_articles') ?></a>
+    <a href="<?= url('/admin/contacts.php') ?>" class="<?= $currentPath == 'contacts.php' ? 'active' : '' ?>">📬 <?= __('admin_nav_contacts') ?></a>
+    <a href="<?= url('/admin/reviews.php') ?>" class="<?= $currentPath == 'reviews.php' ? 'active' : '' ?>">⭐ <?= __('admin_nav_reviews') ?></a>
+    <a href="<?= url('/admin/virtual_tours.php') ?>" class="<?= $currentPath == 'virtual_tours.php' ? 'active' : '' ?>">🌐 <?= __('admin_nav_virtual_tours') ?></a>
+    <a href="<?= url('/admin/forum.php') ?>" class="<?= $currentPath == 'forum.php' ? 'active' : '' ?>">💬 <?= __('nav_forum') ?></a>
+    <a href="<?= url('/admin/destinations.php?logout=1') ?>" style="margin-left: auto; background: #fee2e2; color: #991b1b;"><?= __('admin_nav_logout') ?></a>
 </div>

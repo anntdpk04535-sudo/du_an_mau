@@ -22,7 +22,7 @@ if (empty($token)) {
     }
 }
 
-$pageTitle = 'Xác minh Email - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_verify');
 include __DIR__ . '/../includes/header.php';
 ?>
 

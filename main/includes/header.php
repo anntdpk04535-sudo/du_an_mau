@@ -6,6 +6,13 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<?php if (!empty($metaDescription)): ?>
+<meta name="description" content="<?= e($metaDescription) ?>">
+<meta property="og:description" content="<?= e($metaDescription) ?>">
+<?php else: ?>
+<meta name="description" content="Khám phá các điểm đến hấp dẫn tại Đắk Lắk với sự hỗ trợ của AI. Lên lịch trình, tìm hiểu văn hóa và tận hưởng kỳ nghỉ của bạn.">
+<?php endif; ?>
+<meta property="og:title" content="<?= e($pageTitle) ?>">
 <title><?= e($pageTitle) ?></title>
 <link rel="stylesheet" href="<?= url('/assets/css/style.css?v=' . time()) ?>">
 </head>
@@ -15,13 +22,13 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     <a href="<?= url('/public/index.php') ?>" class="logo">🌿 Đắk Lắk<span>Travel AI</span></a>
     <nav class="main-nav">
       <a href="<?= url('/public/index.php') ?>"><?= __('home') ?></a>
+      <a href="<?= url('/public/forum.php') ?>"><?= __('nav_forum') ?></a>
       <div class="nav-dropdown">
         <button class="dropbtn"><?= __('explore') ?></button>
         <div class="dropdown-content">
-          <a href="<?= url('/public/destinations.php') ?>"><?= __('destinations') ?></a>
+          <a href="<?= url('/diem-den') ?>"><?= __('destinations') ?></a>
           <a href="<?= url('/public/map.php') ?>"><?= __('map') ?></a>
-          <a href="<?= url('/public/virtual_tours.php') ?>">🌐 <?= __('virtual_tour_360') ?></a>
-          <a href="<?= url('/public/articles.php') ?>"><?= __('articles') ?></a>
+          <a href="<?= url('/cam-nang') ?>"><?= __('articles') ?></a>
         </div>
       </div>
       <div class="nav-dropdown">
@@ -43,17 +50,20 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     </nav>
     <div class="auth-area">
       <?php $currentLang = $_SESSION['lang'] ?? 'vi'; ?>
-      <?php if ($currentLang === 'vi'): ?>
-          <a href="<?= url('/public/change_lang.php?lang=en') ?>" title="English" style="text-decoration:none;font-size:20px;margin-right:10px;">🇬🇧</a>
-      <?php else: ?>
-          <a href="<?= url('/public/change_lang.php?lang=vi') ?>" title="Tiếng Việt" style="text-decoration:none;font-size:20px;margin-right:10px;">🇻🇳</a>
-      <?php endif; ?>
+      <a href="<?= url('/public/change_lang.php?lang=' . ($currentLang === 'vi' ? 'en' : 'vi')) ?>" class="lang-toggle" title="<?= $currentLang === 'vi' ? 'English' : 'Tiếng Việt' ?>" style="display:flex; align-items:center; gap:6px; text-decoration:none; color:inherit; margin-right:15px; font-weight:600; font-size:14px; padding:6px 12px; border-radius:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); transition:all 0.3s ease; backdrop-filter:blur(5px);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+          <span><?= $currentLang === 'vi' ? 'EN' : 'VI' ?></span>
+      </a>
 
       <?php $__u = currentUser(); ?>
       <?php if ($__u): ?>
         <span class="auth-greeting" style="display:flex; align-items:center; gap:8px;">
             <?php if (!empty($__u['avatar'])): ?>
-                <img src="<?= e($__u['avatar']) ?>" alt="Avatar" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
+                <img src="<?= e($__u['avatar']) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
             <?php else: ?>
                 👋
             <?php endif; ?>

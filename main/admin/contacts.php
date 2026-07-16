@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . "/../includes/functions.php";
 requireAdmin();
-$pageTitle = "Quản lý Liên hệ - Admin";
+$pageTitle = __('admin_contacts_title');
 $db = getDB();
 $page = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
 $limit = 4;
@@ -216,13 +216,13 @@ include __DIR__ . "/../includes/header.php";
 <!-- Toast container -->
 <div class="toast-container" id="toast-container"></div>
 
-<h1 class="section-title">📬 Quản lý Liên hệ</h1>
+<h1 class="section-title"><?= __('admin_contacts_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 
 <!-- Realtime bar -->
 <div class="realtime-bar">
   <div class="live-dot"></div>
-  <span>Lắng nghe liên hệ mới theo thời gian thực</span>
+  <span><?= __('admin_contacts_listen') ?></span>
   <span id="last-update">—</span>
   <span class="realtime-clock" id="rt-clock">--:--:--</span>
 </div>
@@ -230,24 +230,24 @@ include __DIR__ . "/../includes/header.php";
 <!-- Mobile tabs -->
 <div class="mobile-tabs" id="m-tabs">
   <div class="m-tab active" id="tab-list" onclick="switchTab('list')">
-    📋 Tin nhắn <span class="badge-count" id="new-count-tab">0</span>
+    <?= __('admin_contacts_tab_msg') ?> <span class="badge-count" id="new-count-tab">0</span>
   </div>
-  <div class="m-tab" id="tab-detail" onclick="switchTab('detail')">💬 Chi tiết</div>
+  <div class="m-tab" id="tab-detail" onclick="switchTab('detail')"><?= __('admin_contacts_tab_detail') ?></div>
 </div>
 
 <div class="admin-layout">
   <!-- Left: contact list -->
   <div class="contact-list" id="panel-list">
     <div class="list-header">
-      <h3>📋 Tin nhắn</h3>
+      <h3><?= __('admin_contacts_tab_msg') ?></h3>
       <span class="badge-count" id="new-count"><?= count(array_filter($contacts, fn($c) => $c["status"] === "new")) ?></span>
     </div>
     <div class="list-search">
-      <input type="text" id="search-input" placeholder="🔍 Tìm kiếm..." oninput="filterContacts(this.value)">
+      <input type="text" id="search-input" placeholder="<?= __('admin_contacts_search_ph') ?>" oninput="filterContacts(this.value)">
     </div>
     <div class="list-body" id="contact-list-body">
       <?php foreach ($contacts as $c):
-        $name = $c["user_full_name"] ?: $c["guest_name"] ?: "Khách ẩn danh";
+        $name = $c["user_full_name"] ?: $c["guest_name"] ?: __('admin_contacts_anonymous');
         $ts   = strtotime($c["created_at"]);
       ?>
       <div class="contact-item status-<?= $c["status"] ?>"
@@ -279,7 +279,7 @@ include __DIR__ . "/../includes/header.php";
   <div class="detail-panel" id="panel-detail">
     <div class="detail-empty" id="contact-detail">
       <div class="icon">📭</div>
-      <p>Chọn một tin nhắn để bắt đầu trò chuyện</p>
+      <p><?= __('admin_contacts_empty_text') ?></p>
     </div>
   </div>
 </div>
@@ -302,10 +302,10 @@ const isMobile = () => window.innerWidth <= 680;
 // ===== Relative time =====
 function rel(ts) {
   const d = Math.floor(Date.now()/1000) - ts;
-  if (d < 60)     return "Vừa xong";
-  if (d < 3600)   return Math.floor(d/60) + " phút trước";
-  if (d < 86400)  return Math.floor(d/3600) + " giờ trước";
-  if (d < 604800) return Math.floor(d/86400) + " ngày trước";
+  if (d < 60)     return <?= json_encode(__('admin_contacts_time_just_now')) ?>;
+  if (d < 3600)   return Math.floor(d/60) + <?= json_encode(__('admin_contacts_time_min')) ?>;
+  if (d < 86400)  return Math.floor(d/3600) + <?= json_encode(__('admin_contacts_time_hour')) ?>;
+  if (d < 604800) return Math.floor(d/86400) + <?= json_encode(__('admin_contacts_time_day')) ?>;
   return new Date(ts*1000).toLocaleDateString("vi-VN");
 }
 function updateRel() {
@@ -383,14 +383,14 @@ function renderChatSkeleton(id, name, ts) {
         </div>
       </div>
       <div class="chat-messages" id="chat-messages">
-        <div style="text-align:center;color:#d1d5db;padding:20px;font-size:13px;">⏳ Đang tải...</div>
+        <div style="text-align:center;color:#d1d5db;padding:20px;font-size:13px;">${<?= json_encode(__('admin_contacts_loading')) ?>}</div>
       </div>
       <div class="chat-input-area">
         <div class="chat-input-box">
-          <textarea id="reply-text" placeholder="Nhập nội dung trả lời..." rows="1"
+          <textarea id="reply-text" placeholder="${<?= json_encode(__('admin_contacts_reply_ph')) ?>}" rows="1"
             oninput="autoGrow(this)" onkeydown="handleEnter(event,${id})"></textarea>
           <button class="btn-send" id="btn-send" onclick="sendReply(${id})">
-            <span class="s-icon">📤</span> <span>Gửi</span>
+            <span class="s-icon">📤</span> <span>${<?= json_encode(__('admin_contacts_btn_send')) ?>}</span>
           </button>
         </div>
         <div class="send-status" id="send-status"></div>
@@ -411,15 +411,15 @@ function fillChatContent(id, name, ts, msgData, replies) {
       <div class="msg-avatar">${initial}</div>
       <div class="msg-content">
         <div class="msg-sender">${name} · ${msgTime}</div>
-        <div class="msg-bubble-user">${msg ? msg.replace(/\n/g,"<br>") : '<em style="color:#d1d5db">Đang tải...</em>'}</div>
+        <div class="msg-bubble-user">${msg ? msg.replace(/\n/g,"<br>") : '<em style="color:#d1d5db">${' + json_encode(__('admin_contacts_loading')) + '}</em>'}</div>
       </div>
     </div>`;
 
   if (replies.length) {
-    html += `<div class="replies-divider"><span>── Phản hồi của Admin ──</span></div>`;
+    html += `<div class="replies-divider"><span>${<?= json_encode(__('admin_contacts_reply_divider')) ?>}</span></div>`;
     html += renderReplies(replies);
   } else {
-    html += `<div style="text-align:center;color:#9ca3af;font-size:13px;padding:10px;">Chưa có phản hồi nào.</div>`;
+    html += `<div style="text-align:center;color:#9ca3af;font-size:13px;padding:10px;">${<?= json_encode(__('admin_contacts_no_reply')) ?>}</div>`;
   }
   msgs.innerHTML = html + '<div id="chat-bottom"></div>';
   scrollBottom();
@@ -469,11 +469,11 @@ async function sendReply(id) {
   const btn    = document.getElementById("btn-send");
   if (!text) {
     status.style.color = "#ef4444";
-    status.textContent = "⚠️ Vui lòng nhập nội dung!";
+    status.textContent = <?= json_encode(__('admin_contacts_err_empty')) ?>;
     setTimeout(() => { if(status) status.textContent = ""; }, 2000);
     return;
   }
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="s-icon">⏳</span> <span>Đang gửi...</span>'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="s-icon">⏳</span> <span>${' + json_encode(__('admin_contacts_sending')) + '}</span>'; }
   status.style.color = "#9ca3af"; status.textContent = "";
 
   try {
@@ -486,7 +486,7 @@ async function sendReply(id) {
       document.getElementById("reply-text").value = "";
       document.getElementById("reply-text").style.height = "44px";
       status.style.color = "#16a34a";
-      status.textContent = "✅ Đã gửi!";
+      status.textContent = <?= json_encode(__('admin_contacts_sent')) ?>;
       setTimeout(() => { if(status) status.textContent = ""; }, 2500);
       // Refresh ngay
       const rRes = await fetch(`${BASE}/api/contact_check_reply.php?contact_id=${id}&last_id=0`);
@@ -498,9 +498,9 @@ async function sendReply(id) {
     }
   } catch {
     status.style.color = "#ef4444";
-    status.textContent = "❌ Lỗi kết nối";
+    status.textContent = <?= json_encode(__('admin_contacts_err_conn')) ?>;
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="s-icon">📤</span> <span>Gửi</span>'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="s-icon">📤</span> <span>${' + json_encode(__('admin_contacts_btn_send')) + '}</span>'; }
   }
 }
 
@@ -523,7 +523,7 @@ function refreshRepliesInUI(replies) {
         <div class="msg-bubble-user">${msg}</div>
       </div>
     </div>
-    <div class="replies-divider"><span>── Phản hồi của Admin ──</span></div>
+    <div class="replies-divider"><span>${<?= json_encode(__('admin_contacts_reply_divider')) ?>}</span></div>
     ${renderReplies(replies)}
     <div id="chat-bottom"></div>`;
   msgs.innerHTML = html;
@@ -550,7 +550,7 @@ function showToast(c) {
   div.innerHTML = `
     <span class="toast-icon">📩</span>
     <div class="toast-body">
-      <div class="toast-title">Tin nhắn mới từ ${name}</div>
+      <div class="toast-title">${<?= json_encode(__('admin_contacts_toast_new')) ?>} ${name}</div>
       <div class="toast-msg">${(c.subject||c.message||"").substring(0,55)}</div>
       <div class="toast-time">${new Date().toLocaleTimeString("vi-VN")}</div>
     </div>
@@ -581,14 +581,14 @@ async function pollNewContacts() {
         showToast(fresh[0]);
         if (Notification.permission === "granted") {
           const n = fresh[0].user_full_name || fresh[0].guest_name || "Khách";
-          new Notification("📩 Liên hệ mới!", {
+          new Notification(<?= json_encode(__('admin_contacts_noti_new')) ?>, {
             body: n + ": " + (fresh[0].subject || fresh[0].message||"").substring(0,60),
             icon: "/favicon.ico"
           });
         }
       }
     }
-    document.getElementById("last-update").textContent = "Cập nhật: " + new Date().toLocaleTimeString("vi-VN");
+    document.getElementById("last-update").textContent = <?= json_encode(__('admin_contacts_updated')) ?> + new Date().toLocaleTimeString("vi-VN");
   } catch {}
   setTimeout(pollNewContacts, 3000);
 }
@@ -596,7 +596,7 @@ async function pollNewContacts() {
 function prependItems(contacts) {
   const body = document.getElementById("contact-list-body");
   contacts.forEach(c => {
-    const name = c.user_full_name || c.guest_name || "Khách ẩn danh";
+    const name = c.user_full_name || c.guest_name || <?= json_encode(__('admin_contacts_anonymous')) ?>;
     const ts   = Math.floor(new Date(c.created_at).getTime()/1000);
     const div  = document.createElement("div");
     div.className = "contact-item status-new";

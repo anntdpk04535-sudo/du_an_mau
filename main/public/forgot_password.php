@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/mailer.php';
 
-$pageTitle = 'Quên mật khẩu - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_forgot');
 $message = '';
 $error = '';
 
@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     
     if (empty($email)) {
-        $error = 'Vui lòng nhập địa chỉ email.';
+        $error = __('forgot_enter_email');
     } else {
         $db = getDB();
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
@@ -35,19 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ";
             
             if (sendEmail($email, "Khôi phục mật khẩu - Đắk Lắk Travel AI", $body)) {
-                $message = 'Một email hướng dẫn khôi phục mật khẩu đã được gửi đến bạn.';
+                $message = __('forgot_email_sent');
             } else {
                 // If SMTP is not configured, we'll simulate it for local testing if needed,
                 // but let's just output an error or the link directly for testing purposes
                 if (empty(getenv('SMTP_USER'))) {
-                    $message = 'Hệ thống chưa cấu hình SMTP. (Môi trường test) <a href="'.$resetLink.'">Bấm vào đây để reset</a>';
+                    $message = __('forgot_smtp_test') . ' <a href="'.$resetLink.'">' . __('forgot_click_reset') . '</a>';
                 } else {
-                    $error = 'Không thể gửi email. Vui lòng kiểm tra lại cấu hình SMTP.';
+                    $error = __('forgot_smtp_error');
                 }
             }
         } else {
             // Đừng tiết lộ email có tồn tại hay không vì lý do bảo mật, cứ báo thành công
-            $message = 'Nếu email có trong hệ thống, bạn sẽ nhận được hướng dẫn khôi phục.';
+            $message = __('forgot_email_if_exists');
         }
     }
 }

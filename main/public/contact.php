@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . "/../includes/functions.php";
-$pageTitle = "Liên hệ - Đắk Lắk Travel AI";
+$pageTitle = __('page_title_contact');
 $user = currentUser();
 include __DIR__ . "/../includes/header.php";
 ?>
@@ -156,7 +156,7 @@ include __DIR__ . "/../includes/header.php";
     <h2>📍 <?= __('contact_info') ?></h2>
     <div class="contact-info-item">
       <div class="contact-info-icon">🏢</div>
-      <div>Ban quản lý Du lịch Đắk Lắk<small>Hỗ trợ du khách 24/7</small></div>
+      <div><?= __('contact_org') ?><small><?= __('contact_support_247') ?></small></div>
     </div>
     <div class="contact-info-item">
       <div class="contact-info-icon">📧</div>
@@ -164,14 +164,14 @@ include __DIR__ . "/../includes/header.php";
     </div>
     <div class="contact-info-item">
       <div class="contact-info-icon">📞</div>
-      <div>0262 3957 xxx<small>Thứ 2 – Thứ 7, 8:00–17:30</small></div>
+      <div>0262 3957 555<small><?= __('contact_working_hours') ?></small></div>
     </div>
     <div class="contact-info-item">
       <div class="contact-info-icon">📍</div>
-      <div>01 Lê Duẩn, TP. Buôn Ma Thuột<small>Tỉnh Đắk Lắk, Việt Nam</small></div>
+      <div>01 Lê Duẩn, TP. Buôn Ma Thuột<small><?= __('contact_province') ?></small></div>
     </div>
     <hr class="contact-info-divider">
-    <p class="contact-info-note">💡 Thông thường chúng tôi phản hồi trong vòng <strong>15–30 phút</strong> trong giờ làm việc. Bạn có thể thoát trang và quay lại sau để xem phản hồi.</p>
+    <p class="contact-info-note">💡 <?= __('contact_response_time') ?></p>
   </div>
 
   <!-- Form -->
@@ -182,15 +182,15 @@ include __DIR__ . "/../includes/header.php";
         <?php if (!$user): ?>
         <div class="form-group">
           <label><?= __('fullname_label') ?> *</label>
-          <input type="text" name="name" required placeholder="Nguyễn Văn A">
+          <input type="text" name="name" required placeholder="<?= __('contact_name_ph') ?>">
         </div>
         <div class="form-group">
           <label><?= __('email_label') ?> *</label>
-          <input type="email" name="email" required placeholder="email@example.com">
+          <input type="email" name="email" required placeholder="<?= __('contact_email_ph') ?>">
         </div>
         <?php else: ?>
         <p style="font-size:13px;color:#6b7280;margin:0 0 14px;padding:10px 14px;background:#f9fafb;border-radius:8px;">
-          👋 Gửi với tư cách: <strong style="color:#1b4332;"><?= e($user["full_name"]) ?></strong>
+          👋 <?= __('contact_send_as') ?>: <strong style="color:#1b4332;"><?= e($user["full_name"]) ?></strong>
         </p>
         <?php endif; ?>
         <div class="form-group">
@@ -214,15 +214,15 @@ include __DIR__ . "/../includes/header.php";
 <div class="replies-section-wrap">
   <div class="section-heading">
     <h2>
-      💬 Phản hồi từ Admin
-      <span class="reply-new-dot" id="reply-new-dot" title="Có phản hồi mới!"></span>
+      💬 <?= __('contact_admin_reply') ?>
+      <span class="reply-new-dot" id="reply-new-dot" title="<?= __('contact_new_reply') ?>"></span>
     </h2>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
       <div class="conn-badge">
         <div class="live-dot"></div>
-        <span id="conn-status">Đang kết nối...</span>
+        <span id="conn-status"><?= __('contact_connecting') ?></span>
       </div>
-      <button class="btn-new-msg" id="btn-new-msg" style="display:none;" onclick="startNewMessage()">✏️ Gửi tin mới</button>
+      <button class="btn-new-msg" id="btn-new-msg" style="display:none;" onclick="startNewMessage()">✏️ <?= __('contact_new_msg_btn') ?></button>
     </div>
   </div>
 
@@ -230,8 +230,8 @@ include __DIR__ . "/../includes/header.php";
   <div id="replies-area">
     <div class="no-session-box">
       <div class="ns-icon">📭</div>
-      <p>Bạn chưa gửi tin nhắn nào.<br>
-         Hãy điền form bên trên để liên hệ với chúng tôi.</p>
+      <p><?= __('contact_no_msg') ?><br>
+         <?= __('contact_fill_form') ?></p>
     </div>
   </div>
 </div>
@@ -271,7 +271,7 @@ const Session = {
 
 // ===== Init khi tải trang =====
 document.addEventListener("DOMContentLoaded", async () => {
-  setConnStatus("Đang kiểm tra...");
+  setConnStatus("<?= __('contact_checking') ?>");
 
   // Bước 1: Thử lấy từ server (user đã đăng nhập)
   const serverOk = await tryLoadFromServer();
@@ -290,7 +290,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Không có session
-  setConnStatus("Chưa có tin nhắn");
+  setConnStatus("<?= __('contact_no_msg_short') ?>");
 });
 
 // ===== Lấy từ server nếu user đã đăng nhập =====
@@ -307,7 +307,7 @@ async function tryLoadFromServer() {
 
     sessionData = {
       contact_id: c.id,
-      subject:    c.subject || c.message?.substring(0, 50) || "(không có chủ đề)",
+      subject:    c.subject || c.message?.substring(0, 50) || "<?= __('contact_no_subject') ?>",
       message:    c.message || "",
       sent_at:    c.created_at
     };
@@ -325,14 +325,14 @@ async function tryLoadFromServer() {
 // ===== Form wrap: banner session =====
 function showSessionBanner(s) {
   const sentAt  = s.sent_at ? new Date(s.sent_at).toLocaleString("vi-VN") : "";
-  const subject = s.subject || "(không có chủ đề)";
+  const subject = s.subject || "<?= __('contact_no_subject') ?>";
   document.getElementById("contact-form-wrap").innerHTML = `
     <div class="session-banner">
       <div class="session-banner-info">
-        <strong>📩 Tin nhắn đã được gửi</strong>
+        <strong>📩 <?= __('contact_msg_sent') ?></strong>
         <span>"${subject}" · ${sentAt}</span>
       </div>
-      <button class="btn-new-msg" onclick="startNewMessage()">✏️ Gửi tin mới</button>
+      <button class="btn-new-msg" onclick="startNewMessage()">✏️ <?= __('contact_new_msg_btn') ?></button>
     </div>`;
 }
 
@@ -340,16 +340,15 @@ function showSuccessState(subjectVal, messageVal) {
   document.getElementById("contact-form-wrap").innerHTML = `
     <div class="success-state">
       <div class="success-icon">✅</div>
-      <h3>Đã gửi thành công!</h3>
-      <p>Tin nhắn của bạn đã được ghi nhận.<br>
-         <strong>Bạn có thể thoát trang</strong> — khi quay lại vẫn thấy phản hồi bên dưới.</p>
-      <button class="btn-new-msg" onclick="startNewMessage()">✏️ Gửi tin nhắn mới</button>
+      <h3><?= __('contact_sent_success') ?></h3>
+      <p><?= __('contact_sent_desc') ?></p>
+      <button class="btn-new-msg" onclick="startNewMessage()">✏️ <?= __('contact_new_msg_btn') ?></button>
     </div>`;
 }
 
 // ===== Gửi tin mới =====
 function startNewMessage() {
-  if (!confirm("Bạn có chắc muốn gửi tin nhắn mới?\nCuộc trò chuyện cũ sẽ không còn theo dõi nữa.")) return;
+  if (!confirm("<?= __('contact_confirm_new') ?>")) return;
   if (sseSource) { sseSource.close(); sseSource = null; }
   Session.clear();
   location.reload();
@@ -358,7 +357,7 @@ function startNewMessage() {
 // ===== Load toàn bộ replies =====
 async function loadAllReplies() {
   if (!contactId) return;
-  setConnStatus("Đang tải...");
+  setConnStatus("<?= __('contact_loading') ?>");
   try {
     const res  = await fetch(`${BASE_URL}/api/contact_check_reply.php?contact_id=${contactId}&last_id=0`);
     const data = await res.json();
@@ -367,7 +366,7 @@ async function loadAllReplies() {
       lastReplyId = data.last_id || 0;
       renderConversation();
     }
-  } catch { setConnStatus("⚠️ Lỗi tải"); }
+  } catch { setConnStatus("⚠️ <?= __('contact_load_error') ?>"); }
 }
 
 // ===== Submit form =====
@@ -378,7 +377,7 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
   const errEl  = document.getElementById("contact-error");
   errEl.style.display = "none";
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span> Đang gửi...';
+  btn.innerHTML = '<span class="btn-icon">⏳</span> <?= __('dest_sending') ?>';
 
   const subjectVal = form.querySelector("[name=subject]")?.value || "";
   const messageVal = form.querySelector("[name=message]").value;
@@ -394,10 +393,10 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
     });
     const data = await res.json();
     if (!data.success) {
-      errEl.textContent   = data.message || "Gửi thất bại.";
+      errEl.textContent   = data.message || "<?= __('contact_send_failed') ?>";
       errEl.style.display = "block";
       btn.disabled = false;
-      btn.innerHTML = '<span class="btn-icon">📤</span> Gửi tin nhắn';
+      btn.innerHTML = '<span class="btn-icon">📤</span> <?= __('send_msg') ?>';
       return;
     }
     contactId = data.contact_id;
@@ -416,10 +415,10 @@ document.getElementById("contact-form").addEventListener("submit", async (e) => 
     renderConversation(); // Hiển thị tin nhắn vừa gửi ngay
     startListening();
   } catch {
-    errEl.textContent   = "Lỗi kết nối. Vui lòng thử lại.";
+    errEl.textContent   = "<?= __('contact_network_error') ?>";
     errEl.style.display = "block";
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">📤</span> Gửi tin nhắn';
+    btn.innerHTML = '<span class="btn-icon">📤</span> <?= __('send_msg') ?>';
   }
 });
 
@@ -430,7 +429,7 @@ function renderConversation() {
   if (!s?.contact_id) return;
 
   const sentAt  = s.sent_at ? new Date(s.sent_at).toLocaleString("vi-VN") : "";
-  const subject = s.subject || "(không có chủ đề)";
+  const subject = s.subject || "<?= __('contact_no_subject') ?>";
   const msg     = s.message  || subject;
   const hasReplies = allReplies.length > 0;
 
@@ -440,10 +439,10 @@ function renderConversation() {
       <div class="conv-card-header">
         <div class="conv-meta">
           <div class="conv-subject">${subject}</div>
-          <div class="conv-sent-at">Gửi lúc ${sentAt}</div>
+          <div class="conv-sent-at"><?= __('contact_sent_at') ?> ${sentAt}</div>
         </div>
         <span class="conv-status ${hasReplies ? 'replied' : 'waiting'}">
-          ${hasReplies ? '✅ Đã phản hồi' : '⏳ Chờ phản hồi'}
+          ${hasReplies ? '✅ <?= __('contact_replied') ?>' : '⏳ <?= __('contact_waiting') ?>'}
         </span>
       </div>
       <div class="chat-list">
@@ -451,7 +450,7 @@ function renderConversation() {
         <div class="bubble-row">
           <div class="avatar-circle avatar-user">👤</div>
           <div class="bubble-content">
-            <div class="bubble-sender">Bạn</div>
+            <div class="bubble-sender"><?= __('contact_you') ?></div>
             <div class="bubble-text bubble-user">${msg.replace(/\n/g,"<br>")}</div>
             <div class="bubble-time">${sentAt}</div>
           </div>
@@ -476,9 +475,9 @@ function renderConversation() {
       <div class="waiting-state">
         <div class="waiting-badge">
           <div class="waiting-dot"></div>
-          Đang chờ phản hồi từ admin...
+          <?= __('contact_waiting_admin') ?>
         </div>
-        <p style="font-size:12px;color:#9ca3af;margin-top:10px;">Thường phản hồi trong 15–30 phút</p>
+        <p style="font-size:12px;color:#9ca3af;margin-top:10px;"><?= __('contact_reply_time') ?></p>
       </div>`;
   }
 
@@ -543,7 +542,7 @@ function appendReplies(newList) {
   renderConversation();
   if (document.hidden) {
     document.getElementById("reply-new-dot").style.display = "inline-block";
-    document.title = "💬 Có phản hồi mới! — Đắk Lắk Travel";
+    document.title = "💬 <?= __('contact_new_reply_title') ?>";
   }
 }
 

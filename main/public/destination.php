@@ -6,21 +6,22 @@ $d = getDestinationBySlug($slug);
 
 if (!$d) {
   http_response_code(404);
-  $pageTitle = 'Không tìm thấy điểm đến';
+  $pageTitle = __('dest_404_title');
   include __DIR__ . '/../includes/header.php';
-  echo '<h1>404 - Không tìm thấy điểm đến này.</h1>';
-  echo '<p><a href="' . url('/public/destinations.php') . '">← Quay lại danh sách điểm đến</a></p>';
+  echo '<h1>' . __('dest_404_msg') . '</h1>';
+  echo '<p><a href="' . url('/public/destinations.php') . '">' . __('dest_back_list') . '</a></p>';
   include __DIR__ . '/../includes/footer.php';
   exit;
 }
 
 $pageTitle = $d['name'] . ' - Đắk Lắk Travel AI';
+$metaDescription = $d['short_desc'] ?? '';
 include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<p><a href="<?= url('/public/destinations.php') ?>">← Quay lại danh sách điểm đến</a></p>
+<p><a href="<?= url('/public/destinations.php') ?>"><?= __('dest_back_list') ?></a></p>
 
 <div class="detail-hero">
   <?php if (!empty($d['image_url'])): ?>
@@ -52,7 +53,7 @@ if ($user) {
 <script>
 async function toggleWishlist(destId) {
     <?php if (!$user): ?>
-    alert('Vui lòng đăng nhập để lưu điểm đến.');
+    alert('<?= __('dest_login_save') ?>');
     window.location.href = '<?= url('/public/login.php') ?>';
     return;
     <?php endif; ?>
@@ -70,17 +71,17 @@ async function toggleWishlist(destId) {
             if (data.action === 'added') {
                 btn.innerHTML = '❤️';
                 btn.style.color = '#ef4444';
-                btn.title = 'Bỏ lưu điểm đến';
+                btn.title = '<?= __('remove_wishlist') ?>';
             } else {
                 btn.innerHTML = '🤍';
                 btn.style.color = '#ccc';
-                btn.title = 'Lưu điểm đến';
+                btn.title = '<?= __('save_wishlist') ?>';
             }
         } else {
-            alert(data.error || 'Đã có lỗi xảy ra.');
+            alert(data.error || '<?= __('dest_error_occurred') ?>');
         }
     } catch (e) {
-        alert('Lỗi kết nối mạng.');
+        alert('<?= __('dest_network_error') ?>');
     }
     
     setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
@@ -102,10 +103,10 @@ $starsHtml    = $avgRating !== null
     <?php if ($avgRating !== null): ?>
       <span class="meta-stars"><?= $starsHtml ?></span>
       <strong><?= number_format($avgRating, 1) ?></strong>/5
-      <span class="meta-rev-count">(<?= $reviewCount ?> đánh giá)</span>
+      <span class="meta-rev-count">(<?= $reviewCount ?> <?= __('dest_reviews_unit') ?>)</span>
     <?php else: ?>
       <span class="meta-stars-empty">☆☆☆☆☆</span>
-      <span style="color:#aaa;font-size:13px;">Chưa có đánh giá</span>
+      <span style="color:#aaa;font-size:13px;"><?= __('dest_no_reviews_yet') ?></span>
     <?php endif; ?>
   </div>
   <div class="meta-item">⏱ ~<?= e((string) $d['avg_visit_hours']) ?>h <?= __('avg_visit_time') ?></div>
@@ -121,41 +122,41 @@ $warningHtml = '';
 switch ((int)$d['category_id']) {
     case 1: // Thác nước
         $warningHtml = '<div style="background:#fef2f2; border:1px solid #fecaca; border-left:4px solid #ef4444; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <strong style="color:#b91c1c; display:flex; align-items:center; gap:6px;">⚠️ Cảnh báo an toàn (Thác nước)</strong>
+            <strong style="color:#b91c1c; display:flex; align-items:center; gap:6px;">' . __('warning_waterfall_title') . '</strong>
             <ul style="margin:10px 0 0; padding-left:22px; color:#991b1b; font-size:14px; line-height:1.6;">
-                <li>Cẩn thận đá trơn trượt quanh khu vực thác, nên đi giày có độ bám tốt.</li>
-                <li>Chỉ bơi lội/tắm ở khu vực được cho phép, tuyệt đối không bơi vào dòng nước xoáy chân thác.</li>
-                <li>Nếu thấy nước bất ngờ đục ngầu hoặc có tiếng ù ù, hãy di chuyển lên cao ngay (dấu hiệu lũ quét).</li>
+                <li>' . __('warning_waterfall_1') . '</li>
+                <li>' . __('warning_waterfall_2') . '</li>
+                <li>' . __('warning_waterfall_3') . '</li>
             </ul>
         </div>';
         break;
     case 2: // Hồ
         $warningHtml = '<div style="background:#f0f9ff; border:1px solid #bae6fd; border-left:4px solid #3b82f6; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <strong style="color:#1d4ed8; display:flex; align-items:center; gap:6px;">🌊 Cảnh báo an toàn (Khu vực Hồ / Sông)</strong>
+            <strong style="color:#1d4ed8; display:flex; align-items:center; gap:6px;">' . __('warning_lake_title') . '</strong>
             <ul style="margin:10px 0 0; padding-left:22px; color:#1e40af; font-size:14px; line-height:1.6;">
-                <li>Bắt buộc mặc áo phao khi tham gia chèo thuyền, đi thuyền độc mộc.</li>
-                <li>Không bơi một mình; hồ tự nhiên thường có dòng chảy ngầm và đáy lún bất ngờ.</li>
-                <li>Nếu trời chuyển mây đen, giông lốc, phải lập tức di chuyển vào bờ.</li>
+                <li>' . __('warning_lake_1') . '</li>
+                <li>' . __('warning_lake_2') . '</li>
+                <li>' . __('warning_lake_3') . '</li>
             </ul>
         </div>';
         break;
     case 3: // Buôn làng
         $warningHtml = '<div style="background:#fdf4ff; border:1px solid #f5d0fe; border-left:4px solid #d946ef; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <strong style="color:#a21caf; display:flex; align-items:center; gap:6px;">🛖 Lưu ý văn hóa (Buôn làng bản địa)</strong>
+            <strong style="color:#a21caf; display:flex; align-items:center; gap:6px;">' . __('warning_village_title') . '</strong>
             <ul style="margin:10px 0 0; padding-left:22px; color:#86198f; font-size:14px; line-height:1.6;">
-                <li>Nên xin phép người dân hoặc già làng trước khi chụp ảnh, đi sâu vào khu vực sinh hoạt.</li>
-                <li>Tôn trọng không gian cộng đồng, tuyệt đối không tự ý sờ/chạm vào các vật thờ cúng tâm linh.</li>
-                <li>Ăn mặc lịch sự, kín đáo khi vào thăm nhà dài truyền thống.</li>
+                <li>' . __('warning_village_1') . '</li>
+                <li>' . __('warning_village_2') . '</li>
+                <li>' . __('warning_village_3') . '</li>
             </ul>
         </div>';
         break;
     case 4: // Vườn quốc gia
         $warningHtml = '<div style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:4px solid #22c55e; padding:16px; border-radius:8px; margin:20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-            <strong style="color:#15803d; display:flex; align-items:center; gap:6px;">🌲 Cảnh báo an toàn (Rừng & Vườn Quốc Gia)</strong>
+            <strong style="color:#15803d; display:flex; align-items:center; gap:6px;">' . __('warning_forest_title') . '</strong>
             <ul style="margin:10px 0 0; padding-left:22px; color:#166534; font-size:14px; line-height:1.6;">
-                <li>Luôn đi cùng hướng dẫn viên/người bản địa, tuyệt đối không tự ý đi lạc khỏi đường mòn.</li>
-                <li>Đề phòng côn trùng, rắn rết (mặc quần áo dài tay, dùng bình xịt côn trùng, dùng gậy khua bụi cỏ).</li>
-                <li>Đề phòng cháy rừng trong mùa khô: Không vứt tàn thuốc, không đốt lửa bừa bãi.</li>
+                <li>' . __('warning_forest_1') . '</li>
+                <li>' . __('warning_forest_2') . '</li>
+                <li>' . __('warning_forest_3') . '</li>
             </ul>
         </div>';
         break;
@@ -253,12 +254,12 @@ endif;
 
 <?php if (!empty($d['latitude']) && !empty($d['longitude'])): ?>
 <div class="form-box" id="dest-weather-box" style="display:none; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 1px solid #bae6fd; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);">
-  <h3 style="margin-top:0; color:#0369a1; display:flex; align-items:center; gap:8px;">🌤️ Thời tiết hiện tại ở khu vực này</h3>
+  <h3 style="margin-top:0; color:#0369a1; display:flex; align-items:center; gap:8px;"><?= __('dest_current_weather') ?></h3>
   <div style="display:flex; align-items:center; gap:24px; margin-top:12px;">
       <div id="dw-temp" style="font-size:38px; font-weight:800; color:#0284c7; line-height:1;">--°C</div>
       <div style="border-left: 2px solid #bae6fd; padding-left: 20px;">
-          <div id="dw-status" style="font-size:16px; font-weight:700; color:#0369a1; margin-bottom:6px;">Đang tải...</div>
-          <div id="dw-wind" style="font-size:13px; color:#0c4a6e; background: #fff; padding: 2px 8px; border-radius: 12px; display:inline-block;">Gió: -- km/h</div>
+          <div id="dw-status" style="font-size:16px; font-weight:700; color:#0369a1; margin-bottom:6px;"><?= __('dest_weather_loading') ?></div>
+          <div id="dw-wind" style="font-size:13px; color:#0c4a6e; background: #fff; padding: 2px 8px; border-radius: 12px; display:inline-block;"><?= __('dest_wind') ?>: -- km/h</div>
       </div>
   </div>
 </div>
@@ -272,16 +273,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (data.current_weather) {
             document.getElementById('dest-weather-box').style.display = 'block';
             document.getElementById('dw-temp').textContent = data.current_weather.temperature + '°C';
-            document.getElementById('dw-wind').textContent = '💨 Gió: ' + data.current_weather.windspeed + ' km/h';
+            document.getElementById('dw-wind').textContent = '💨 <?= __('dest_wind') ?>: ' + data.current_weather.windspeed + ' km/h';
             
             let code = data.current_weather.weathercode;
-            let status = 'Trời trong xanh';
+            let status = '<?= __('dest_weather_clear_sky') ?>';
             let icon = '☀️';
-            if (code >= 95) { status = 'Có mưa dông'; icon = '⛈️'; }
-            else if (code >= 61) { status = 'Có mưa'; icon = '🌧️'; }
-            else if (code >= 51) { status = 'Mưa phùn'; icon = '🌦️'; }
-            else if (code >= 45) { status = 'Sương mù'; icon = '🌫️'; }
-            else if (code >= 1) { status = 'Có mây'; icon = '⛅'; }
+            if (code >= 95) { status = '<?= __('dest_weather_has_storm') ?>'; icon = '⛈️'; }
+            else if (code >= 61) { status = '<?= __('dest_weather_has_rain') ?>'; icon = '🌧️'; }
+            else if (code >= 51) { status = '<?= __('dest_weather_drizzle') ?>'; icon = '🌦️'; }
+            else if (code >= 45) { status = '<?= __('dest_weather_fog') ?>'; icon = '🌫️'; }
+            else if (code >= 1) { status = '<?= __('dest_weather_has_cloud') ?>'; icon = '⛅'; }
             
             document.getElementById('dw-status').innerHTML = icon + ' ' + status;
         }
@@ -299,11 +300,11 @@ document.addEventListener('DOMContentLoaded', async function() {
   <div style="display:flex;gap:10px;flex-wrap:wrap;">
     <a href="https://www.google.com/maps/dir/?api=1&destination=<?= (float)$d['latitude'] ?>,<?= (float)$d['longitude'] ?>" target="_blank"
        style="display:inline-flex;align-items:center;gap:6px;background:#1a56db;color:white;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">
-      🧭 Chỉ đường Google Maps
+      <?= __('dest_google_directions') ?>
     </a>
     <a href="https://www.google.com/maps?q=<?= (float)$d['latitude'] ?>,<?= (float)$d['longitude'] ?>" target="_blank"
        style="display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;color:#334155;padding:8px 16px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">
-      🗺️ Xem trên Google Maps
+      <?= __('dest_google_view') ?>
     </a>
   </div>
 </div>
@@ -350,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ${addr ? `<div style="color:#666;font-size:12px;margin-bottom:8px;">📍 ${addr}</div>` : ''}
         <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank"
            style="display:inline-block;background:#1a56db;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;font-size:11px;font-weight:600;">
-          🧭 Chỉ đường
+          🧭 <?= __('directions') ?>
         </a>
       </div>
     </div>`, { maxWidth: 240 }).openPopup();
@@ -360,9 +361,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <div class="cta">
-  <a href="<?= url('/public/itinerary.php') ?>?prefill=<?= e($d['slug']) ?>" class="btn">🧭 Đưa vào lịch trình AI</a>
-  <a href="<?= url('/public/chatbot.php') ?>?ask=<?= urlencode('Cho tôi biết thêm về ' . $d['name']) ?>"
-    class="btn secondary">💬 Hỏi Chatbot AI về nơi này</a>
+  <a href="<?= url('/public/itinerary.php') ?>?prefill=<?= e($d['slug']) ?>" class="btn"><?= __('dest_add_to_itinerary') ?></a>
+  <a href="<?= url('/public/chatbot.php') ?>?ask=<?= urlencode(__('dest_ask_chatbot_prefix') . ' ' . $d['name']) ?>"
+    class="btn secondary"><?= __('dest_ask_chatbot_about') ?></a>
 </div>
 
 <!-- ══════════════════════════════════════
@@ -462,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="dest-review-header">
   <h2>⭐ <?= __('reviews_tab') ?></h2>
   <div class="dest-avg-pill" id="destAvgPill" style="display:none">
-    ⭐ <span id="destAvgScore">0</span>/5 &nbsp;·&nbsp; <span id="destTotalCount">0</span> đánh giá
+    ⭐ <span id="destAvgScore">0</span>/5 &nbsp;·&nbsp; <span id="destTotalCount">0</span> <?= __('dest_reviews_unit') ?>
   </div>
 </div>
 
@@ -473,18 +474,18 @@ document.addEventListener('DOMContentLoaded', function() {
   <form id="destReviewForm">
     <input type="hidden" name="destination_id" value="<?= (int)$d['id'] ?>">
     <div class="form-group">
-      <label>Số sao <span style="color:red">*</span></label>
+      <label><?= __('dest_star_label') ?> <span style="color:red">*</span></label>
       <div class="star-rating-input">
         <?php for ($i = 5; $i >= 1; $i--): ?>
         <input type="radio" id="dstar<?= $i ?>" name="rating" value="<?= $i ?>" <?= $i === 5 ? 'checked' : '' ?>>
-        <label for="dstar<?= $i ?>" title="<?= $i ?> sao">★</label>
+        <label for="dstar<?= $i ?>" title="<?= $i ?> <?= __('star_label') ?>">★</label>
         <?php endfor; ?>
       </div>
     </div>
     <div class="form-group">
-      <label for="destComment">Nhận xét <span style="font-weight:400;color:#999;">(không bắt buộc)</span></label>
+      <label for="destComment"><?= __('dest_comment_label') ?> <span style="font-weight:400;color:#999;"><?= __('dest_comment_optional') ?></span></label>
       <textarea id="destComment" name="comment" rows="3"
-        placeholder="Chia sẻ cảm nhận về <?= e($d['name']) ?>..."
+        placeholder="<?= __('dest_share_feeling') ?> <?= e($d['name']) ?>..."
         style="resize:vertical;font-family:inherit;"></textarea>
       <div style="text-align:right;font-size:12px;color:#aaa;margin-top:3px;">
         <span id="destCharCount">0</span>/1000
@@ -501,9 +502,9 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 
 <div class="dest-review-list" id="destReviewList">
-  <div class="dest-rev-empty">⏳ Đang tải đánh giá...</div>
+  <div class="dest-rev-empty"><?= __('dest_loading_reviews') ?></div>
 </div>
-<button class="dest-load-more" id="destLoadMoreBtn" style="display:none" onclick="destLoadMore()">Xem thêm...</button>
+<button class="dest-load-more" id="destLoadMoreBtn" style="display:none" onclick="destLoadMore()"><?= __('dest_load_more') ?></button>
 
 <!-- ── Edit Review Modal (Destination) ── -->
 <style>
@@ -584,32 +585,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="rev-modal-overlay" id="destEditOverlay" onclick="closeDRevModal(event)">
   <div class="rev-modal">
-    <h3>✏️ Chỉnh sửa đánh giá</h3>
-    <p class="sub">Cập nhật đánh giá của bạn về địa điểm này.</p>
+    <h3><?= __('dest_edit_review') ?></h3>
+    <p class="sub"><?= __('dest_edit_review_sub') ?></p>
     <form id="destEditForm">
       <input type="hidden" id="destEditId" name="id" value="">
       <div class="form-group">
-        <label>Số sao <span style="color:red">*</span></label>
+        <label><?= __('dest_star_label') ?> <span style="color:red">*</span></label>
         <div class="star-rating-input" id="destEditStars">
           <?php for ($i = 5; $i >= 1; $i--): ?>
           <input type="radio" id="destr<?= $i ?>" name="rating" value="<?= $i ?>">
-          <label for="destr<?= $i ?>" title="<?= $i ?> sao">★</label>
+          <label for="destr<?= $i ?>" title="<?= $i ?> <?= __('star_label') ?>">★</label>
           <?php endfor; ?>
         </div>
       </div>
       <div class="form-group">
-        <label for="destEditComment">Nhận xét</label>
+        <label for="destEditComment"><?= __('dest_comment_label') ?></label>
         <textarea id="destEditComment" name="comment" rows="3"
           style="resize:vertical;font-family:inherit;"
-          placeholder="Chia sẻ cảm nhận của bạn..."></textarea>
+          placeholder="<?= __('dest_share_feeling') ?>..."></textarea>
         <div style="text-align:right;font-size:12px;color:#aaa;margin-top:3px;">
           <span id="destEditCharCnt">0</span>/1000
         </div>
       </div>
       <div id="destEditMsg" style="margin-bottom:10px;font-size:14px;"></div>
       <div class="rev-modal-footer">
-        <button type="button" class="rev-btn-cancel" onclick="closeDRevModal()">Hủy</button>
-        <button type="submit" class="btn" id="destEditSubmit">💾 Lưu thay đổi</button>
+        <button type="button" class="rev-btn-cancel" onclick="closeDRevModal()"><?= __('dest_cancel') ?></button>
+        <button type="submit" class="btn" id="destEditSubmit"><?= __('dest_save_changes') ?></button>
       </div>
     </form>
   </div>
@@ -618,20 +619,20 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- Admin Delete Reason Modal (Destination) -->
 <div class="dest-admin-del-overlay" id="destAdminDelOverlay" onclick="if(event.target===this) closeDAdmDel()">
   <div class="dest-admin-del-modal">
-    <h3>🛡️ Xóa đánh giá (Admin)</h3>
-    <p class="sub">Bạn đang xóa đánh giá của <strong id="destAdmDelName"></strong>. Vui lòng nhập lý do xóa — lý do sẽ được lưu vào lịch sử.</p>
+    <h3><?= __('dest_admin_delete_title') ?></h3>
+    <p class="sub"><?= __('dest_admin_delete_desc_prefix') ?> <strong id="destAdmDelName"></strong><?= __('dest_admin_delete_desc_suffix') ?></p>
     <div class="reason-presets">
-      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('Nội dung vi phạm quy định cộng đồng')">🚫 Vi phạm quy định</button>
-      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('Nội dung spam hoặc quảng cáo')">📢 Spam/Quảng cáo</button>
-      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('Nội dung không phù hợp hoặc xúc phạm')">⚠️ Không phù hợp</button>
-      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('Đánh giá sai sự thật, gây hiểu lầm')">❌ Sai sự thật</button>
-      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('Trùng lặp, đánh giá nhiều lần')">🔁 Trùng lặp</button>
+      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('<?= __('dest_admin_reason_violation') ?>')"><?= __('dest_admin_preset_violation') ?></button>
+      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('<?= __('dest_admin_reason_spam') ?>')"><?= __('dest_admin_preset_spam') ?></button>
+      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('<?= __('dest_admin_reason_inappropriate') ?>')"><?= __('dest_admin_preset_inappropriate') ?></button>
+      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('<?= __('dest_admin_reason_false') ?>')"><?= __('dest_admin_preset_false') ?></button>
+      <button type="button" class="dest-reason-preset-btn" onclick="setDAdmReason('<?= __('dest_admin_reason_duplicate') ?>')"><?= __('dest_admin_preset_duplicate') ?></button>
     </div>
-    <textarea id="destAdmDelReason" placeholder="VD: Nội dung vi phạm quy định, spam, không phù hợp..."></textarea>
+    <textarea id="destAdmDelReason" placeholder="<?= __('dest_admin_reason_placeholder') ?>"></textarea>
     <div id="destAdmDelErr" style="color:#dc2626;font-size:13px;margin-top:8px;min-height:18px;"></div>
     <div class="dest-admin-del-footer">
-      <button class="dest-adm-cancel" onclick="closeDAdmDel()">Hủy</button>
-      <button class="dest-adm-confirm" id="destAdmDelConfirm">🗑️ Xác nhận xóa</button>
+      <button class="dest-adm-cancel" onclick="closeDAdmDel()"><?= __('dest_cancel') ?></button>
+      <button class="dest-adm-confirm" id="destAdmDelConfirm"><?= __('dest_admin_confirm_delete') ?></button>
     </div>
   </div>
 </div>
@@ -651,10 +652,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   function timeSince(str) {
     const diff = (Date.now() - new Date(str).getTime()) / 1000;
-    if (diff < 60)    return 'vừa xong';
-    if (diff < 3600)  return Math.floor(diff/60) + ' phút trước';
-    if (diff < 86400) return Math.floor(diff/3600) + ' giờ trước';
-    return Math.floor(diff/86400) + ' ngày trước';
+    if (diff < 60)    return '<?= __('dest_just_now') ?>';
+    if (diff < 3600)  return Math.floor(diff/60) + ' <?= __('dest_minutes_ago') ?>';
+    if (diff < 86400) return Math.floor(diff/3600) + ' <?= __('dest_hours_ago') ?>';
+    return Math.floor(diff/86400) + ' <?= __('dest_days_ago') ?>';
   }
 
   async function loadReviews(reset = false) {
@@ -674,7 +675,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (data.reviews.length === 0 && offset === 0) {
-      list.innerHTML = `<div class="dest-rev-empty">💬 Chưa có đánh giá nào. Hãy là người đầu tiên!</div>`;
+      list.innerHTML = `<div class="dest-rev-empty"><?= __('dest_no_reviews_first') ?></div>`;
       document.getElementById('destLoadMoreBtn').style.display = 'none';
       return;
     }
@@ -686,11 +687,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const actionsHtml = r.is_mine ? `
         <div class="dest-card-actions">
-          <button class="btn-edit-rev" onclick="openDRevEdit(${r.review_id}, ${r.rating}, ${JSON.stringify(r.comment || '')})">✏️ Sửa</button>
-          <button class="btn-del-rev" onclick="deleteDRev(${r.review_id})">🗑️ Xóa</button>
+          <button class="btn-edit-rev" onclick="openDRevEdit(${r.review_id}, ${r.rating}, ${JSON.stringify(r.comment || '')})"><?= __('dest_edit_btn') ?></button>
+          <button class="btn-del-rev" onclick="deleteDRev(${r.review_id})"><?= __('dest_delete_btn') ?></button>
         </div>` : (_destIsAdmin ? `
         <div class="dest-card-actions">
-          <button class="btn-admin-del-rev" onclick="openDAdmDel(${r.review_id}, '${r.display_name.replace(/'/g, "\\'")}')">🛡️ Xóa <span class="dest-admin-badge">Admin</span></button>
+          <button class="btn-admin-del-rev" onclick="openDAdmDel(${r.review_id}, '${r.display_name.replace(/'/g, "\\'")}')">🛡️ <?= __('dest_delete_btn') ?> <span class="dest-admin-badge"><?= __('dest_admin_badge') ?></span></button>
         </div>` : '');
 
       card.innerHTML = `
@@ -698,7 +699,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="dest-reviewer">
             <div class="dest-rev-avatar">${r.display_name.charAt(0).toUpperCase()}</div>
             <div>
-              <div class="dest-rev-name">${r.display_name}${r.is_mine ? ' <span style="background:#d8f3dc;color:#1b4332;font-size:10px;padding:1px 6px;border-radius:6px;font-weight:700;">Của bạn</span>' : ''}</div>
+              <div class="dest-rev-name">${r.display_name}${r.is_mine ? ' <span style="background:#d8f3dc;color:#1b4332;font-size:10px;padding:1px 6px;border-radius:6px;font-weight:700;"><?= __('dest_yours_badge') ?></span>' : ''}</div>
               <div class="dest-rev-date">${timeSince(r.created_at)}</div>
             </div>
           </div>
@@ -706,7 +707,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
         ${r.comment
           ? `<p class="dest-rev-comment">"${r.comment}"</p>`
-          : `<p class="dest-rev-comment" style="color:#bbb;font-style:italic;">Không có nhận xét.</p>`}
+          : `<p class="dest-rev-comment" style="color:#bbb;font-style:italic;"><?= __('dest_no_comment') ?></p>`}
         ${actionsHtml}
       `;
       list.appendChild(card);
@@ -729,7 +730,7 @@ document.addEventListener('DOMContentLoaded', function() {
       e.preventDefault();
       const btn = document.getElementById('destSubmitBtn');
       const msg = document.getElementById('destReviewMsg');
-      btn.disabled = true; btn.textContent = '⏳ Đang gửi...';
+      btn.disabled = true; btn.textContent = '<?= __('dest_sending') ?>';
       const res  = await fetch(`${API_BASE}/review_submit.php`, { method:'POST', body: new FormData(form) });
       const data = await res.json();
       if (data.success) {
@@ -742,12 +743,12 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
           msg.innerHTML = '';
           btn.disabled = false;
-          btn.textContent = '🚀 Gửi đánh giá';
+          btn.textContent = '🚀 <?= __('send_review') ?>';
           loadReviews(true);
         }, 1500);
       } else {
         msg.innerHTML = `<div style="background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:10px;">❌ ${data.error}</div>`;
-        btn.disabled = false; btn.textContent = '🚀 Gửi đánh giá';
+        btn.disabled = false; btn.textContent = '🚀 <?= __('send_review') ?>';
       }
     });
   }
@@ -778,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
     e.preventDefault();
     const btn = document.getElementById('destEditSubmit');
     const msg = document.getElementById('destEditMsg');
-    btn.disabled = true; btn.textContent = '⏳ Đang lưu...';
+    btn.disabled = true; btn.textContent = '<?= __('dest_saving') ?>';
     const res  = await fetch(`${API_BASE}/review_edit.php`, { method:'POST', body: new FormData(document.getElementById('destEditForm')) });
     const data = await res.json();
     if (data.success) {
@@ -790,13 +791,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 800);
     } else {
       msg.innerHTML = `<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;">❌ ${data.error}</div>`;
-      btn.disabled = false; btn.textContent = '💾 Lưu thay đổi';
+      btn.disabled = false; btn.textContent = '<?= __('dest_save_changes') ?>';
     }
   });
 
   // Delete review (user's own - simple confirm)
   window.deleteDRev = async function(reviewId) {
-    if (!confirm('Bạn có chắc muốn xóa đánh giá này không?')) return;
+    if (!confirm('<?= __('dest_confirm_delete') ?>')) return;
     const fd = new FormData();
     fd.append('id', reviewId);
     const res  = await fetch(`${API_BASE}/review_delete.php`, { method:'POST', body: fd });
@@ -804,7 +805,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (data.success) {
       loadReviews(true);
     } else {
-      alert('❌ ' + (data.error || 'Không thể xóa.'));
+      alert('❌ ' + (data.error || '<?= __('dest_cannot_delete') ?>'));
     }
   };
 
@@ -815,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('destAdmDelReason').value = '';
     document.getElementById('destAdmDelErr').textContent = '';
     document.getElementById('destAdmDelConfirm').disabled = false;
-    document.getElementById('destAdmDelConfirm').textContent = '🗑️ Xác nhận xóa';
+    document.getElementById('destAdmDelConfirm').textContent = '<?= __('dest_admin_confirm_delete') ?>';
     document.getElementById('destAdminDelOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
     setTimeout(() => document.getElementById('destAdmDelReason').focus(), 100);
@@ -838,17 +839,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const errEl  = document.getElementById('destAdmDelErr');
 
     if (!reason) {
-      errEl.textContent = '⚠️ Vui lòng nhập lý do xóa.';
+      errEl.textContent = '<?= __('dest_admin_reason_required') ?>';
       document.getElementById('destAdmDelReason').focus();
       return;
     }
     if (reason.length < 10) {
-      errEl.textContent = '⚠️ Lý do phải có ít nhất 10 ký tự.';
+      errEl.textContent = '<?= __('dest_admin_reason_min') ?>';
       return;
     }
 
     this.disabled = true;
-    this.textContent = '⏳ Đang xóa...';
+    this.textContent = '<?= __('dest_admin_deleting') ?>';
     errEl.textContent = '';
 
     const fd = new FormData();
@@ -862,14 +863,14 @@ document.addEventListener('DOMContentLoaded', function() {
         closeDAdmDel();
         loadReviews(true);
       } else {
-        errEl.textContent = '❌ ' + (data.error || 'Lỗi không xác định');
+        errEl.textContent = '❌ ' + (data.error || '<?= __('dest_admin_error') ?>');
         this.disabled = false;
-        this.textContent = '🗑️ Xác nhận xóa';
+        this.textContent = '<?= __('dest_admin_confirm_delete') ?>';
       }
     } catch(e) {
-      errEl.textContent = '❌ Lỗi kết nối mạng.';
+      errEl.textContent = '❌ <?= __('dest_network_error') ?>';
       this.disabled = false;
-      this.textContent = '🗑️ Xác nhận xóa';
+      this.textContent = '<?= __('dest_admin_confirm_delete') ?>';
     }
   });
 

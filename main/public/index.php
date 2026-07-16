@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Du lịch Đắk Lắk AI - Trang chủ';
+$pageTitle = __('page_title_home');
 $featured = array_slice(getAllDestinations(), 0, 6);
 $user = currentUser();
 
@@ -29,7 +29,9 @@ include __DIR__ . '/../includes/header.php';
   <?php if ($myItineraries): ?>
     <p class="section-sub"><?= __('my_saved_iti_sub') ?></p>
     <div class="grid">
-      <?php foreach ($myItineraries as $it): ?>
+      <?php foreach ($myItineraries as $it): 
+        $it = translateItineraryDynamic($it);
+      ?>
         <a href="<?= url('/public/itinerary_view.php?id=' . $it['id']) ?>" class="card" style="text-decoration:none;">
           <div class="card-body">
             <h3 style="color:var(--green-900);"><?= e($it['title']) ?></h3>
@@ -99,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 <div class="grid">
   <?php foreach ($featured as $d): ?>
-    <a href="<?= url('/public/destination.php') ?>?slug=<?= e($d['slug']) ?>" class="card">
+    <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card">
       <div class="card-img">
         <?php if (!empty($d['image_url'])): ?>
           <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" style="width:100%;height:100%;object-fit:cover;">
@@ -118,7 +120,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 </div>
 
 <div style="text-align: center; margin-top: 30px; margin-bottom: 20px;">
-    <a href="<?= url('/public/destinations.php') ?>" class="btn secondary" style="padding: 10px 25px; border-radius: 30px; font-weight: 600;"><?= __('view_all_dest') ?></a>
+    <a href="<?= url('/diem-den') ?>" class="btn secondary" style="padding: 10px 25px; border-radius: 30px; font-weight: 600;"><?= __('view_all_dest') ?></a>
 </div>
 
 

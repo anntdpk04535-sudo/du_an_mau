@@ -95,6 +95,8 @@
         pitch: scene.pitch,
         yaw: scene.yaw,
         hfov: scene.hfov,
+        minHfov: 50,
+        maxHfov: 120,
         autoLoad: true,
         hotSpots: hotSpots,
       };

@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Đánh giá dịch vụ - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_reviews');
 $user = currentUser();
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -278,8 +278,8 @@ include __DIR__ . '/../includes/header.php';
 </style>
 
 <div class="review-hero">
-  <h1>⭐ Đánh giá dịch vụ</h1>
-  <p>Chia sẻ trải nghiệm của bạn về website Du lịch Đắk Lắk AI</p>
+  <h1>⭐ <?= __('reviews_title') ?></h1>
+  <p><?= __('reviews_subtitle') ?></p>
 </div>
 
 <!-- Summary Bar -->
@@ -287,7 +287,7 @@ include __DIR__ . '/../includes/header.php';
   <div class="review-big-score">
     <div class="score-num" id="avgScore">—</div>
     <div class="star-display" id="avgStars">☆☆☆☆☆</div>
-    <div class="score-label">Đánh giá trung bình (<span id="totalCount">0</span> lượt)</div>
+    <div class="score-label"><?= __('reviews_avg') ?> (<span id="totalCount">0</span> <?= __('reviews_count_unit') ?>)</div>
   </div>
   <div class="review-dist" id="distChart">
     <?php foreach ([5,4,3,2,1] as $s): ?>
@@ -302,55 +302,55 @@ include __DIR__ . '/../includes/header.php';
 
 <!-- Tabs -->
 <div class="section-tabs">
-  <button class="section-tab active" onclick="switchTab('list')">📋 Danh sách đánh giá</button>
-  <button class="section-tab" onclick="switchTab('write')" id="writeTabBtn">✏️ Viết đánh giá</button>
+  <button class="section-tab active" onclick="switchTab('list')">📋 <?= __('reviews_list_tab') ?></button>
+  <button class="section-tab" onclick="switchTab('write')" id="writeTabBtn">✏️ <?= __('reviews_write_tab') ?></button>
 </div>
 
 <!-- Tab: Danh sách -->
 <div class="tab-content active" id="tab-list">
   <div class="reviews-list" id="reviewsList">
-    <div class="review-empty"><div class="review-empty-icon">⏳</div>Đang tải đánh giá...</div>
+    <div class="review-empty"><div class="review-empty-icon">⏳</div><?= __('reviews_loading') ?></div>
   </div>
-  <button class="load-more-btn" id="loadMoreBtn" style="display:none" onclick="loadMore()">Xem thêm đánh giá...</button>
+  <button class="load-more-btn" id="loadMoreBtn" style="display:none" onclick="loadMore()"><?= __('reviews_load_more') ?></button>
 </div>
 
 <!-- Tab: Viết đánh giá -->
 <div class="tab-content" id="tab-write">
   <?php if ($user): ?>
   <div class="review-form-box">
-    <h2>✍️ Chia sẻ trải nghiệm của bạn</h2>
-    <p class="sub">Bạn đang đánh giá <strong>dịch vụ website Đắk Lắk Travel AI</strong> (không phải điểm đến cụ thể)</p>
+    <h2>✍️ <?= __('reviews_write_title') ?></h2>
+    <p class="sub"><?= __('reviews_write_sub') ?></p>
     <form id="reviewForm">
       <div class="form-group">
-        <label>Số sao đánh giá <span style="color:red">*</span></label>
+        <label><?= __('reviews_rating_label') ?> <span style="color:red">*</span></label>
         <div class="star-rating-input">
           <?php for ($i = 5; $i >= 1; $i--): ?>
           <input type="radio" id="star<?= $i ?>" name="rating" value="<?= $i ?>" <?= $i === 5 ? 'checked' : '' ?>>
-          <label for="star<?= $i ?>" title="<?= $i ?> sao">★</label>
+          <label for="star<?= $i ?>" title="<?= $i ?> <?= __('reviews_stars') ?>">★</label>
           <?php endfor; ?>
         </div>
       </div>
       <div class="form-group">
-        <label for="reviewComment">Nhận xét của bạn</label>
+        <label for="reviewComment"><?= __('reviews_comment_label') ?></label>
         <textarea id="reviewComment" name="comment" rows="4"
-          placeholder="Chia sẻ trải nghiệm, góp ý về tính năng, AI chatbot, giao diện... (không bắt buộc)"
+          placeholder="<?= __('reviews_comment_ph') ?>"
           style="resize:vertical; font-family:inherit;"></textarea>
         <div style="text-align:right; font-size:12px; color:#aaa; margin-top:4px;">
-          <span id="charCount">0</span>/1000 ký tự
+          <span id="charCount">0</span>/1000 <?= __('reviews_chars') ?>
         </div>
       </div>
-      <button type="submit" class="btn" id="submitReviewBtn">🚀 Gửi đánh giá</button>
+      <button type="submit" class="btn" id="submitReviewBtn">🚀 <?= __('reviews_submit') ?></button>
       <div id="reviewMsg" style="margin-top:14px;font-size:14px;"></div>
     </form>
   </div>
   <?php else: ?>
   <div class="form-box" style="text-align:center; padding:48px 24px;">
     <div style="font-size:48px; margin-bottom:16px;">🔐</div>
-    <h3 style="margin-bottom:8px;">Bạn cần đăng nhập để đánh giá</h3>
-    <p style="color:#888; margin-bottom:24px;">Hãy đăng nhập để chia sẻ trải nghiệm của bạn về dịch vụ.</p>
+    <h3 style="margin-bottom:8px;"><?= __('reviews_login_req') ?></h3>
+    <p style="color:#888; margin-bottom:24px;"><?= __('reviews_login_sub') ?></p>
     <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
-      <a href="<?= url('/public/login.php') ?>" class="btn">Đăng nhập</a>
-      <a href="<?= url('/public/register.php') ?>" class="btn secondary">Đăng ký tài khoản</a>
+      <a href="<?= url('/public/login.php') ?>" class="btn"><?= __('login') ?></a>
+      <a href="<?= url('/public/register.php') ?>" class="btn secondary"><?= __('register') ?></a>
     </div>
   </div>
   <?php endif; ?>
@@ -359,32 +359,32 @@ include __DIR__ . '/../includes/header.php';
 <!-- Edit Review Modal -->
 <div class="review-modal-overlay" id="editModalOverlay">
   <div class="review-modal" id="editModalBox">
-    <h3>✏️ Chỉnh sửa đánh giá</h3>
-    <p class="sub">Bạn có thể thay đổi số sao và nội dung nhận xét.</p>
+    <h3>✏️ <?= __('reviews_edit_title') ?></h3>
+    <p class="sub"><?= __('reviews_edit_sub') ?></p>
     <form id="editReviewForm">
       <input type="hidden" id="editReviewId" name="id" value="">
       <div class="form-group">
-        <label>Số sao <span style="color:red">*</span></label>
+        <label><?= __('reviews_rating_label') ?> <span style="color:red">*</span></label>
         <div class="star-rating-input" id="editStarInput">
           <?php for ($i = 5; $i >= 1; $i--): ?>
           <input type="radio" id="estr<?= $i ?>" name="rating" value="<?= $i ?>">
-          <label for="estr<?= $i ?>" title="<?= $i ?> sao">★</label>
+          <label for="estr<?= $i ?>" title="<?= $i ?> <?= __('reviews_stars') ?>">★</label>
           <?php endfor; ?>
         </div>
       </div>
       <div class="form-group">
-        <label for="editComment">Nhận xét</label>
+        <label for="editComment"><?= __('reviews_comment_label') ?></label>
         <textarea id="editComment" name="comment" rows="4"
-          placeholder="Chia sẻ trải nghiệm của bạn..."
+          placeholder="<?= __('reviews_comment_ph_short') ?>"
           style="resize:vertical;font-family:inherit;"></textarea>
         <div style="text-align:right;font-size:12px;color:#aaa;margin-top:4px;">
-          <span id="editCharCount">0</span>/1000 ký tự
+          <span id="editCharCount">0</span>/1000 <?= __('reviews_chars') ?>
         </div>
       </div>
       <div id="editModalMsg" style="margin-bottom:10px;font-size:14px;"></div>
       <div class="modal-footer">
-        <button type="button" class="btn-cancel" id="editCancelBtn">Hủy</button>
-        <button type="submit" class="btn" id="editSubmitBtn">💾 Lưu thay đổi</button>
+        <button type="button" class="btn-cancel" id="editCancelBtn"><?= __('cancel') ?></button>
+        <button type="submit" class="btn" id="editSubmitBtn">💾 <?= __('reviews_save') ?></button>
       </div>
     </form>
   </div>
@@ -393,20 +393,20 @@ include __DIR__ . '/../includes/header.php';
 <!-- Admin Delete Reason Modal -->
 <div class="admin-del-modal-overlay" id="adminDelOverlay">
   <div class="admin-del-modal">
-    <h3>🛡️ Xóa đánh giá (Admin)</h3>
-    <p class="sub">Bạn đang xóa đánh giá của <strong id="adminDelTargetName"></strong>. Vui lòng nhập lý do xóa — lý do sẽ được lưu vào lịch sử.</p>
+    <h3>🛡️ <?= __('reviews_admin_del_title') ?></h3>
+    <p class="sub"><?= __('reviews_admin_del_sub_1') ?> <strong id="adminDelTargetName"></strong>. <?= __('reviews_admin_del_sub_2') ?></p>
     <div class="reason-presets">
-      <button type="button" class="reason-preset-btn" onclick="setDelReason('Nội dung vi phạm quy định cộng đồng')">🚫 Vi phạm quy định</button>
-      <button type="button" class="reason-preset-btn" onclick="setDelReason('Nội dung spam hoặc quảng cáo')">📢 Spam/Quảng cáo</button>
-      <button type="button" class="reason-preset-btn" onclick="setDelReason('Nội dung không phù hợp hoặc xúc phạm')">⚠️ Không phù hợp</button>
-      <button type="button" class="reason-preset-btn" onclick="setDelReason('Đánh giá sai sự thật, gây hiểu lầm')">❌ Sai sự thật</button>
-      <button type="button" class="reason-preset-btn" onclick="setDelReason('Trùng lặp, đánh giá nhiều lần')">🔁 Trùng lặp</button>
+      <button type="button" class="reason-preset-btn" onclick="setDelReason('<?= __('reviews_reason_1_full') ?>')">🚫 <?= __('reviews_reason_1') ?></button>
+      <button type="button" class="reason-preset-btn" onclick="setDelReason('<?= __('reviews_reason_2_full') ?>')">📢 <?= __('reviews_reason_2') ?></button>
+      <button type="button" class="reason-preset-btn" onclick="setDelReason('<?= __('reviews_reason_3_full') ?>')">⚠️ <?= __('reviews_reason_3') ?></button>
+      <button type="button" class="reason-preset-btn" onclick="setDelReason('<?= __('reviews_reason_4_full') ?>')">❌ <?= __('reviews_reason_4') ?></button>
+      <button type="button" class="reason-preset-btn" onclick="setDelReason('<?= __('reviews_reason_5_full') ?>')">🔁 <?= __('reviews_reason_5') ?></button>
     </div>
-    <textarea id="adminDelReason" placeholder="VD: Nội dung vi phạm quy định, spam, không phù hợp..."></textarea>
+    <textarea id="adminDelReason" placeholder="<?= __('reviews_admin_del_ph') ?>"></textarea>
     <div id="adminDelErr" style="color:#dc2626;font-size:13px;margin-top:8px;min-height:18px;"></div>
     <div class="admin-del-footer">
-      <button class="admin-del-cancel" id="adminDelCancelBtn">Hủy</button>
-      <button class="admin-del-confirm" id="adminDelConfirmBtn">🗑️ Xác nhận xóa</button>
+      <button class="admin-del-cancel" id="adminDelCancelBtn"><?= __('cancel') ?></button>
+      <button class="admin-del-confirm" id="adminDelConfirmBtn">🗑️ <?= __('reviews_confirm_del') ?></button>
     </div>
   </div>
 </div>
@@ -440,10 +440,10 @@ function avatarLetter(name) {
 function timeSince(dateStr) {
   const d = new Date(dateStr);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60)   return 'vừa xong';
-  if (diff < 3600) return Math.floor(diff/60) + ' phút trước';
-  if (diff < 86400) return Math.floor(diff/3600) + ' giờ trước';
-  return Math.floor(diff/86400) + ' ngày trước';
+  if (diff < 60)   return '<?= __('dest_just_now') ?>';
+  if (diff < 3600) return Math.floor(diff/60) + ' <?= __('dest_minutes_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+  if (diff < 86400) return Math.floor(diff/3600) + ' <?= __('dest_hours_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+  return Math.floor(diff/86400) + ' <?= __('dest_days_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
 }
 
 async function loadReviews(reset = false) {
@@ -465,7 +465,7 @@ async function loadReviews(reset = false) {
   document.getElementById('totalCount').textContent = data.total;
 
   if (data.reviews.length === 0 && offset === 0) {
-    list.innerHTML = `<div class="review-empty"><div class="review-empty-icon">💬</div>Chưa có đánh giá nào. Hãy là người đầu tiên!</div>`;
+    list.innerHTML = `<div class="review-empty"><div class="review-empty-icon">💬</div><?= __('dest_no_reviews_yet') ?></div>`;
     document.getElementById('loadMoreBtn').style.display = 'none';
     return;
   }
@@ -482,7 +482,7 @@ async function loadReviews(reset = false) {
       <div class="reviewer-info">
         <div class="reviewer-avatar">${avatarLetter(r.display_name)}</div>
         <div>
-          <div class="reviewer-name">${r.display_name}${r.is_mine ? ' <span style="background:#d8f3dc;color:#1b4332;font-size:10px;padding:1px 6px;border-radius:6px;font-weight:700;">Của bạn</span>' : ''}</div>
+          <div class="reviewer-name">${r.display_name}${r.is_mine ? ' <span style="background:#d8f3dc;color:#1b4332;font-size:10px;padding:1px 6px;border-radius:6px;font-weight:700;"><?= __('dest_yours') ?></span>' : ''}</div>
           <div class="reviewer-date">${timeSince(r.created_at)}</div>
         </div>
       </div>
@@ -496,7 +496,7 @@ async function loadReviews(reset = false) {
       commentP.textContent = '\u201c' + r.comment + '\u201d';
     } else {
       commentP.style.cssText = 'color:#bbb;font-style:italic;';
-      commentP.textContent = 'Không có nhận xét.';
+      commentP.textContent = '<?= __('dest_no_comment') ?>';
     }
     card.appendChild(commentP);
 
@@ -511,14 +511,14 @@ async function loadReviews(reset = false) {
       if (showOwnerActions) {
         const editBtn = document.createElement('button');
         editBtn.className = 'btn-edit-review';
-        editBtn.textContent = '✏️ Sửa';
+        editBtn.textContent = '✏️ <?= __('dest_edit') ?>';
         editBtn.addEventListener('click', function() {
           openEditModal(r.review_id, r.rating, r.comment || '');
         });
 
         const delBtn = document.createElement('button');
         delBtn.className = 'btn-del-review';
-        delBtn.textContent = '🗑️ Xóa';
+        delBtn.textContent = '🗑️ <?= __('dest_delete') ?>';
         delBtn.addEventListener('click', function() {
           deleteReview(r.review_id, this);
         });
@@ -530,7 +530,7 @@ async function loadReviews(reset = false) {
       if (showAdminDel) {
         const adminDelBtn = document.createElement('button');
         adminDelBtn.className = 'btn-admin-del-review';
-        adminDelBtn.innerHTML = '🛡️ Xóa <span class="admin-badge-sm">Admin</span>';
+        adminDelBtn.innerHTML = '🛡️ <?= __('dest_delete') ?> <span class="admin-badge-sm">Admin</span>';
         adminDelBtn.addEventListener('click', function() {
           openAdminDelModal(r.review_id, r.display_name);
         });
@@ -577,7 +577,7 @@ if (form) {
     const btn = document.getElementById('submitReviewBtn');
     const msg = document.getElementById('reviewMsg');
     btn.disabled = true;
-    btn.textContent = '⏳ Đang gửi...';
+    btn.textContent = '⏳ <?= __('dest_sending') ?>';
 
     const fd = new FormData(form);
     const res  = await fetch(`${API_BASE}/review_submit.php`, { method: 'POST', body: fd });
@@ -594,7 +594,7 @@ if (form) {
       setTimeout(() => {
         msg.innerHTML = '';
         btn.disabled = false;
-        btn.textContent = '🚀 Gửi đánh giá';
+        btn.textContent = '🚀 <?= __('reviews_submit') ?>';
         loadReviews(true);
         loadDistribution();
         // Switch to list tab
@@ -603,7 +603,7 @@ if (form) {
     } else {
       msg.innerHTML = `<div style="background:#fee2e2;color:#991b1b;padding:12px 16px;border-radius:10px;">❌ ${data.error}</div>`;
       btn.disabled = false;
-      btn.textContent = '🚀 Gửi đánh giá';
+      btn.textContent = '🚀 <?= __('reviews_submit') ?>';
     }
   });
 }
@@ -617,7 +617,7 @@ function openEditModal(reviewId, currentRating, currentComment) {
   if (radio) radio.checked = true;
   document.getElementById('editModalMsg').innerHTML = '';
   document.getElementById('editSubmitBtn').disabled = false;
-  document.getElementById('editSubmitBtn').textContent = '💾 Lưu thay đổi';
+  document.getElementById('editSubmitBtn').textContent = '💾 <?= __('reviews_save') ?>';
   document.getElementById('editModalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -646,7 +646,7 @@ document.getElementById('editReviewForm').addEventListener('submit', async funct
   const btn = document.getElementById('editSubmitBtn');
   const msg = document.getElementById('editModalMsg');
   btn.disabled = true;
-  btn.textContent = '⏳ Đang lưu...';
+  btn.textContent = '⏳ <?= __('dest_saving') ?>';
 
   const fd = new FormData(this);
   try {
@@ -660,14 +660,14 @@ document.getElementById('editReviewForm').addEventListener('submit', async funct
         loadDistribution();
       }, 800);
     } else {
-      msg.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;">❌ ' + (data.error || 'Lỗi không xác định') + '</div>';
+      msg.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;">❌ ' + (data.error || '<?= __('dest_error_occurred') ?>') + '</div>';
       btn.disabled = false;
-      btn.textContent = '💾 Lưu thay đổi';
+      btn.textContent = '💾 <?= __('reviews_save') ?>';
     }
   } catch(err) {
-    msg.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;">❌ Lỗi kết nối mạng.</div>';
+    msg.innerHTML = '<div style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:8px;">❌ <?= __('dest_network_error') ?></div>';
     btn.disabled = false;
-    btn.textContent = '💾 Lưu thay đổi';
+    btn.textContent = '💾 <?= __('reviews_save') ?>';
   }
 });
 
@@ -677,7 +677,7 @@ async function deleteReview(reviewId, buttonEl) {
     console.error('deleteReview: reviewId is invalid', reviewId);
     return;
   }
-  if (!confirm('Bạn có chắc muốn xóa đánh giá này không?')) return;
+  if (!confirm('<?= __('dest_confirm_delete') ?>')) return;
 
   if (buttonEl) {
     buttonEl.disabled = true;
@@ -693,18 +693,18 @@ async function deleteReview(reviewId, buttonEl) {
       loadReviews(true);
       loadDistribution();
     } else {
-      if (buttonEl) { buttonEl.disabled = false; buttonEl.textContent = '🗑️ Xóa'; }
+      if (buttonEl) { buttonEl.disabled = false; buttonEl.textContent = '🗑️ <?= __('dest_delete') ?>'; }
       // Hiện lỗi bên cạnh nút thay vì alert
       const errSpan = document.createElement('span');
       errSpan.style.cssText = 'color:#dc2626;font-size:12px;margin-left:8px;';
-      errSpan.textContent = data.error || 'Không thể xóa.';
+      errSpan.textContent = data.error || '<?= __('dest_cannot_delete') ?>';
       if (buttonEl && buttonEl.parentNode) {
         buttonEl.parentNode.appendChild(errSpan);
         setTimeout(() => errSpan.remove(), 4000);
       }
     }
   } catch(err) {
-    if (buttonEl) { buttonEl.disabled = false; buttonEl.textContent = '🗑️ Xóa'; }
+    if (buttonEl) { buttonEl.disabled = false; buttonEl.textContent = '🗑️ <?= __('dest_delete') ?>'; }
     console.error('deleteReview error:', err);
   }
 }
@@ -716,7 +716,7 @@ function openAdminDelModal(reviewId, userName) {
   document.getElementById('adminDelReason').value = '';
   document.getElementById('adminDelErr').textContent = '';
   document.getElementById('adminDelConfirmBtn').disabled = false;
-  document.getElementById('adminDelConfirmBtn').textContent = '🗑️ Xác nhận xóa';
+  document.getElementById('adminDelConfirmBtn').textContent = '🗑️ <?= __('reviews_confirm_del') ?>';
   document.getElementById('adminDelOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   setTimeout(() => document.getElementById('adminDelReason').focus(), 100);
@@ -744,17 +744,17 @@ document.getElementById('adminDelConfirmBtn').addEventListener('click', async fu
   const errEl  = document.getElementById('adminDelErr');
 
   if (!reason) {
-    errEl.textContent = '⚠️ Vui lòng nhập lý do xóa.';
+    errEl.textContent = '⚠️ <?= __('reviews_err_no_reason') ?>';
     document.getElementById('adminDelReason').focus();
     return;
   }
   if (reason.length < 10) {
-    errEl.textContent = '⚠️ Lý do phải có ít nhất 10 ký tự.';
+    errEl.textContent = '⚠️ <?= __('reviews_err_reason_len') ?>';
     return;
   }
 
   this.disabled = true;
-  this.textContent = '⏳ Đang xóa...';
+  this.textContent = '⏳ <?= __('dest_deleting') ?>';
   errEl.textContent = '';
 
   const fd = new FormData();
@@ -769,14 +769,14 @@ document.getElementById('adminDelConfirmBtn').addEventListener('click', async fu
       loadReviews(true);
       loadDistribution();
     } else {
-      errEl.textContent = '❌ ' + (data.error || 'Lỗi không xác định');
+      errEl.textContent = '❌ ' + (data.error || '<?= __('dest_error_occurred') ?>');
       this.disabled = false;
-      this.textContent = '🗑️ Xác nhận xóa';
+      this.textContent = '🗑️ <?= __('reviews_confirm_del') ?>';
     }
   } catch(e) {
-    errEl.textContent = '❌ Lỗi kết nối mạng.';
+    errEl.textContent = '❌ <?= __('dest_network_error') ?>';
     this.disabled = false;
-    this.textContent = '🗑️ Xác nhận xóa';
+    this.textContent = '🗑️ <?= __('reviews_confirm_del') ?>';
   }
 });
 

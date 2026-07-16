@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
-$pageTitle = 'Quản lý điểm đến - Admin';
+$pageTitle = __('admin_destinations_title');
 $db = getDB();
 
 // Xử lý xoá
@@ -85,7 +85,7 @@ include __DIR__ . '/../includes/header.php';
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<h1 class="section-title">Quản lý điểm đến (Admin)</h1>
+<h1 class="section-title"><?= __('admin_destinations_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 <?php if (isset($_GET['logout'])) {
   unset($_SESSION['user']);
@@ -94,21 +94,21 @@ include __DIR__ . '/../includes/header.php';
 } ?>
 
 <div class="form-box">
-  <h3><?= $editing ? 'Sửa điểm đến' : 'Thêm điểm đến mới' ?></h3>
+  <h3><?= $editing ? __('admin_destinations_edit') : __('admin_destinations_add') ?></h3>
   <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="id" value="<?= e((string) ($editing['id'] ?? '')) ?>">
     <div class="form-group">
-      <label>Tên điểm đến</label>
+      <label><?= __('admin_destinations_name') ?></label>
       <input type="text" name="name" required value="<?= e($editing['name'] ?? '') ?>">
     </div>
     <div class="form-group">
-      <label>Slug (để trống để tự tạo)</label>
+      <label><?= __('admin_destinations_slug') ?></label>
       <input type="text" name="slug" value="<?= e($editing['slug'] ?? '') ?>">
     </div>
     <div class="form-group">
-      <label>Danh mục</label>
+      <label><?= __('admin_destinations_category') ?></label>
       <select name="category_id">
-        <option value="">-- Chọn danh mục --</option>
+        <option value=""><?= __('admin_destinations_cat_select') ?></option>
         <?php foreach ($categories as $c): ?>
           <option value="<?= e((string) $c['id']) ?>" <?= ($editing['category_id'] ?? null) == $c['id'] ? 'selected' : '' ?>>
             <?= e($c['name']) ?>
@@ -117,20 +117,20 @@ include __DIR__ . '/../includes/header.php';
       </select>
     </div>
     <div class="form-group">
-      <label>Mô tả ngắn</label>
+      <label><?= __('admin_destinations_short_desc') ?></label>
       <input type="text" name="short_desc" value="<?= e($editing['short_desc'] ?? '') ?>">
     </div>
     <div class="form-group">
-      <label>Mô tả chi tiết</label>
+      <label><?= __('admin_destinations_desc') ?></label>
       <textarea name="description" rows="4"><?= e($editing['description'] ?? '') ?></textarea>
     </div>
     <div class="form-group">
-      <label>Thời gian tham quan (giờ)</label>
+      <label><?= __('admin_destinations_time') ?></label>
       <input type="number" step="0.5" name="avg_visit_hours"
         value="<?= e((string) ($editing['avg_visit_hours'] ?? 2)) ?>">
     </div>
     <div class="form-group">
-      <label>Mức chi phí</label>
+      <label><?= __('admin_destinations_price') ?></label>
       <select name="price_level">
         <?php foreach (['free', 'low', 'medium', 'high'] as $pl): ?>
           <option value="<?= $pl ?>" <?= ($editing['price_level'] ?? '') === $pl ? 'selected' : '' ?>><?= $pl ?></option>
@@ -138,14 +138,14 @@ include __DIR__ . '/../includes/header.php';
       </select>
     </div>
     <div class="form-group">
-      <label>Tags (phân cách bởi dấu phẩy)</label>
+      <label><?= __('admin_destinations_tags') ?></label>
       <input type="text" name="tags" value="<?= e($editing['tags'] ?? '') ?>">
     </div>
     <div class="form-group">
-      <label>URL hình ảnh (hoặc Upload)</label>
+      <label><?= __('admin_destinations_image') ?></label>
       <div style="display:flex; gap:10px; margin-bottom:10px;">
           <input type="file" name="image_upload" accept="image/*" style="flex:1;">
-          <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="Hoặc dán URL: https://..." style="flex:1;">
+          <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="<?= __('admin_destinations_image_ph') ?>" style="flex:1;">
       </div>
       <?php if (!empty($editing['image_url'])): ?>
         <img src="<?= e($editing['image_url']) ?>" style="margin-top:8px;max-width:200px;border-radius:8px;">
@@ -154,19 +154,19 @@ include __DIR__ . '/../includes/header.php';
 
     <div style="display: flex; gap: 20px; flex-wrap: wrap;">
       <div class="form-group" style="flex: 1; min-width: 200px;">
-        <label>Vĩ độ (Latitude)</label>
+        <label><?= __('admin_destinations_lat') ?></label>
         <input type="number" step="any" name="latitude" id="lat-input" value="<?= e((string) ($editing['latitude'] ?? '')) ?>" placeholder="Vd: 12.6667">
       </div>
       <div class="form-group" style="flex: 1; min-width: 200px;">
-        <label>Kinh độ (Longitude)</label>
+        <label><?= __('admin_destinations_lng') ?></label>
         <input type="number" step="any" name="longitude" id="lng-input" value="<?= e((string) ($editing['longitude'] ?? '')) ?>" placeholder="Vd: 108.0500">
       </div>
     </div>
 
     <div class="form-group">
-      <label>Chọn vị trí trên bản đồ</label>
+      <label><?= __('admin_destinations_map') ?></label>
       <div id="admin-map" style="height: 300px; border-radius: 8px; border: 1px solid #ddd; z-index: 1;"></div>
-      <p style="font-size: 12px; color: #666; margin-top: 4px;">Click chọn vị trí trên bản đồ hoặc kéo marker để tự động cập nhật tọa độ.</p>
+      <p style="font-size: 12px; color: #666; margin-top: 4px;"><?= __('admin_destinations_map_hint') ?></p>
     </div>
 
     <script>
@@ -226,17 +226,17 @@ include __DIR__ . '/../includes/header.php';
     });
     </script>
 
-    <button type="submit" class="btn"><?= $editing ? 'Lưu thay đổi' : 'Thêm điểm đến' ?></button>
+    <button type="submit" class="btn"><?= $editing ? __('admin_destinations_save') : __('admin_destinations_submit') ?></button>
   </form>
 </div>
 
-<h3 class="section-title">Danh sách điểm đến</h3>
+<h3 class="section-title"><?= __('admin_destinations_list') ?></h3>
 <table style="width:100%;background:white;border-radius:14px;overflow:hidden;border-collapse:collapse;">
   <tr style="background:#f1f1f1;text-align:left;">
-    <th style="padding:10px;">Tên</th>
-    <th style="padding:10px;">Danh mục</th>
-    <th style="padding:10px;">Rating</th>
-    <th style="padding:10px;">Hành động</th>
+    <th style="padding:10px;"><?= __('admin_destinations_th_name') ?></th>
+    <th style="padding:10px;"><?= __('admin_destinations_category') ?></th>
+    <th style="padding:10px;"><?= __('admin_destinations_th_rating') ?></th>
+    <th style="padding:10px;"><?= __('admin_destinations_th_action') ?></th>
   </tr>
   <?php foreach ($destinations as $d): ?>
     <tr style="border-top:1px solid #eee;">
@@ -244,9 +244,9 @@ include __DIR__ . '/../includes/header.php';
       <td style="padding:10px;"><?= e((string) ($d['category_name'] ?? '-')) ?></td>
       <td style="padding:10px;"><?= e((string) $d['rating']) ?></td>
       <td style="padding:10px;">
-        <a href="<?= url('/admin/destinations.php') ?>?edit=<?= e((string) $d['id']) ?>">Sửa</a> |
+        <a href="<?= url('/admin/destinations.php') ?>?edit=<?= e((string) $d['id']) ?>"><?= __('admin_destinations_edit_btn') ?></a> |
         <a href="<?= url('/admin/destinations.php') ?>?delete=<?= e((string) $d['id']) ?>"
-          onclick="return confirm('Xoá điểm đến này?')">Xoá</a>
+          onclick="return confirm('<?= __('admin_destinations_delete_confirm') ?>')"><?= __('admin_destinations_delete_btn') ?></a>
       </td>
     </tr>
   <?php endforeach; ?>

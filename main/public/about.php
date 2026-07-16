@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Giới thiệu - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_about');
 include __DIR__ . '/../includes/header.php';
 ?>
 

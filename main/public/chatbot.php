@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Chatbot AI - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_chatbot');
 
 if (empty($_SESSION['chat_session_id'])) {
   $_SESSION['chat_session_id'] = bin2hex(random_bytes(16));
@@ -14,7 +14,7 @@ include __DIR__ . '/../includes/header.php';
   <div class="chat-hero-text">
     <h1><?= __('chatbot_title') ?></h1>
     <p><?= __('chatbot_sub') ?></p>
-    <a href="#chat-box" class="btn">💬 Bắt đầu trò chuyện</a>
+    <a href="#chat-box" class="btn"><?= __('chat_start_btn') ?></a>
   </div>
   <div class="chat-hero-art">
     <svg viewBox="0 0 220 220" width="220" height="220">
@@ -35,14 +35,12 @@ include __DIR__ . '/../includes/header.php';
 </section>
 
 <div id="chat-box">
-  <p class="section-sub" style="margin-top:6px;">Hỏi bất cứ điều gì về điểm đến, văn hoá, ẩm thực, thời điểm nên đi du
-    lịch Đắk Lắk...</p>
+  <p class="section-sub" style="margin-top:6px;"><?= __('chat_desc') ?></p>
 
   <div class="chat-window" id="chat-window">
     <div class="msg-row bot-row">
       <div class="msg-avatar">🤖</div>
-      <div class="msg bot">Xin chào! Mình là trợ lý AI du lịch Đắk Lắk 🌿. Bạn muốn hỏi gì về Hồ Lắk, Buôn Đôn, cà phê
-        Buôn Ma Thuột hay lịch trình du lịch?</div>
+      <div class="msg bot"><?= __('chat_greeting') ?></div>
     </div>
   </div>
 
@@ -174,7 +172,7 @@ include __DIR__ . '/../includes/header.php';
     if (!text.trim()) return;
     addMessage(text, 'user');
     chatInput.value = '';
-    const loadingDiv = addMessage('Đang trả lời...', 'bot');
+    const loadingDiv = addMessage('<?= __('chat_answering') ?>', 'bot');
     loadingDiv.classList.add('loading-dots');
 
     try {
@@ -185,7 +183,7 @@ include __DIR__ . '/../includes/header.php';
       });
       const data = await res.json();
       loadingDiv.classList.remove('loading-dots');
-      loadingDiv.textContent = data.reply || 'Xin lỗi, có lỗi xảy ra.';
+      loadingDiv.textContent = data.reply || '<?= __('chat_error') ?>';
 
       if (data.images && data.images.length > 0) {
         const imgRow = document.createElement('div');
@@ -204,7 +202,7 @@ include __DIR__ . '/../includes/header.php';
       }
     } catch (err) {
       loadingDiv.classList.remove('loading-dots');
-      loadingDiv.textContent = 'Lỗi kết nối tới server.';
+      loadingDiv.textContent = '<?= __('chat_connection_error') ?>';
     }
   }
 

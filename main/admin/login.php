@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
-$pageTitle = 'Đăng nhập Admin';
+$pageTitle = __('admin_login_title');
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -14,38 +14,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($u && password_verify($password, $u['password_hash'])) {
         if ($u['status'] === 'banned') {
-            $error = 'Tài khoản của bạn đã bị khóa.';
+            $error = __('admin_account_banned');
         } else {
             $_SESSION['user'] = ['id' => $u['id'], 'full_name' => $u['full_name'], 'role' => $u['role']];
             header('Location: ' . url('/admin/index.php'));
             exit;
         }
     } else {
-        $error = 'Email hoặc mật khẩu không đúng.';
+        $error = __('admin_wrong_credentials');
     }
 }
 
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<h1 class="section-title">Đăng nhập Quản trị</h1>
+<h1 class="section-title"><?= __('admin_login_heading') ?></h1>
 
 <div class="form-box" style="max-width:400px;">
   <?php if ($error): ?><p style="color:red;"><?= e($error) ?></p><?php endif; ?>
   <form method="post">
     <div class="form-group">
-      <label>Email</label>
+      <label><?= __('email_label') ?></label>
       <input type="email" name="email" required>
     </div>
     <div class="form-group">
-      <label>Mật khẩu</label>
+      <label><?= __('password_label') ?></label>
       <input type="password" name="password" required>
     </div>
-    <button type="submit" class="btn">Đăng nhập</button>
+    <button type="submit" class="btn"><?= __('login_submit') ?></button>
   </form>
   <p style="margin-top:14px;font-size:13px;color:#777;">
-    Tạo tài khoản admin bằng cách insert vào bảng <code>users</code> với
-    <code>role='admin'</code> và <code>password_hash</code> tạo bằng <code>password_hash()</code> của PHP.
+    <?= __('admin_login_hint') ?>
   </p>
 </div>
 

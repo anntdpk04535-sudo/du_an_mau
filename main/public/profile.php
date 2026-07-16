@@ -16,7 +16,7 @@ if (!$user) {
     exit;
 }
 
-$pageTitle = 'Trang cá nhân - Đắk Lắk Travel AI';
+$pageTitle = __('page_title_profile');
 $message = '';
 $error = '';
 
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $avatar = $user['avatar'] ?? null;
     
     if (empty($fullName)) {
-        $error = 'Vui lòng nhập họ tên.';
+        $error = __('profile_name_required');
     } else {
         try {
             // Handle image upload
@@ -58,9 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user']['avatar'] = $avatar;
             $user['full_name'] = $fullName;
             $user['avatar'] = $avatar;
-            $message = 'Cập nhật thông tin thành công!';
+            $message = __('profile_update_success');
         } catch (Exception $e) {
-            $error = 'Lỗi hệ thống: ' . $e->getMessage();
+            $error = __('profile_system_error') . ': ' . $e->getMessage();
         }
     }
 }
@@ -218,7 +218,7 @@ include __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="form-group">
                     <label><?= __('new_password_label') ?></label>
-                    <input type="password" name="new_password" placeholder="Mật khẩu mới...">
+                    <input type="password" name="new_password" placeholder="<?= __('profile_new_pass_placeholder') ?>">
                 </div>
                 <button type="submit" class="btn" style="width:100%;">💾 <?= __('update_profile') ?></button>
             </form>
@@ -233,18 +233,20 @@ include __DIR__ . '/../includes/header.php';
         <?php if (empty($itineraries)): ?>
             <div class="empty-state">
                 <div style="font-size: 40px; margin-bottom: 16px;">🧭</div>
-                <h3>Bạn chưa tạo lịch trình nào</h3>
-                <p>Hãy để AI giúp bạn lên kế hoạch cho chuyến đi Đắk Lắk sắp tới nhé!</p>
-                <a href="<?= url('/public/itinerary.php') ?>" class="btn" style="margin-top: 10px; display: inline-block;">Tạo lịch trình ngay</a>
+                <h3><?= __('profile_no_iti_title') ?></h3>
+                <p><?= __('profile_no_iti_desc') ?></p>
+                <a href="<?= url('/public/itinerary.php') ?>" class="btn" style="margin-top: 10px; display: inline-block;"><?= __('profile_create_now') ?></a>
             </div>
         <?php else: ?>
             <div class="itinerary-grid">
-                <?php foreach ($itineraries as $it): ?>
+                <?php foreach ($itineraries as $it): 
+                    $it = translateItineraryDynamic($it);
+                ?>
                     <a href="<?= url('/public/itinerary_view.php?id=' . $it['id']) ?>" class="itinerary-card" style="text-decoration: none;">
                         <h3><?= e($it['title']) ?></h3>
-                        <p>Sở thích: <?= e($it['preferences'] ?: 'Không có') ?></p>
+                        <p><?= __('profile_preferences') ?>: <?= e($it['preferences'] ?: __('profile_no_pref')) ?></p>
                         <div class="itinerary-meta">
-                            <span>⏱️ <?= $it['days'] ?> ngày</span>
+                            <span>⏱️ <?= $it['days'] ?> <?= __('days') ?></span>
                             <span>📅 <?= date('d/m/Y', strtotime($it['created_at'])) ?></span>
                         </div>
                     </a>
@@ -268,9 +270,9 @@ include __DIR__ . '/../includes/header.php';
         <?php if (empty($wishlists)): ?>
             <div class="empty-state">
                 <div style="font-size: 40px; margin-bottom: 16px;">🤍</div>
-                <h3>Chưa có điểm đến nào</h3>
-                <p>Khám phá các điểm đến và bấm lưu để xem lại sau nhé!</p>
-                <a href="<?= url('/public/destinations.php') ?>" class="btn" style="margin-top: 10px; display: inline-block;">Khám phá ngay</a>
+                <h3><?= __('profile_no_saved_title') ?></h3>
+                <p><?= __('profile_no_saved_desc') ?></p>
+                <a href="<?= url('/public/destinations.php') ?>" class="btn" style="margin-top: 10px; display: inline-block;"><?= __('profile_explore_now') ?></a>
             </div>
         <?php else: ?>
             <div class="itinerary-grid">

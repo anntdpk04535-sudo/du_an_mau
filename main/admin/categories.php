@@ -14,21 +14,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'add') {
             $name = trim($_POST['name'] ?? '');
             $slug = slugify($name);
-            if (!$name) throw new Exception('Tên danh mục không được để trống.');
+            if (!$name) throw new Exception(__('admin_categories_err_empty'));
 
             $stmt = $db->prepare("INSERT INTO categories (name, slug) VALUES (?, ?)");
             $stmt->execute([$name, $slug]);
-            $message = 'Đã thêm danh mục mới.';
+            $message = __('admin_categories_msg_added');
 
         } elseif ($action === 'edit') {
             $id = (int)$_POST['id'];
             $name = trim($_POST['name'] ?? '');
             $slug = slugify($name);
-            if (!$name) throw new Exception('Tên danh mục không được để trống.');
+            if (!$name) throw new Exception(__('admin_categories_err_empty'));
 
             $stmt = $db->prepare("UPDATE categories SET name = ?, slug = ? WHERE id = ?");
             $stmt->execute([$name, $slug, $id]);
-            $message = 'Đã cập nhật danh mục.';
+            $message = __('admin_categories_msg_updated');
 
         } elseif ($action === 'delete') {
             $id = (int)$_POST['id'];
@@ -36,10 +36,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->prepare("UPDATE destinations SET category_id = NULL WHERE category_id = ?")->execute([$id]);
             $stmt = $db->prepare("DELETE FROM categories WHERE id = ?");
             $stmt->execute([$id]);
-            $message = 'Đã xóa danh mục. Các điểm đến thuộc danh mục này đã được gỡ liên kết.';
+            $message = __('admin_categories_msg_deleted');
         }
     } catch (Exception $e) {
-        $error = 'Lỗi: ' . $e->getMessage();
+        $error = __('admin_categories_err_prefix') . $e->getMessage();
     }
 }
 
@@ -54,11 +54,11 @@ $totalPages = ceil($totalCategories / $limit);
 $stmt = $db->query("SELECT * FROM categories ORDER BY id ASC LIMIT $limit OFFSET $offset");
 $categories = $stmt->fetchAll();
 
-$pageTitle = 'Quản lý Danh mục - Admin';
+$pageTitle = __('admin_categories_title');
 include __DIR__ . '/../includes/header.php';
 ?>
 
-<h1 class="section-title">🏷️ Quản lý Danh mục (Admin)</h1>
+<h1 class="section-title">🏷️ <?= __('admin_categories_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 
 <style>
@@ -84,8 +84,8 @@ tr:hover { background:#f1f5f9; }
 </style>
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <p style="margin:0; color:#666;">Quản lý các danh mục phân loại cho Điểm đến.</p>
-    <button class="btn" onclick="openAddModal()">+ Thêm Danh mục</button>
+    <p style="margin:0; color:#666;"><?= __('admin_categories_desc') ?></p>
+    <button class="btn" onclick="openAddModal()"><?= __('admin_categories_add_btn') ?></button>
 </div>
 
 <?php if ($message): ?>
@@ -100,9 +100,9 @@ tr:hover { background:#f1f5f9; }
         <thead>
             <tr>
                 <th style="width:60px;">ID</th>
-                <th>Tên Danh mục</th>
-                <th>Slug</th>
-                <th style="text-align:right;">Thao tác</th>
+                <th><?= __('admin_categories_th_name') ?></th>
+                <th><?= __('admin_categories_th_slug') ?></th>
+                <th style="text-align:right;"><?= __('admin_categories_th_action') ?></th>
             </tr>
         </thead>
         <tbody>
@@ -112,17 +112,17 @@ tr:hover { background:#f1f5f9; }
                 <td><span style="font-weight:600; color:var(--green-900);"><?= e($c['name']) ?></span></td>
                 <td><code style="color:#64748b; background:#f1f5f9; padding:2px 6px; border-radius:4px;"><?= e($c['slug']) ?></code></td>
                 <td style="text-align:right;">
-                    <button class="btn-sm" onclick="openEditModal(<?= $c['id'] ?>, '<?= e($c['name'], true) ?>')">✏️ Sửa</button>
-                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('Bạn có chắc muốn xóa danh mục này? Các điểm đến thuộc danh mục này sẽ trở thành chưa phân loại.');">
+                    <button class="btn-sm" onclick="openEditModal(<?= $c['id'] ?>, '<?= e($c['name'], true) ?>')">✏️ <?= __('admin_categories_edit_btn') ?></button>
+                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('<?= __('admin_categories_delete_confirm') ?>');">
                         <input type="hidden" name="action" value="delete">
                         <input type="hidden" name="id" value="<?= $c['id'] ?>">
-                        <button type="submit" class="btn-sm delete">🗑️ Xóa</button>
+                        <button type="submit" class="btn-sm delete">🗑️ <?= __('admin_categories_delete_btn') ?></button>
                     </form>
                 </td>
             </tr>
             <?php endforeach; ?>
             <?php if (empty($categories)): ?>
-            <tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">Chưa có danh mục nào.</td></tr>
+            <tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;"><?= __('admin_categories_no_data') ?></td></tr>
             <?php endif; ?>
         </tbody>
     </table>
@@ -141,17 +141,17 @@ tr:hover { background:#f1f5f9; }
 <!-- Modal Thêm/Sửa -->
 <div class="modal" id="catModal">
     <div class="modal-content">
-        <h3 id="modalTitle">Thêm Danh mục</h3>
+        <h3 id="modalTitle"><?= __('admin_categories_add_modal_title') ?></h3>
         <form method="POST">
             <input type="hidden" name="action" id="formAction" value="add">
             <input type="hidden" name="id" id="catId" value="">
             <div class="form-group">
-                <label>Tên Danh mục</label>
-                <input type="text" name="name" id="catName" required placeholder="VD: Thác nước, Khu sinh thái...">
+                <label><?= __('admin_categories_th_name') ?></label>
+                <input type="text" name="name" id="catName" required placeholder="<?= __('admin_categories_ph_name') ?>">
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn-sm" onclick="closeModal()" style="padding:10px 16px;">Hủy</button>
-                <button type="submit" class="btn" style="padding:10px 16px;">💾 Lưu lại</button>
+                <button type="button" class="btn-sm" onclick="closeModal()" style="padding:10px 16px;"><?= __('admin_categories_cancel_btn') ?></button>
+                <button type="submit" class="btn" style="padding:10px 16px;">💾 <?= __('admin_categories_save_btn') ?></button>
             </div>
         </form>
     </div>
@@ -159,7 +159,7 @@ tr:hover { background:#f1f5f9; }
 
 <script>
 function openAddModal() {
-    document.getElementById('modalTitle').textContent = 'Thêm Danh mục mới';
+    document.getElementById('modalTitle').textContent = '<?= __('admin_categories_add_modal_new') ?>';
     document.getElementById('formAction').value = 'add';
     document.getElementById('catId').value = '';
     document.getElementById('catName').value = '';
@@ -168,7 +168,7 @@ function openAddModal() {
 }
 
 function openEditModal(id, name) {
-    document.getElementById('modalTitle').textContent = 'Chỉnh sửa Danh mục';
+    document.getElementById('modalTitle').textContent = '<?= __('admin_categories_edit_modal_title') ?>';
     document.getElementById('formAction').value = 'edit';
     document.getElementById('catId').value = id;
     document.getElementById('catName').value = name;

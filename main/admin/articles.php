@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
 requireAdmin();
-$pageTitle = 'Quản lý Cẩm nang - Admin';
+$pageTitle = __('admin_articles_title');
 $db = getDB();
 
 // Xử lý xoá
@@ -81,69 +81,69 @@ include __DIR__ . '/../includes/header.php';
   });
 </script>
 
-<h1 class="section-title">Quản lý Cẩm nang Du lịch</h1>
+<h1 class="section-title"><?= __('admin_articles_heading') ?></h1>
 <?php include __DIR__ . '/nav.php'; ?>
 
 <div class="form-box" style="max-width: 100%;">
-    <h3><?= $editing ? 'Sửa bài viết' : 'Thêm bài viết mới' ?></h3>
+    <h3><?= $editing ? __('admin_articles_edit') : __('admin_articles_add') ?></h3>
     <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="id" value="<?= $editing['id'] ?? '' ?>">
         
         <div class="form-group">
-            <label>Tiêu đề bài viết</label>
+            <label><?= __('admin_articles_form_title') ?></label>
             <input type="text" name="title" required value="<?= e($editing['title'] ?? '') ?>">
         </div>
         
         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
             <div class="form-group" style="flex: 1; min-width: 200px;">
-                <label>Slug (URL thân thiện - để trống tự tạo)</label>
+                <label><?= __('admin_articles_slug') ?></label>
                 <input type="text" name="slug" value="<?= e($editing['slug'] ?? '') ?>">
             </div>
             <div class="form-group" style="flex: 1; min-width: 200px;">
-                <label>Trạng thái</label>
+                <label><?= __('admin_articles_status') ?></label>
                 <select name="status">
-                    <option value="published" <?= ($editing['status'] ?? '') === 'published' ? 'selected' : '' ?>>Đã xuất bản (Published)</option>
-                    <option value="draft" <?= ($editing['status'] ?? '') === 'draft' ? 'selected' : '' ?>>Bản nháp (Draft)</option>
+                    <option value="published" <?= ($editing['status'] ?? '') === 'published' ? 'selected' : '' ?>><?= __('admin_articles_status_pub') ?></option>
+                    <option value="draft" <?= ($editing['status'] ?? '') === 'draft' ? 'selected' : '' ?>><?= __('admin_articles_status_draft') ?></option>
                 </select>
             </div>
         </div>
 
         <div class="form-group">
-            <label>Mô tả ngắn (Summary)</label>
+            <label><?= __('admin_articles_summary') ?></label>
             <textarea name="summary" rows="3"><?= e($editing['summary'] ?? '') ?></textarea>
         </div>
         
         <div class="form-group">
-            <label>Nội dung chi tiết (HTML)</label>
+            <label><?= __('admin_articles_content') ?></label>
             <textarea id="content-editor" name="content"><?= $editing['content'] ?? '' ?></textarea>
         </div>
 
         <div class="form-group">
-            <label>URL Hình ảnh (hoặc Upload)</label>
+            <label><?= __('admin_articles_image') ?></label>
             <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <input type="file" name="image_upload" accept="image/*" style="flex:1;">
-                <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="Hoặc dán URL: https://..." style="flex:1;">
+                <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="<?= __('admin_articles_image_ph') ?>" style="flex:1;">
             </div>
             <?php if (!empty($editing['image_url'])): ?>
                 <img src="<?= e($editing['image_url']) ?>" style="margin-top:10px; max-height:150px; border-radius:8px;">
             <?php endif; ?>
         </div>
 
-        <button type="submit" class="btn"><?= $editing ? 'Lưu thay đổi' : 'Đăng bài viết' ?></button>
+        <button type="submit" class="btn"><?= $editing ? __('admin_articles_save') : __('admin_articles_submit') ?></button>
         <?php if ($editing): ?>
-            <a href="<?= url('/admin/articles.php') ?>" class="btn secondary">Hủy</a>
+            <a href="<?= url('/admin/articles.php') ?>" class="btn secondary"><?= __('admin_articles_cancel') ?></a>
         <?php endif; ?>
     </form>
 </div>
 
-<h3 class="section-title">Danh sách bài viết</h3>
+<h3 class="section-title"><?= __('admin_articles_list') ?></h3>
 <table style="width:100%; background:white; border-radius:14px; overflow:hidden; border-collapse:collapse; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
     <tr style="background:#f1f5f9; text-align:left;">
-        <th style="padding:15px; color:#475569;">Tiêu đề</th>
-        <th style="padding:15px; color:#475569;">Tác giả</th>
-        <th style="padding:15px; color:#475569;">Trạng thái</th>
-        <th style="padding:15px; color:#475569;">Ngày đăng</th>
-        <th style="padding:15px; color:#475569;">Hành động</th>
+        <th style="padding:15px; color:#475569;"><?= __('admin_articles_th_title') ?></th>
+        <th style="padding:15px; color:#475569;"><?= __('admin_articles_th_author') ?></th>
+        <th style="padding:15px; color:#475569;"><?= __('admin_articles_th_status') ?></th>
+        <th style="padding:15px; color:#475569;"><?= __('admin_articles_th_date') ?></th>
+        <th style="padding:15px; color:#475569;"><?= __('admin_articles_th_action') ?></th>
     </tr>
     <?php foreach ($articles as $a): ?>
         <tr style="border-bottom:1px solid #f1f5f9;">
@@ -155,15 +155,15 @@ include __DIR__ . '/../includes/header.php';
             <td style="padding:15px;"><?= e($a['author_name'] ?? 'Admin') ?></td>
             <td style="padding:15px;">
                 <?php if ($a['status'] === 'published'): ?>
-                    <span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;">Xuất bản</span>
+                    <span style="background:#dcfce7; color:#166534; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;"><?= __('admin_articles_badge_pub') ?></span>
                 <?php else: ?>
-                    <span style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;">Bản nháp</span>
+                    <span style="background:#f1f5f9; color:#475569; padding:4px 8px; border-radius:12px; font-size:12px; font-weight:600;"><?= __('admin_articles_badge_draft') ?></span>
                 <?php endif; ?>
             </td>
             <td style="padding:15px; font-size:13px; color:#64748b;"><?= date('d/m/Y', strtotime($a['created_at'])) ?></td>
             <td style="padding:15px;">
-                <a href="<?= url('/admin/articles.php?edit=' . $a['id']) ?>" style="color:#2563eb; text-decoration:none; font-weight:600; margin-right:10px;">Sửa</a>
-                <a href="<?= url('/admin/articles.php?delete=' . $a['id']) ?>" onclick="return confirm('Bạn có chắc muốn xóa bài viết này?')" style="color:#dc2626; text-decoration:none; font-weight:600;">Xóa</a>
+                <a href="<?= url('/admin/articles.php?edit=' . $a['id']) ?>" style="color:#2563eb; text-decoration:none; font-weight:600; margin-right:10px;"><?= __('admin_articles_btn_edit') ?></a>
+                <a href="<?= url('/admin/articles.php?delete=' . $a['id']) ?>" onclick="return confirm('<?= __('admin_articles_delete_confirm') ?>')" style="color:#dc2626; text-decoration:none; font-weight:600;"><?= __('admin_articles_btn_delete') ?></a>
             </td>
         </tr>
     <?php endforeach; ?>
