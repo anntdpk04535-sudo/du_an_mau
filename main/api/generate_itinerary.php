@@ -90,7 +90,7 @@ Suggest realistic transport (motorbike, car, walking) suitable for the distance.
 YOU CAN INCORPORATE THESE SUGGESTIONS WHEN APPROPRIATE:
 - Transport: Motorbike rental (100k-150k/day) or taxi/Grab.
 - Food: Bun do Co Thu (Phan Dinh Giot - Le Hong Phong), Quan Ca Te (140 Le Thanh Tong), Pho 52 (52 Ngo Quyen). Cafes: Trung Nguyen Coffee Village (163 Ly Thai To), Arul Coffee (17 Tran Nhat Duat).
-- Stay: Scenic homestays like Lee's House (55 St. 3, Cu Bur), Zan Homestay (37 Ho Giao), Lak Tented Camp (Lak Lake). Central hotels like Muong Thanh (81 Nguyen Tat Thanh).
+- Stay: Scenic homestays like Lee's House (55 St. 3, Cu Bur), Zan Homestay (37 Ho Giao), Lak Tented Camp (Lak Lake), Huyen Thoai Homestay (Buon Don), and An Homestay (137/91 Thoi Huu). Central hotels like Muong Thanh (81 Nguyen Tat Thanh), Elephants (142 Hai Ba Trung), Sai Gon - Ban Me (01-03 Phan Chu Trinh), and Hai Ba Trung Hotel (8 Hai Ba Trung). Eco-resorts like KoTam (789 Pham Van Dong).
 SYS;
 
     $userPrompt = "[#REQ-{$randomSeed}] Please create a Dak Lak travel itinerary for {$days} days.\n"
@@ -153,7 +153,7 @@ Gợi ý phương tiện đi lại thực tế (xe máy, ô tô, đi bộ, xe bu
 BẠN CÓ THỂ LỒNG GHÉP CÁC GỢI Ý SAU VÀO LỊCH TRÌNH KHI PHÙ HỢP:
 - Phương tiện: Thuê xe máy (100k-150k/ngày) hoặc taxi/Grab.
 - Ẩm thực: Bún đỏ cô Thu (Ngã 4 Phan Đình Giót - Lê Hồng Phong), Quán Cà Te (140 Lê Thánh Tông), Phở hai tô 52 (52 Ngô Quyền), Bánh ướt chồng dĩa 45 (45 Lê Thánh Tông). Quán cà phê: Làng cà phê Trung Nguyên (163 Lý Thái Tổ), Arul Coffee (17 Trần Nhật Duật), SOUL Roastery (87 Nguyễn Khuyến).
-- Lưu trú: Homestay view đẹp như Lee's House (55 đ.số 3, Cư Bur), Zan Homestay (37 Hồ Giáo), Lak Tented Camp (ven Hồ Lắk). Khách sạn trung tâm như Mường Thanh (81 Nguyễn Tất Thành), Elephants (142 Hai Bà Trưng).
+- Lưu trú: Homestay view đẹp như Lee's House (55 đ.số 3, Cư Bur), Zan Homestay (37 Hồ Giáo), Lak Tented Camp (ven Hồ Lắk), Cư H'Lăm Restaurant & Homestay (Ea Pốk), An Homestay (137/91 Thôi Hữu). Khách sạn trung tâm như Mường Thanh (81 Nguyễn Tất Thành), Elephants (142 Hai Bà Trưng), Sài Gòn - Ban Mê (01-03 Phan Chu Trinh), Khách sạn Hai Bà Trưng (8 Hai Bà Trưng), Đam San Hotel (212 Nguyễn Công Trứ). Khu nghỉ dưỡng sinh thái như KoTam (789 Phạm Văn Đồng).
 - Mua sắm: Cà phê, thịt nai khô, mật tự nhiên.
 SYS;
 
@@ -170,7 +170,8 @@ $aiResponse = callGemini(
     [['role' => 'user', 'content' => $userPrompt]],
     $systemPrompt,
     8192,
-    $temperature
+    $temperature,
+    'application/json'
 );
 
 // Cố gắng parse JSON từ AI (loại bỏ markdown fences nếu có, và chỉ lấy phần

@@ -50,14 +50,14 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     </nav>
     <div class="auth-area">
       <?php $currentLang = $_SESSION['lang'] ?? 'vi'; ?>
-      <a href="<?= url('/public/change_lang.php?lang=' . ($currentLang === 'vi' ? 'en' : 'vi')) ?>" class="lang-toggle" title="<?= $currentLang === 'vi' ? 'English' : 'Tiếng Việt' ?>" style="display:flex; align-items:center; gap:6px; text-decoration:none; color:inherit; margin-right:15px; font-weight:600; font-size:14px; padding:6px 12px; border-radius:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); transition:all 0.3s ease; backdrop-filter:blur(5px);">
+      <button type="button" data-lang-url="<?= url('/public/change_lang.php?lang=' . ($currentLang === 'vi' ? 'en' : 'vi')) ?>" class="lang-toggle" title="<?= $currentLang === 'vi' ? 'English' : 'Tiếng Việt' ?>" style="display:flex; align-items:center; gap:6px; cursor:pointer; color:inherit; margin-right:15px; font-weight:600; font-size:14px; padding:6px 12px; border-radius:20px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); transition:all 0.3s ease; backdrop-filter:blur(5px);">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"></circle>
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
           <span><?= $currentLang === 'vi' ? 'EN' : 'VI' ?></span>
-      </a>
+      </button>
 
       <?php $__u = currentUser(); ?>
       <?php if ($__u): ?>

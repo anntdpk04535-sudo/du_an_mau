@@ -99,7 +99,8 @@ $aiResponse = callGemini(
     [['role' => 'user', 'content' => $userPrompt]],
     $systemPrompt,
     8192,
-    $temperature
+    $temperature,
+    'application/json'
 );
 
 $clean = trim($aiResponse);

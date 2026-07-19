@@ -20,7 +20,7 @@ define('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/model
  * @param int    $maxTokens
  * @return string Nội dung trả lời (text) hoặc thông báo lỗi
  */
-function callGemini(array $messages, string $system = '', int $maxTokens = 1024, float $temperature = 1.0): string
+function callGemini(array $messages, string $system = '', int $maxTokens = 1024, float $temperature = 1.0, string $responseMimeType = 'text/plain'): string
 {
     if (empty(GEMINI_API_KEY)) {
         return 'Lỗi: Chưa cấu hình GEMINI_API_KEY trong file .env (xem .env.example).';
@@ -41,7 +41,7 @@ function callGemini(array $messages, string $system = '', int $maxTokens = 1024,
         'generationConfig' => [
             'maxOutputTokens' => $maxTokens,
             'temperature' => $temperature,
-            'responseMimeType' => 'application/json',
+            'responseMimeType' => $responseMimeType,
             // Tắt "thinking" để model không tốn token suy nghĩ ngầm,
             // tránh bị cắt cụt phần trả lời thực tế (đặc biệt khi yêu cầu JSON dài).
             'thinkingConfig' => ['thinkingBudget' => 0],
