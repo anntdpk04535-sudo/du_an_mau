@@ -102,7 +102,7 @@ include __DIR__ . '/../includes/header.php';
     <?php if ($user): ?>
     <div class="create-post">
         <form id="postForm" onsubmit="submitPost(event)">
-            <textarea name="content" rows="3" placeholder="<?= __('forum_post_content_ph') ?>" required></textarea>
+            <textarea name="content" id="postContentEditor" rows="3" placeholder="<?= __('forum_post_content_ph') ?>"></textarea>
             <div class="post-actions">
                 <div class="action-left">
                     <label style="font-size: 13px; font-weight: 600; color: #64748b;"><?= __('forum_post_image') ?></label>
@@ -152,7 +152,7 @@ include __DIR__ . '/../includes/header.php';
                         </div>
                         <?php endif; ?>
                     </div>
-                    <div class="post-content" id="post-content-<?= $c['id'] ?>"><?= nl2br(e($c['content'])) ?></div>
+                    <div class="post-content ck-content" id="post-content-<?= $c['id'] ?>" style="word-wrap: break-word; overflow-wrap: break-word;"><?= strip_tags($c['content']) !== $c['content'] ? $c['content'] : nl2br(e($c['content'])) ?></div>
                     
                     <?php
                     $postImages = [];
@@ -243,7 +243,24 @@ include __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<style>
+.ck-editor__editable { min-height: 120px; }
+.ck-content { font-family: inherit; font-size: 15px; }
+</style>
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <script>
+let postEditor;
+document.addEventListener("DOMContentLoaded", function() {
+    if (document.querySelector('#postContentEditor')) {
+        ClassicEditor
+            .create( document.querySelector( '#postContentEditor' ), {
+                toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|', 'bulletedList', 'numberedList', 'outdent', 'indent' ]
+            } )
+            .then( editor => { postEditor = editor; } )
+            .catch( error => { console.error( error ); } );
+    }
+});
+
 async function submitPost(e) {
     e.preventDefault();
     <?php if (!$user): ?>
@@ -254,6 +271,9 @@ async function submitPost(e) {
     const form = e.target;
     const btn = document.getElementById('btnSubmitPost');
     const formData = new FormData(form);
+    if (window.postEditor) {
+        formData.set('content', window.postEditor.getData());
+    }
     formData.append('action', 'post');
 
     btn.disabled = true;
@@ -363,9 +383,19 @@ async function submitComment(e, checkinId) {
     }
 }
 
+let editEditors = {};
 function editPost(checkinId) {
     document.getElementById('post-content-' + checkinId).style.display = 'none';
     document.getElementById('post-edit-' + checkinId).style.display = 'block';
+    
+    if (!editEditors[checkinId]) {
+        ClassicEditor
+            .create( document.querySelector( '#edit-text-' + checkinId ), {
+                toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|', 'bulletedList', 'numberedList', 'outdent', 'indent' ]
+            } )
+            .then( editor => { editEditors[checkinId] = editor; } )
+            .catch( error => { console.error( error ); } );
+    }
 }
 
 function cancelEdit(checkinId) {
@@ -374,7 +404,12 @@ function cancelEdit(checkinId) {
 }
 
 async function saveEdit(checkinId) {
-    const content = document.getElementById('edit-text-' + checkinId).value.trim();
+    let content = '';
+    if (editEditors[checkinId]) {
+        content = editEditors[checkinId].getData().trim();
+    } else {
+        content = document.getElementById('edit-text-' + checkinId).value.trim();
+    }
     if (!content) {
         alert('Nội dung không được để trống!');
         return;
