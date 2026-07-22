@@ -125,7 +125,11 @@ header('Content-Type: text/html; charset=utf-8');
       </button>
     </div>
 
-    <div class="vt-audio-group">
+    <div class="vt-audio-group" style="display:flex; gap:8px;">
+      <select id="vt-audio-lang" class="vt-audio-lang-select" onchange="vtChangeAudioLang()" title="Chọn ngôn ngữ thuyết minh" style="padding:4px 8px; border-radius:6px; border:1px solid #ccc; background:#fff;">
+        <option value="vi">🇻🇳 Tiếng Việt</option>
+        <option value="en">🇬🇧 English</option>
+      </select>
       <button class="vt-audio-btn" id="vt-audio-btn" onclick="vtToggleAudio()"
               data-label-play="<?= __('vt_listen') ?>"
               data-label-stop="<?= __('vt_stop') ?>">

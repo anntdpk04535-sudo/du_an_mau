@@ -37,8 +37,13 @@ if ($action === 'get') {
     $stmt->execute([$destId]);
     $scenes = $stmt->fetchAll();
 
-    // Dịch
+    // Dịch (nhưng giữ lại bản gốc để thuyết minh)
     foreach ($scenes as &$scene) {
+        $scene['orig_title_vi'] = $scene['title'];
+        $scene['orig_title_en'] = $scene['title_en'] ?: $scene['title'];
+        $scene['orig_desc_vi'] = $scene['description'];
+        $scene['orig_desc_en'] = $scene['description_en'] ?: $scene['description'];
+        
         $scene = translateDbRow($scene, ['title', 'description', 'audio_url']);
     }
     unset($scene);
@@ -84,6 +89,10 @@ if ($action === 'get') {
             'thumbnail_url' => $scene['thumbnail_url'],
             'audio_url' => $scene['audio_url'],
             'description' => $scene['description'],
+            'orig_title_vi' => $scene['orig_title_vi'],
+            'orig_title_en' => $scene['orig_title_en'],
+            'orig_desc_vi' => $scene['orig_desc_vi'],
+            'orig_desc_en' => $scene['orig_desc_en'],
             'pitch' => (float)$scene['pitch'],
             'yaw' => (float)$scene['yaw'],
             'hfov' => (int)$scene['hfov'],
