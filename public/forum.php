@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .create( document.querySelector( '#postContentEditor' ), {
                 toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|', 'bulletedList', 'numberedList', 'outdent', 'indent' ]
             } )
-            .then( editor => { postEditor = editor; } )
+            .then( editor => { window.postEditor = editor; } )
             .catch( error => { console.error( error ); } );
     }
 });
