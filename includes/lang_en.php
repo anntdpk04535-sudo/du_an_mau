@@ -142,7 +142,7 @@ return [
     'season_title' => 'Travel Season',
     'invalid_verify_link' => 'Invalid verification link',
     'verify_success' => 'Account verified successfully',
-    'footer_text' => 'Copyright by Biệt đội Báo Đốm',
+    'footer_text' => 'Copyright by Dak Lak Travel AI',
 
     // Virtual Tour 360°
     'vt_title_prefix' => '360° Tour —',
@@ -352,21 +352,9 @@ return [
     'iti_duration' => 'Duration',
 
     // Chatbot page
-    'chat_start_btn' => 'Start chat',
-    'chat_desc' => 'Ask anything about destinations, culture, food, and when to travel to Dak Lak...',
-    'chat_greeting' => 'Hello! I am Dak Lak Travel AI Assistant 🌿. What do you want to ask about Lak Lake, Buon Don, Buon Ma Thuot coffee or travel itineraries?',
-    
-    // Chatbot suggestions
-    'chat_sugg_1' => 'Suggest a 3D2N itinerary in Dak Lak',
-    'chat_sugg_2' => 'What are the local food specialties?',
-    'chat_sugg_3' => 'When is the best time to visit?',
-    'chat_sugg_4' => 'Tell me about the World Coffee Museum',
-    'chat_sugg_5' => 'How to travel to Dak Lak?',
-    'chat_sugg_6' => 'What souvenirs should I buy?',
-    'chat_sugg_7' => 'What are the best camping spots?',
-    'chat_sugg_8' => 'Any tips for traveling in the rainy season?',
-    'chat_sugg_9' => 'Suggest some nice hotels/homestays?',
-
+    'chat_start_btn' => '💬 Start Chatting',
+    'chat_desc' => 'Ask anything about destinations, culture, cuisine, best time to visit Dak Lak...',
+    'chat_greeting' => 'Hello! I\'m the Dak Lak travel AI assistant 🌿. What would you like to know about Lak Lake, Buon Don, Buon Ma Thuot coffee or travel itineraries?',
     'chat_answering' => 'Answering...',
     'chat_error' => 'Sorry, an error occurred.',
     'chat_connection_error' => 'Server connection error.',

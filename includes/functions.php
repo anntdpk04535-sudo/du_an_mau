@@ -53,28 +53,6 @@ function e(?string $str): string
     return htmlspecialchars($str ?? '', ENT_QUOTES, 'UTF-8');
 }
 
-function get_avatar(?string $avatarUrl): string
-{
-    if (empty($avatarUrl)) {
-        return url('/assets/images/default-avatar.png');
-    }
-    
-    // Extract the true relative path if it contains /assets/images/
-    if (preg_match('#/assets/images/(.*)$#', $avatarUrl, $matches)) {
-        return url('/assets/images/' . $matches[1]);
-    }
-    
-    if (str_starts_with($avatarUrl, 'http://') || str_starts_with($avatarUrl, 'https://')) {
-        return $avatarUrl;
-    }
-    
-    if (!str_starts_with($avatarUrl, '/')) {
-        $avatarUrl = '/' . $avatarUrl;
-    }
-    return url($avatarUrl);
-}
-
-
 /**
  * Dịch mức chi phí sang tiếng Việt.
  */

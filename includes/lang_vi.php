@@ -142,7 +142,7 @@ return [
     'season_title' => 'Mùa du lịch',
     'invalid_verify_link' => 'Đường dẫn xác thực không hợp lệ',
     'verify_success' => 'Xác thực tài khoản thành công',
-    'footer_text' => 'Bản quyền thuộc về biệt đội Báo Đốm',
+    'footer_text' => 'Bản quyền thuộc về Đắk Lắk Travel AI',
 
     // Virtual Tour 360°
     'vt_title_prefix' => 'Tour 360° —',
@@ -355,17 +355,6 @@ return [
     'chat_start_btn' => '💬 Bắt đầu trò chuyện',
     'chat_desc' => 'Hỏi bất cứ điều gì về điểm đến, văn hoá, ẩm thực, thời điểm nên đi du lịch Đắk Lắk...',
     'chat_greeting' => 'Xin chào! Mình là trợ lý AI du lịch Đắk Lắk 🌿. Bạn muốn hỏi gì về Hồ Lắk, Buôn Đôn, cà phê Buôn Ma Thuột hay lịch trình du lịch?',
-    
-    // Gợi ý chatbot
-    'chat_sugg_1' => 'Gợi ý lịch trình 3 ngày 2 đêm ở Đắk Lắk',
-    'chat_sugg_2' => 'Các món ăn đặc sản Đắk Lắk là gì?',
-    'chat_sugg_3' => 'Thời điểm lý tưởng nhất để đi du lịch?',
-    'chat_sugg_4' => 'Giới thiệu về Bảo tàng Thế giới Cà phê',
-    'chat_sugg_5' => 'Phương tiện di chuyển đến Đắk Lắk?',
-    'chat_sugg_6' => 'Mua đặc sản gì về làm quà?',
-    'chat_sugg_7' => 'Những địa điểm cắm trại đẹp nhất?',
-    'chat_sugg_8' => 'Cần lưu ý gì khi đi du lịch mùa mưa?',
-    'chat_sugg_9' => 'Gợi ý một số khách sạn, homestay view đẹp?',
     'chat_answering' => 'Đang trả lời...',
     'chat_error' => 'Xin lỗi, có lỗi xảy ra.',
     'chat_connection_error' => 'Lỗi kết nối tới server.',
