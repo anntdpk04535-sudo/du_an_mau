@@ -42,7 +42,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 15px;
 }
 
@@ -51,6 +51,7 @@ body {
   font-size: 22px;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap;
 }
 
 .logo span {
@@ -60,7 +61,7 @@ body {
 .main-nav {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 14px;
 }
 
@@ -222,7 +223,7 @@ body {
 .auth-area {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 10px;
 }
 
@@ -231,6 +232,14 @@ body {
   font-size: 14px;
   margin-right: 4px;
   white-space: nowrap;
+}
+
+.auth-greeting strong {
+  max-width: 120px;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
 }
 
 .auth-area .btn {

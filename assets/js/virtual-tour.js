@@ -22,6 +22,11 @@
   // ── Init ──
   document.addEventListener('DOMContentLoaded', init);
 
+  if ('speechSynthesis' in window) {
+    // Pre-load voices to avoid empty getVoices() array on first click (common in Chrome)
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  }
+
   async function init() {
     if (!DEST_ID) return;
 
@@ -232,17 +237,26 @@
       return;
     }
 
-    // Ưu tiên dùng file audio nếu có, không thì dùng TTS
-    const text = scene.description || scene.title;
+    // Lấy ngôn ngữ và văn bản
+    const langSelect = document.getElementById('vt-audio-lang');
+    const selectedLang = langSelect ? langSelect.value : 'vi';
+    
+    let text = '';
+    if (selectedLang === 'en') {
+      text = scene.orig_desc_en || scene.orig_title_en;
+    } else {
+      text = scene.orig_desc_vi || scene.orig_title_vi;
+    }
 
-    if ('speechSynthesis' in window && text) {
+    if (text) {
       stopAudio();
-      speechUtterance = new SpeechSynthesisUtterance(text);
-      speechUtterance.lang = document.documentElement.lang === 'en' ? 'en-US' : 'vi-VN';
-      speechUtterance.rate = 0.9;   // Nói chậm hơn cho người già
-      speechUtterance.pitch = 1.0;
-
-      speechUtterance.onend = function () {
+      
+      const targetLang = selectedLang === 'en' ? 'en' : 'vi';
+      const ttsUrl = `/travel_daklak/api/tts.php?lang=${targetLang}&text=${encodeURIComponent(text)}`;
+      
+      let audio = new Audio(ttsUrl);
+      
+      audio.onended = function () {
         isAudioPlaying = false;
         if (btn) {
           btn.classList.remove('playing');
@@ -250,24 +264,65 @@
         }
       };
 
-      window.speechSynthesis.speak(speechUtterance);
-      isAudioPlaying = true;
+      audio.onerror = function() {
+        console.error("Google TTS error. Using fallback TTS.");
+        // Fallback to browser TTS if Google TTS fails (e.g. text too long)
+        fallbackBrowserTTS(text, targetLang, btn);
+      };
 
-      if (btn) {
-        btn.classList.add('playing');
-        btn.innerHTML = '⏹ ' + (btn.dataset.labelStop || 'Dừng phát');
-      }
-
-      logInteraction('play_audio', scene.id);
+      audio.play().then(() => {
+        isAudioPlaying = true;
+        // Gắn đối tượng audio này vào window để hàm stopAudio có thể tắt nó
+        window.currentTtsAudio = audio;
+        
+        if (btn) {
+          btn.classList.add('playing');
+          btn.innerHTML = '⏹ ' + (btn.dataset.labelStop || 'Dừng phát');
+        }
+      }).catch(err => {
+        console.error("Audio play blocked:", err);
+        fallbackBrowserTTS(text, targetLang, btn);
+      });
     }
   };
 
+  function fallbackBrowserTTS(text, lang, btn) {
+    if (!('speechSynthesis' in window)) return;
+    
+    let speechUtterance = new SpeechSynthesisUtterance(text);
+    speechUtterance.lang = lang === 'en' ? 'en-US' : 'vi-VN';
+    speechUtterance.rate = 0.9;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const voice = voices.find(v => v.lang.toLowerCase().includes(lang));
+    if (voice) speechUtterance.voice = voice;
+
+    speechUtterance.onend = function () {
+      isAudioPlaying = false;
+      if (btn) {
+        btn.classList.remove('playing');
+        btn.innerHTML = '🔊 ' + (btn.dataset.labelPlay || 'Nghe thuyết minh');
+      }
+    };
+
+    window.speechSynthesis.speak(speechUtterance);
+    isAudioPlaying = true;
+    if (btn) {
+      btn.classList.add('playing');
+      btn.innerHTML = '⏹ ' + (btn.dataset.labelStop || 'Dừng phát');
+    }
+  }
+
   function stopAudio() {
+    if (window.currentTtsAudio) {
+      window.currentTtsAudio.pause();
+      window.currentTtsAudio.currentTime = 0;
+      window.currentTtsAudio = null;
+    }
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
     isAudioPlaying = false;
-
     const btn = document.getElementById('vt-audio-btn');
     if (btn) {
       btn.classList.remove('playing');
@@ -285,10 +340,17 @@
   };
 
   window.vtFontDecrease = function () {
-    const panel = document.querySelector('.vt-scene-info-panel');
-    if (panel) {
-      const current = parseFloat(getComputedStyle(panel).fontSize);
-      panel.style.fontSize = Math.max(current - 2, 12) + 'px';
+    const el = document.querySelector('.vt-scene-info-panel');
+    if (!el) return;
+    let size = parseInt(window.getComputedStyle(el).fontSize);
+    el.style.fontSize = Math.max(14, size - 2) + 'px';
+  };
+
+  window.vtChangeAudioLang = function () {
+    if (isAudioPlaying) {
+      // Nếu đang phát thì dừng lại và phát lại bằng ngôn ngữ mới
+      stopAudio();
+      window.vtToggleAudio();
     }
   };
 

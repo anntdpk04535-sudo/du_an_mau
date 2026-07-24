@@ -82,7 +82,7 @@ $vi_add = [
     'season_title' => 'Mùa du lịch',
     'invalid_verify_link' => 'Đường dẫn xác thực không hợp lệ',
     'verify_success' => 'Xác thực tài khoản thành công',
-    'footer_text' => 'Bản quyền thuộc về Đắk Lắk Travel AI',
+    'footer_text' => 'Bản quyền thuộc về biệt đội Báo Đốm',
 ];
 
 $en_add = [
@@ -168,7 +168,7 @@ $en_add = [
     'season_title' => 'Travel Season',
     'invalid_verify_link' => 'Invalid verification link',
     'verify_success' => 'Account verified successfully',
-    'footer_text' => 'Copyright by Dak Lak Travel AI',
+    'footer_text' => 'Copyright by Biệt đội Báo Đốm',
 ];
 
 function appendToFile($file, $arr) {
