@@ -75,7 +75,7 @@ header('Content-Type: text/html; charset=utf-8');
       <button onclick="vtFontDecrease()" title="<?= __('vt_font_smaller') ?>">A-</button>
       <button onclick="vtFontIncrease()" title="<?= __('vt_font_larger') ?>">A+</button>
     </div>
-  </div>
+  </div> 
 
   <!-- ── Viewer ── -->
   <div class="vt-viewer-wrapper">
