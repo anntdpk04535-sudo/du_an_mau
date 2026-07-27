@@ -176,7 +176,7 @@ include __DIR__ . '/../includes/header.php';
 
     const bubble = document.createElement('div');
     bubble.className = 'msg ' + role;
-    bubble.textContent = text;
+    bubble.textContent = text.replace(/\*/g, '');
     wrap.appendChild(bubble);
 
     if (images && images.length > 0) {
@@ -222,7 +222,8 @@ include __DIR__ . '/../includes/header.php';
       });
       const data = await res.json();
       loadingDiv.classList.remove('loading-dots');
-      loadingDiv.textContent = data.reply || '<?= __('chat_error') ?>';
+      let replyText = data.reply || '<?= __('chat_error') ?>';
+      loadingDiv.textContent = replyText.replace(/\*/g, '');
 
       if (data.images && data.images.length > 0) {
         const imgRow = document.createElement('div');
