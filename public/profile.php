@@ -286,7 +286,7 @@ include __DIR__ . '/../includes/header.php';
                             <p style="margin-bottom: 10px; line-height: 1.4;"><?= mb_substr(e($w['short_desc']), 0, 80) ?>...</p>
                             <div class="itinerary-meta" style="margin-top: auto;">
                                 <span>💰 <?= e(priceLevelVi($w['price_level'])) ?></span>
-                                <span>⭐ <?= number_format((float)$w['avg_rating'], 1) ?></span>
+                                <span>⭐ <?= number_format((float)($w['avg_rating'] ?? $w['rating'] ?? 0), 1) ?></span>
                             </div>
                         </div>
                     </a>
