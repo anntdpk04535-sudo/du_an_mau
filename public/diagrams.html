@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ đồ Vận hành & Luồng Dữ Liệu</title>
+    <!-- Tải thư viện Mermaid JS để vẽ sơ đồ -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body { font-family: sans-serif; background-color: #f9fafb; margin: 0; padding: 40px; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1, h2 { color: #1b4332; text-align: center; }
+        h2 { margin-top: 50px; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+        .diagram-wrapper { display: flex; justify-content: center; margin-top: 20px; overflow-x: auto; }
+        p.desc { text-align: center; color: #6b7280; font-size: 15px; margin-bottom: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sơ Đồ Kiến Trúc Hệ Thống</h1>
+    <p class="desc">Đắk Lắk Travel AI</p>
+
+    <h2>1. Sơ đồ Quy trình Vận hành (Operational Flow)</h2>
+    <p class="desc">Mô tả vòng đời khi người dùng yêu cầu AI lên lịch trình hoặc Chatbot</p>
+    <div class="diagram-wrapper">
+        <pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor User as Khách du lịch
+    participant UI as Giao diện Web (Frontend)
+    participant Server as Web Server (PHP)
+    participant DB as Database (MySQL)
+    participant AI as Gemini AI API
+
+    User->>UI: Truy cập web & Chọn "Lên lịch trình / Chatbot"
+    UI->>Server: Gửi yêu cầu (Thông tin sở thích, số ngày...)
+    
+    rect rgb(235, 248, 255)
+    Note right of Server: Khâu chuẩn bị Dữ liệu (RAG)
+    Server->>DB: Truy vấn danh sách điểm đến, giá vé...
+    DB-->>Server: Trả về dữ liệu thô (JSON/Array)
+    Server->>Server: Đóng gói dữ liệu thực tế vào System Prompt
+    end
+
+    Server->>AI: Gửi Prompt (Dữ liệu web + Yêu cầu User)
+    AI-->>Server: Trả về kết quả phân tích (Lịch trình / Câu trả lời)
+    
+    Server->>UI: Trả kết quả (Render HTML / Cập nhật UI)
+    UI-->>User: Hiển thị lịch trình trực quan / Tin nhắn
+        </pre>
+    </div>
+
+    <h2>2. Sơ đồ Luồng dữ liệu tổng quan (Data Flow Architecture)</h2>
+    <p class="desc">Mô tả cách các thành phần trong hệ thống kết nối và trao đổi dữ liệu</p>
+    <div class="diagram-wrapper">
+        <pre class="mermaid">
+graph TD
+    Client(Trình duyệt Khách hàng)
+    
+    subgraph Frontend [Frontend - Giao diện]
+        UI[Trang web HTML/CSS]
+        JS[JavaScript & 360 Viewer]
+    end
+    
+    subgraph Backend [Backend - Xử lý]
+        PHP[PHP Core & Router]
+        SSE[Realtime Stream]
+    end
+    
+    subgraph Database [Database & Storage]
+        MySQL[(Cơ sở dữ liệu MySQL)]
+        Files[(Thư mục Ảnh/360)]
+    end
+    
+    subgraph External_APIs [Third-party APIs]
+        Gemini[Google Gemini AI]
+        OAuth[Google / Facebook Auth]
+        GoogleMaps[Google Maps API]
+        OpenMeteo[Open-Meteo API]
+    end
+
+    Client <-->|Click, Nhập liệu| UI
+    Client <-->|Xoay, Kéo thả 360| JS
+    
+    UI <-->|HTTP Requests| PHP
+    UI <-->|Kết nối liên tục| SSE
+    
+    PHP <-->|Truy vấn PDO| MySQL
+    PHP -->|Đọc file| Files
+    SSE <-->|Check tin nhắn mới| MySQL
+    
+    PHP <-->|Gửi/Nhận Prompt JSON| Gemini
+    PHP <-->|Xác thực Token| OAuth
+    PHP <-->|Lấy Thời tiết| OpenMeteo
+    
+    JS <-->|Render Bản đồ| GoogleMaps
+    UI <-->|Chuyển hướng Login| OAuth
+
+    classDef backend fill:#f9e0e8,stroke:#d6336c,stroke-width:2px;
+    classDef frontend fill:#dbe4ff,stroke:#4c6ef5,stroke-width:2px;
+    classDef db fill:#ffebd2,stroke:#f59f00,stroke-width:2px;
+    classDef external fill:#d3f9d8,stroke:#40c057,stroke-width:2px;
+    
+    class PHP,SSE backend;
+    class UI,JS frontend;
+    class MySQL,Files db;
+    class Gemini,OAuth,GoogleMaps,OpenMeteo external;
+        </pre>
+    </div>
+</div>
+
+</body>
+</html>

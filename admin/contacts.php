@@ -411,7 +411,7 @@ function fillChatContent(id, name, ts, msgData, replies) {
       <div class="msg-avatar">${initial}</div>
       <div class="msg-content">
         <div class="msg-sender">${name} · ${msgTime}</div>
-        <div class="msg-bubble-user">${msg ? msg.replace(/\n/g,"<br>") : '<em style="color:#d1d5db">${' + json_encode(__('admin_contacts_loading')) + '}</em>'}</div>
+        <div class="msg-bubble-user">${msg ? msg.replace(/\n/g,"<br>") : '<em style="color:#d1d5db">' + <?= json_encode(__('admin_contacts_loading')) ?> + '</em>'}</div>
       </div>
     </div>`;
 
@@ -473,7 +473,7 @@ async function sendReply(id) {
     setTimeout(() => { if(status) status.textContent = ""; }, 2000);
     return;
   }
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="s-icon">⏳</span> <span>${' + json_encode(__('admin_contacts_sending')) + '}</span>'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="s-icon">⏳</span> <span>' + <?= json_encode(__('admin_contacts_sending')) ?> + '</span>'; }
   status.style.color = "#9ca3af"; status.textContent = "";
 
   try {
@@ -500,7 +500,7 @@ async function sendReply(id) {
     status.style.color = "#ef4444";
     status.textContent = <?= json_encode(__('admin_contacts_err_conn')) ?>;
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="s-icon">📤</span> <span>${' + json_encode(__('admin_contacts_btn_send')) + '}</span>'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<span class="s-icon">📤</span> <span>' + <?= json_encode(__('admin_contacts_btn_send')) ?> + '</span>'; }
   }
 }
 
