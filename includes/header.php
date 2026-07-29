@@ -19,7 +19,7 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
 <body>
 <header class="site-header">
   <div class="container header-inner">
-    <a href="<?= url('/public/index.php') ?>" class="logo">🌿 Đắk Lắk <span>Travel AI</span></a>
+    <a href="<?= url('/public/index.php') ?>" class="logo">🌿 Đắk Lắk<span>Travel AI</span></a>
     <nav class="main-nav">
       <a href="<?= url('/public/index.php') ?>"><?= __('home') ?></a>
       <a href="<?= url('/public/forum.php') ?>"><?= __('nav_forum') ?></a>
@@ -63,9 +63,9 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
       <?php if ($__u): ?>
         <span class="auth-greeting" style="display:flex; align-items:center; gap:8px;">
             <?php if (!empty($__u['avatar'])): ?>
-                <img src="<?= e(get_avatar($__u['avatar'])) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
+                <img src="<?= e($__u['avatar']) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
             <?php else: ?>
-                <img src="<?= e(get_avatar(null)) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
+                👋
             <?php endif; ?>
             <?= __('hello') ?>, <a href="<?= url('/public/profile.php') ?>" style="color:#fde68a;text-decoration:none;border-bottom:1px dashed #fde68a;" title="Profile"><strong><?= e($__u['full_name']) ?></strong></a>
         </span>

@@ -44,18 +44,6 @@ include __DIR__ . '/../includes/header.php';
     </div>
   </div>
 
-  <div class="chat-suggestions" id="chat-suggestions">
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_1')) ?>')"><?= __('chat_sugg_1') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_2')) ?>')"><?= __('chat_sugg_2') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_3')) ?>')"><?= __('chat_sugg_3') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_4')) ?>')"><?= __('chat_sugg_4') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_5')) ?>')"><?= __('chat_sugg_5') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_6')) ?>')"><?= __('chat_sugg_6') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_7')) ?>')"><?= __('chat_sugg_7') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_8')) ?>')"><?= __('chat_sugg_8') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_9')) ?>')"><?= __('chat_sugg_9') ?></button>
-  </div>
-
   <form id="chat-form" class="chat-input-row">
     <input type="text" id="chat-input" placeholder="<?= __('type_msg') ?>" autocomplete="off"
       value="<?= e($askPrefill) ?>">
@@ -64,29 +52,6 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <style>
-  .chat-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0;
-    padding: 0 16px;
-  }
-  .sugg-btn {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #334155;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 13.5px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .sugg-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateY(-1px);
-  }
-
   .chat-images {
     display: flex;
     gap: 8px;
@@ -148,10 +113,6 @@ include __DIR__ . '/../includes/header.php';
   const chatWindow = document.getElementById('chat-window');
   const chatForm = document.getElementById('chat-form');
   const chatInput = document.getElementById('chat-input');
-
-  function sendSuggestion(text) {
-    sendMessage(text);
-  }
 
   function openLightbox(src) {
     document.getElementById('lightbox-img').src = src;
