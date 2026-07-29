@@ -273,6 +273,14 @@ const Session = {
 document.addEventListener("DOMContentLoaded", async () => {
   setConnStatus("<?= __('contact_checking') ?>");
 
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('new')) {
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+    setConnStatus("<?= __('contact_no_msg_short') ?>");
+    return;
+  }
+
   // Bước 1: Thử lấy từ server (user đã đăng nhập)
   const serverOk = await tryLoadFromServer();
   if (serverOk) return;
@@ -351,7 +359,7 @@ function startNewMessage() {
   if (!confirm("<?= __('contact_confirm_new') ?>")) return;
   if (sseSource) { sseSource.close(); sseSource = null; }
   Session.clear();
-  location.reload();
+  window.location.search = "?new=1";
 }
 
 // ===== Load toàn bộ replies =====

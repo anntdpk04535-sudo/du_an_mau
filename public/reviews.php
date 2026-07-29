@@ -412,13 +412,13 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
-const API_BASE = '<?= url('/api') ?>';
-let offset = 0;
-const limit = 10;
-let totalLoaded = 0;
-let grandTotal  = 0;
-let _isAdmin = false;
-let _adminDelReviewId = null;
+var API_BASE = '<?= url('/api') ?>';
+var offset = 0;
+var limit = 10;
+var totalLoaded = 0;
+var grandTotal  = 0;
+var _isAdmin = false;
+var _adminDelReviewId = null;
 
 function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -441,9 +441,9 @@ function timeSince(dateStr) {
   const d = new Date(dateStr);
   const diff = (Date.now() - d.getTime()) / 1000;
   if (diff < 60)   return '<?= __('dest_just_now') ?>';
-  if (diff < 3600) return Math.floor(diff/60) + ' <?= __('dest_minutes_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
-  if (diff < 86400) return Math.floor(diff/3600) + ' <?= __('dest_hours_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
-  return Math.floor(diff/86400) + ' <?= __('dest_days_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+  if (diff < 3600) return Math.floor(diff/60) + ' ' + '<?= __('dest_minutes_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+  if (diff < 86400) return Math.floor(diff/3600) + ' ' + '<?= __('dest_hours_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+  return Math.floor(diff/86400) + ' ' + '<?= __('dest_days_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
 }
 
 async function loadReviews(reset = false) {
@@ -565,7 +565,7 @@ async function loadDistribution() {
 function loadMore() { loadReviews(false); }
 
 // Submit form
-const form = document.getElementById('reviewForm');
+var form = document.getElementById('reviewForm');
 if (form) {
   const textarea = document.getElementById('reviewComment');
   textarea?.addEventListener('input', () => {

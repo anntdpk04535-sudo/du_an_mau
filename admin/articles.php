@@ -5,9 +5,9 @@ $pageTitle = __('admin_articles_title');
 $db = getDB();
 
 // Xử lý xoá
-if (isset($_GET['delete'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
     $stmt = $db->prepare("DELETE FROM articles WHERE id = ?");
-    $stmt->execute([(int)$_GET['delete']]);
+    $stmt->execute([(int)$_POST['delete_id']]);
     header('Location: ' . url('/admin/articles.php'));
     exit;
 }
@@ -163,7 +163,11 @@ include __DIR__ . '/../includes/header.php';
             <td style="padding:15px; font-size:13px; color:#64748b;"><?= date('d/m/Y', strtotime($a['created_at'])) ?></td>
             <td style="padding:15px;">
                 <a href="<?= url('/admin/articles.php?edit=' . $a['id']) ?>" style="color:#2563eb; text-decoration:none; font-weight:600; margin-right:10px;"><?= __('admin_articles_btn_edit') ?></a>
-                <a href="<?= url('/admin/articles.php?delete=' . $a['id']) ?>" onclick="return confirm('<?= __('admin_articles_delete_confirm') ?>')" style="color:#dc2626; text-decoration:none; font-weight:600;"><?= __('admin_articles_btn_delete') ?></a>
+                <form method="post" style="display:inline;">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="delete_id" value="<?= $a['id'] ?>">
+                    <button type="submit" onclick="return confirm('<?= __('admin_articles_delete_confirm') ?>')" style="background:none; border:none; color:#dc2626; text-decoration:none; font-weight:600; cursor:pointer; font-size:inherit; font-family:inherit; padding:0;"><?= __('admin_articles_btn_delete') ?></button>
+                </form>
             </td>
         </tr>
     <?php endforeach; ?>

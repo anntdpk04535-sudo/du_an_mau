@@ -75,20 +75,20 @@ try {
         exit;
     }
 
-    // Admin luôn phải nhập lý do xóa (bất kể xóa của ai)
-    if ($isAdmin && $reason === '') {
+    // Admin xóa đánh giá của người khác thì phải nhập lý do
+    if ($isAdmin && !$isOwner && $reason === '') {
         echo json_encode(['success' => false, 'error' => 'Vui lòng nhập lý do xóa.']);
         exit;
     }
-    if ($isAdmin && mb_strlen($reason) < 10) {
+    if ($isAdmin && !$isOwner && mb_strlen($reason) < 10) {
         echo json_encode(['success' => false, 'error' => 'Lý do xóa phải có ít nhất 10 ký tự.']);
         exit;
     }
 
     $destinationId = $review['destination_id'];
 
-    // Ghi log mỗi khi admin xóa đánh giá (kể cả xóa của chính mình)
-    if ($isAdmin) {
+    // Ghi log mỗi khi admin xóa đánh giá (của người khác)
+    if ($isAdmin && !$isOwner) {
         $log = $db->prepare("
             INSERT INTO review_deletion_logs
                 (review_id, reviewer_user_id, reviewer_name, rating, comment, deleted_by, deleted_by_name, reason)

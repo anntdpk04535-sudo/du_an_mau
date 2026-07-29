@@ -244,7 +244,7 @@ include __DIR__ . '/../includes/header.php';
                         <h3><?= e($it['title']) ?></h3>
                         <p><?= __('profile_preferences') ?>: <?= e($it['preferences'] ?: __('profile_no_pref')) ?></p>
                         <div class="itinerary-meta">
-                            <span>⏱️ <?= $it['days'] ?> <?= __('days') ?></span>
+                            <span>⏱️ <?= e((string)$it['days']) ?> <?= __('days') ?></span>
                             <span>📅 <?= date('d/m/Y', strtotime($it['created_at'])) ?></span>
                         </div>
                     </a>
@@ -286,7 +286,7 @@ include __DIR__ . '/../includes/header.php';
                             <p style="margin-bottom: 10px; line-height: 1.4;"><?= mb_substr(e($w['short_desc']), 0, 80) ?>...</p>
                             <div class="itinerary-meta" style="margin-top: auto;">
                                 <span>💰 <?= e(priceLevelVi($w['price_level'])) ?></span>
-                                <span>⭐ <?= number_format((float)$w['avg_rating'], 1) ?></span>
+                                <span>⭐ <?= number_format((float)($w['avg_rating'] ?? $w['rating'] ?? 0), 1) ?></span>
                             </div>
                         </div>
                     </a>

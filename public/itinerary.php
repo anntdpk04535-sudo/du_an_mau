@@ -91,6 +91,63 @@ include __DIR__ . '/../includes/header.php';
 <div id="result"></div>
 
 <script>
+if (!window.itineraryEventsAttached) {
+    window.itineraryEventsAttached = true;
+    document.addEventListener('beforeLangSwitch', function() {
+        const form = document.getElementById('itinerary-form');
+        if (form) {
+            window.savedItiForm = {
+                days: document.getElementById('days').value,
+                prefs: Array.from(form.querySelectorAll('input[name="prefs[]"]:checked')).map(c => c.value),
+                notes: document.getElementById('notes').value
+            };
+        }
+    });
+    
+    document.addEventListener('afterLangSwitch', function() {
+        if (window.savedItiForm) {
+            const daysEl = document.getElementById('days');
+            if (daysEl) daysEl.value = window.savedItiForm.days;
+            
+            const noteEl = document.getElementById('notes');
+            if (noteEl) noteEl.value = window.savedItiForm.notes;
+            
+            const prefs = window.savedItiForm.prefs || [];
+            document.querySelectorAll('input[name="prefs[]"]').forEach(cb => {
+                cb.checked = prefs.includes(cb.value);
+            });
+        }
+        
+        if (window.lastItineraryData && window.renderItinerary) {
+            const resultBox = document.getElementById('result');
+            if (resultBox) {
+                resultBox.innerHTML = '<p class="loading-dots">🤖 Translating itinerary...</p>';
+                document.getElementById('stats-bar').style.display = 'none';
+                document.getElementById('map-container').style.display = 'none';
+                document.getElementById('route-panel').style.display = 'none';
+            }
+            
+            fetch('<?= url('/api/translate_json.php') ?>', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: window.lastItineraryData})
+            }).then(r => r.json()).then(res => {
+                if (res.success && res.data) {
+                    window.lastItineraryData = res.data;
+                    window.renderItinerary(res.data);
+                } else {
+                    console.error("Translation API failed:", res);
+                    window.renderItinerary(window.lastItineraryData);
+                }
+            }).catch(e => {
+                console.error("Translation API fetch error:", e);
+                window.renderItinerary(window.lastItineraryData);
+            });
+        }
+    });
+}
+
+(function() {
 const form = document.getElementById('itinerary-form');
 const resultBox = document.getElementById('result');
 const DAY_COLORS = ['#2d6a4f','#e76f51','#3a86c8','#8338ec','#ff006e'];
@@ -154,7 +211,7 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-async function renderItinerary(data) {
+window.renderItinerary = async function(data) {
     let html = `
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <h2 class="section-title" style="margin:0;"><?= __('iti_suggested_title') ?></h2>
@@ -184,7 +241,7 @@ async function renderItinerary(data) {
       html += '</div>';
     });
     html += '</div>'; // End pdf-export-content
-    resultBox.innerHTML = html;
+    document.getElementById('result').innerHTML = html;
 
     // Chuẩn bị mapData
     const mapData = [];
@@ -295,7 +352,7 @@ async function renderItinerary(data) {
 
 }
 
-function exportItineraryPDF() {
+window.exportItineraryPDF = function() {
     const element = document.getElementById('pdf-export-content');
     
     const opt = {
@@ -310,11 +367,11 @@ function exportItineraryPDF() {
 }
 
 // Giả lập mưa lớn
-async function simulateRain() {
+window.simulateRain = async function() {
     const data = window.lastItineraryData;
     if (!data) return alert('<?= __('iti_reroute_need_iti') ?>');
     
-    resultBox.innerHTML = '<p class="loading-dots"><?= __('iti_rerouting_loading') ?></p>';
+    document.getElementById('result').innerHTML = '<p class="loading-dots"><?= __('iti_rerouting_loading') ?></p>';
     
     try {
         const res = await fetch('<?= url('/api/reroute_itinerary.php') ?>', {
@@ -323,7 +380,7 @@ async function simulateRain() {
         });
         const reData = await res.json();
         if(reData.success) {
-            renderItinerary(reData); // Cần refactor để tái sử dụng
+            window.renderItinerary(reData); // Cần refactor để tái sử dụng
             alert('<?= __('iti_reroute_success') ?>');
         } else {
             alert('Lỗi: ' + reData.message);
@@ -374,7 +431,7 @@ if (window.SpeechRecognition || window.webkitSpeechRecognition) {
 } else {
   micBtn.style.display = 'none';
 }
-
+})();
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

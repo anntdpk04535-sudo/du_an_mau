@@ -653,9 +653,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function timeSince(str) {
     const diff = (Date.now() - new Date(str).getTime()) / 1000;
     if (diff < 60)    return '<?= __('dest_just_now') ?>';
-    if (diff < 3600)  return Math.floor(diff/60) + ' <?= __('dest_minutes_ago') ?>';
-    if (diff < 86400) return Math.floor(diff/3600) + ' <?= __('dest_hours_ago') ?>';
-    return Math.floor(diff/86400) + ' <?= __('dest_days_ago') ?>';
+    if (diff < 3600)  return Math.floor(diff/60) + ' ' + '<?= __('dest_minutes_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+    if (diff < 86400) return Math.floor(diff/3600) + ' ' + '<?= __('dest_hours_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
+    return Math.floor(diff/86400) + ' ' + '<?= __('dest_days_ago') ?>'.replace('<?= __('dest_ago') ?>', '').trim();
   }
 
   async function loadReviews(reset = false) {

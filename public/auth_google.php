@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/functions.php';
 
 $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
-$redirectUri = url('/public/auth_google_callback.php');
+$redirectUri = $_ENV['GOOGLE_REDIRECT_URI'] ?? url('/public/auth_google_callback.php');
 
 if (empty($clientId)) {
     die('<div style="padding: 20px; font-family: sans-serif;"><strong>Lỗi Cấu hình:</strong> Vui lòng cung cấp <code>GOOGLE_CLIENT_ID</code> trong file <code>.env</code></div>');

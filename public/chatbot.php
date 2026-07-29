@@ -40,7 +40,7 @@ include __DIR__ . '/../includes/header.php';
   <div class="chat-window" id="chat-window">
     <div class="msg-row bot-row">
       <div class="msg-avatar">🤖</div>
-      <div class="msg bot"><?= __('chat_greeting') ?></div>
+      <div class="msg bot" id="chat-greeting-bubble"><?= __('chat_greeting') ?></div>
     </div>
   </div>
 
@@ -145,21 +145,88 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
+if (!window.chatbotEventsAttached) {
+    window.chatbotEventsAttached = true;
+    let savedChatHtml = '';
+    let savedInputValue = '';
+    document.addEventListener('beforeLangSwitch', function() {
+        const cw = document.getElementById('chat-window');
+        const ci = document.getElementById('chat-input');
+        if (cw) savedChatHtml = cw.innerHTML;
+        if (ci) savedInputValue = ci.value;
+    });
+    document.addEventListener('afterLangSwitch', function() {
+        const cw = document.getElementById('chat-window');
+        const ci = document.getElementById('chat-input');
+        
+        // Lấy câu chào mới đã được dịch từ DOM mới trước khi ghi đè
+        let newGreeting = '';
+        const newGreetingBubble = document.getElementById('chat-greeting-bubble');
+        if (newGreetingBubble) {
+            newGreeting = newGreetingBubble.innerHTML;
+        }
+        
+        if (cw && savedChatHtml) {
+            cw.innerHTML = savedChatHtml;
+            
+            // Cập nhật lại câu chào với ngôn ngữ mới
+            const restoredGreetingBubble = document.getElementById('chat-greeting-bubble');
+            if (restoredGreetingBubble && newGreeting) {
+                restoredGreetingBubble.innerHTML = newGreeting;
+            }
+            cw.scrollTop = cw.scrollHeight;
+
+            // Tự động dịch phần lịch sử chat
+            if (cw.querySelectorAll('.msg-row').length > 1) {
+                const translateDiv = document.createElement('div');
+                translateDiv.className = 'msg-row bot-row';
+                translateDiv.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg bot loading-dots">Translating history...</div>';
+                cw.appendChild(translateDiv);
+                cw.scrollTop = cw.scrollHeight;
+
+                fetch('<?= url('/api/translate_html.php') ?>', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({html: savedChatHtml})
+                }).then(r => r.json()).then(data => {
+                    if (data.success && data.html) {
+                        cw.innerHTML = data.html;
+                        // Phục hồi lại câu chào để đảm bảo khớp 100%
+                        const updatedGreeting = document.getElementById('chat-greeting-bubble');
+                        if (updatedGreeting && newGreeting) {
+                            updatedGreeting.innerHTML = newGreeting;
+                        }
+                        cw.scrollTop = cw.scrollHeight;
+                    } else {
+                        cw.removeChild(translateDiv);
+                    }
+                }).catch(() => {
+                    if(translateDiv.parentNode) cw.removeChild(translateDiv);
+                });
+            }
+        }
+        if (ci && savedInputValue) {
+            ci.value = savedInputValue;
+        }
+    });
+}
+
+(function() {
   const chatWindow = document.getElementById('chat-window');
   const chatForm = document.getElementById('chat-form');
   const chatInput = document.getElementById('chat-input');
 
-  function sendSuggestion(text) {
+  window.sendSuggestion = function(text) {
     sendMessage(text);
-  }
+  };
 
-  function openLightbox(src) {
+  window.openLightbox = function(src) {
     document.getElementById('lightbox-img').src = src;
     document.getElementById('img-lightbox').classList.add('open');
-  }
-  function closeLightbox() {
+  };
+  window.closeLightbox = function() {
     document.getElementById('img-lightbox').classList.remove('open');
-  }
+  };
   document.getElementById('img-lightbox').addEventListener('click', function (e) {
     if (e.target === this) closeLightbox();
   });
@@ -176,7 +243,7 @@ include __DIR__ . '/../includes/header.php';
 
     const bubble = document.createElement('div');
     bubble.className = 'msg ' + role;
-    bubble.textContent = text;
+    bubble.textContent = text.replace(/\*/g, '');
     wrap.appendChild(bubble);
 
     if (images && images.length > 0) {
@@ -222,7 +289,8 @@ include __DIR__ . '/../includes/header.php';
       });
       const data = await res.json();
       loadingDiv.classList.remove('loading-dots');
-      loadingDiv.textContent = data.reply || '<?= __('chat_error') ?>';
+      let replyText = data.reply || '<?= __('chat_error') ?>';
+      loadingDiv.textContent = replyText.replace(/\*/g, '');
 
       if (data.images && data.images.length > 0) {
         const imgRow = document.createElement('div');
@@ -254,6 +322,7 @@ include __DIR__ . '/../includes/header.php';
     const prefill = chatInput.value;
     if (prefill) sendMessage(prefill);
   });
+})();
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

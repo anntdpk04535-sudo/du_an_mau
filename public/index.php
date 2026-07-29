@@ -72,7 +72,7 @@ include __DIR__ . '/../includes/header.php';
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
   try {
-    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.6667&longitude=108.0500&current_weather=true');
+    const res = await fetch('<?= url('/api/weather.php') ?>');
     const data = await res.json();
     if (data.current_weather) {
       const temp = Math.round(data.current_weather.temperature);

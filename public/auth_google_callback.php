@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/functions.php';
 
 $clientId = $_ENV['GOOGLE_CLIENT_ID'] ?? '';
 $clientSecret = $_ENV['GOOGLE_CLIENT_SECRET'] ?? '';
-$redirectUri = url('/public/auth_google_callback.php');
+$redirectUri = $_ENV['GOOGLE_REDIRECT_URI'] ?? url('/public/auth_google_callback.php');
 
 if (empty($_GET['code'])) {
     die('Lỗi: Không nhận được mã xác thực từ Google.');
