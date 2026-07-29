@@ -8,14 +8,14 @@ $mapDestinations = [];
 foreach ($destinations as $d) {
     if (!empty($d['latitude']) && !empty($d['longitude'])) {
         $mapDestinations[] = [
-            'name'            => $d['name'],
+            'name'            => htmlspecialchars($d['name'], ENT_QUOTES, 'UTF-8'),
             'slug'            => $d['slug'],
-            'short_desc'      => $d['short_desc'],
+            'short_desc'      => htmlspecialchars($d['short_desc'], ENT_QUOTES, 'UTF-8'),
             'lat'             => (float)$d['latitude'],
             'lng'             => (float)$d['longitude'],
             'rating'          => $d['avg_rating'] !== null ? round((float)$d['avg_rating'], 1) : null,
             'review_count'    => (int)$d['review_count'],
-            'avg_visit_hours' => (float)$d['avg_visit_hours'],
+            'avg_visit_hours' => !empty($d['avg_visit_hours']) ? (float)$d['avg_visit_hours'] : null,
             'price_level'     => $d['price_level'],
             'image_url'       => $d['image_url']
         ];
@@ -209,14 +209,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="padding:0 2px;">
                     <img src="${d.image_url || 'https://via.placeholder.com/260x120?text=No+Image'}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px;">
                     <div style="font-size:12px;margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;">
-                        ${d.rating !== null
+                        ${d.rating !== null 
                             ? `<span class="badge-rating">${'★'.repeat(Math.round(d.rating))}${'☆'.repeat(5-Math.round(d.rating))} ${d.rating.toFixed(1)}</span>`
-                            : `<span class="badge-norating"><?= __('dest_no_reviews') ?></span>`
+                            : `<span class="badge-norating"><?= __('dest_no_reviews_yet') ?></span>`
                         }
-                        <span style="background:#f1f1f1;padding:2px 7px;border-radius:8px;">~${d.avg_visit_hours}h</span>
+                        ${d.avg_visit_hours !== null ? `<span style="background:#f1f1f1;padding:2px 7px;border-radius:8px;">~${d.avg_visit_hours}h</span>` : ''}
                     </div>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
-                        <a href="<?= url('/public/destination.php') ?>?slug=${d.slug}" style="background:${color};color:white;padding:5px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;display:block;text-align:center;flex:1;"><?= __('dest_view_details') ?></a>
+                        <a href="<?= url('/public/destination.php') ?>?slug=${d.slug}" style="background:${color};color:white;padding:5px 12px;border-radius:6px;text-decoration:none;font-size:12px;font-weight:600;display:block;text-align:center;flex:1;"><?= __('view_details') ?></a>
                     </div>
                 </div>
             </div>`;
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="map-sidebar-meta">
                     ${d.rating !== null 
                         ? `<span style="color:#d97706;font-weight:600;">★ ${d.rating.toFixed(1)}</span>` 
-                        : `<span style="color:#9ca3af;"><?= __('dest_no_reviews') ?></span>`}
+                        : `<span style="color:#9ca3af;"><?= __('dest_no_reviews_yet') ?></span>`}
                     <span>•</span>
                     <span style="color:${color};font-weight:600;">${getPriceLabelVi(d.price_level)}</span>
                 </div>

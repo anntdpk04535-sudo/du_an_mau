@@ -5,9 +5,9 @@ $pageTitle = __('admin_destinations_title');
 $db = getDB();
 
 // Xử lý xoá
-if (isset($_GET['delete'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
   $stmt = $db->prepare("DELETE FROM destinations WHERE id = ?");
-  $stmt->execute([(int) $_GET['delete']]);
+  $stmt->execute([(int) $_POST['delete_id']]);
   header('Location: ' . url('/admin/destinations.php'));
   exit;
 }
@@ -245,8 +245,11 @@ include __DIR__ . '/../includes/header.php';
       <td style="padding:10px;"><?= e((string) $d['rating']) ?></td>
       <td style="padding:10px;">
         <a href="<?= url('/admin/destinations.php') ?>?edit=<?= e((string) $d['id']) ?>"><?= __('admin_destinations_edit_btn') ?></a> |
-        <a href="<?= url('/admin/destinations.php') ?>?delete=<?= e((string) $d['id']) ?>"
-          onclick="return confirm('<?= __('admin_destinations_delete_confirm') ?>')"><?= __('admin_destinations_delete_btn') ?></a>
+        <form method="post" style="display:inline;">
+          <input type="hidden" name="action" value="delete">
+          <input type="hidden" name="delete_id" value="<?= e((string) $d['id']) ?>">
+          <button type="submit" onclick="return confirm('<?= __('admin_destinations_delete_confirm') ?>')" style="background:none; border:none; color:inherit; text-decoration:underline; font:inherit; cursor:pointer; padding:0;"><?= __('admin_destinations_delete_btn') ?></button>
+        </form>
       </td>
     </tr>
   <?php endforeach; ?>

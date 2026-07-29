@@ -244,7 +244,7 @@ include __DIR__ . '/../includes/header.php';
                         <h3><?= e($it['title']) ?></h3>
                         <p><?= __('profile_preferences') ?>: <?= e($it['preferences'] ?: __('profile_no_pref')) ?></p>
                         <div class="itinerary-meta">
-                            <span>⏱️ <?= $it['days'] ?> <?= __('days') ?></span>
+                            <span>⏱️ <?= e((string)$it['days']) ?> <?= __('days') ?></span>
                             <span>📅 <?= date('d/m/Y', strtotime($it['created_at'])) ?></span>
                         </div>
                     </a>

@@ -13,7 +13,13 @@ document.addEventListener('click', function(e) {
     var langUrl = btn.getAttribute('data-lang-url');
     if (!langUrl) return;
     
+    // Đảm bảo fetch trả về HTML của trang hiện tại thay vì bị redirect về trang chủ nếu mất Referer
+    langUrl += '&return_to=' + encodeURIComponent(location.href);
+    
     btn.disabled = true;
+    
+    // Lưu state trước khi đổi ngôn ngữ
+    document.dispatchEvent(new Event('beforeLangSwitch'));
     
     // Bước 1: Gọi change_lang.php để cập nhật session
     // Bước 2: Fetch lại trang hiện tại với ngôn ngữ mới
@@ -49,6 +55,10 @@ document.addEventListener('click', function(e) {
                 oldScript.parentNode.replaceChild(newScript, oldScript);
             }
         }
+        
+        // Phục hồi state sau khi đổi ngôn ngữ
+        document.dispatchEvent(new Event('afterLangSwitch'));
+        
     }).catch(function(err) {
         console.error('Lang switch error:', err);
     });

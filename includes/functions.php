@@ -246,7 +246,7 @@ function getTotalDestinations(?int $categoryId = null, string $keyword = '', str
     }
     
     if ($minRating > 0) {
-        $sql .= " GROUP BY d.id HAVING COALESCE(AVG(r.rating), d.rating) >= ?";
+        $sql .= " GROUP BY d.id HAVING COALESCE(AVG(r.rating), MAX(d.rating)) >= ?";
         $params[] = $minRating;
         
         $stmt = $db->prepare($sql);
