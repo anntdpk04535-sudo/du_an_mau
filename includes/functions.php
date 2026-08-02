@@ -303,7 +303,24 @@ function getDestinationsSummaryForAI(): string
 
 function currentUser(): ?array
 {
-    return $_SESSION['user'] ?? null;
+    if (isset($_SESSION['user'])) {
+        return $_SESSION['user'];
+    }
+
+    if (isset($_COOKIE['remember_token'])) {
+        $token = $_COOKIE['remember_token'];
+        $db = getDB();
+        $stmt = $db->prepare("SELECT * FROM users WHERE remember_token = ? AND status = 'active'");
+        $stmt->execute([$token]);
+        $u = $stmt->fetch();
+        if ($u) {
+            session_regenerate_id(true);
+            $_SESSION['user'] = ['id' => $u['id'], 'full_name' => $u['full_name'], 'role' => $u['role'], 'avatar' => $u['avatar'] ?? null];
+            return $_SESSION['user'];
+        }
+    }
+
+    return null;
 }
 
 function requireAdmin(): void
