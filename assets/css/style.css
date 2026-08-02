@@ -646,19 +646,97 @@ body {
   margin-top: 40px;
 }
 
+/* Mobile Menu */
+.header-mobile-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 5px;
+}
+.header-collapsible {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+
+@media (max-width: 900px) {
+  .header-inner {
+    flex-direction: column;
+    gap: 0;
+  }
+  .mobile-menu-toggle {
+    display: block;
+  }
+  .header-collapsible {
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    padding-top: 15px;
+    margin-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .site-header.menu-open .header-collapsible {
+    display: flex;
+  }
+  .main-nav {
+    flex-direction: column;
+    width: 100%;
+    gap: 15px;
+  }
+  .nav-dropdown {
+    width: 100%;
+    text-align: center;
+  }
+  .nav-dropdown .dropbtn {
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+  }
+  .dropdown-content {
+    position: static;
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    box-shadow: none;
+    background: rgba(255,255,255,0.1);
+    display: none;
+    margin-top: 0;
+  }
+  .nav-dropdown:hover .dropdown-content,
+  .nav-dropdown:focus-within .dropdown-content {
+    display: block;
+  }
+  .dropdown-content a {
+    color: white;
+  }
+  .dropdown-content a:hover {
+    background: rgba(255,255,255,0.2);
+    color: white;
+  }
+  .auth-area {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+}
+
 @media (max-width: 700px) {
-  .main-nav a {
-    margin-left: 12px;
+  .main-nav a, .nav-dropdown .dropbtn {
     font-size: 13px;
   }
 
   .hero h1 {
     font-size: 26px;
-  }
-
-  .header-inner {
-    flex-wrap: wrap;
-    gap: 10px;
   }
 
   .auth-greeting {
@@ -674,6 +752,15 @@ body {
   .chat-hero-art svg {
     width: 150px;
     height: 150px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    font-size: 14px;
   }
 }
 

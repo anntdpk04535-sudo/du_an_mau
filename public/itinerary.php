@@ -64,7 +64,6 @@ include __DIR__ . '/../includes/header.php';
       <label><?= __('iti_form_extra') ?></label>
       <div style="display:flex; gap:10px;">
         <textarea name="notes" id="notes" rows="3" style="flex:1" placeholder="<?= __('iti_form_extra_ph') ?>"><?= $prefill ? __('iti_prefill_prefix') . ' ' . e($prefill) : '' ?></textarea>
-        <button type="button" id="mic-btn" class="btn secondary" style="align-self:flex-start; padding:10px 14px; min-width:48px;" title="<?= __('iti_mic_title') ?>">🎤</button>
       </div>
     </div>
     <button type="submit" class="btn">✨ <?= __('iti_form_submit') ?></button>
@@ -390,47 +389,6 @@ window.simulateRain = async function() {
     }
 }
 
-// Voice input
-const micBtn = document.getElementById('mic-btn');
-const notesEl = document.getElementById('notes');
-if (window.SpeechRecognition || window.webkitSpeechRecognition) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'vi-VN';
-  recognition.interimResults = false;
-  
-  micBtn.addEventListener('click', () => {
-    if (micBtn.textContent === '🔴') {
-        recognition.stop();
-        return;
-    }
-    micBtn.textContent = '🔴';
-    recognition.start();
-  });
-  
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    notesEl.value += (notesEl.value ? ' ' : '') + transcript;
-  };
-  
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error detected: ' + event.error);
-    if (event.error === 'not-allowed') {
-        alert('<?= __('iti_mic_blocked') ?>');
-    } else if (event.error === 'network') {
-        alert('<?= __('iti_mic_network') ?>');
-    } else {
-        alert('<?= __('iti_mic_error') ?>' + event.error + '<?= __('iti_mic_try_again') ?>');
-    }
-    micBtn.textContent = '🎤';
-  };
-  
-  recognition.onend = () => {
-    micBtn.textContent = '🎤';
-  };
-} else {
-  micBtn.style.display = 'none';
-}
 })();
 </script>
 
