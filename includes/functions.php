@@ -36,7 +36,7 @@ function __(string $key): string
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
 if (!defined('BASE_URL')) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || ($_SERVER['SERVER_PORT'] ?? null) == 443) ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
     $base = preg_replace('#/(public|admin|api)$#', '', $scriptDir);

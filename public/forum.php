@@ -30,14 +30,16 @@ $checkins = $stmt->fetchAll();
 // Lấy lượt thích của user hiện tại
 $userLikes = [];
 if ($user) {
-    $likes = $db->query("SELECT checkin_id FROM checkin_likes WHERE user_id = {$user['id']}")->fetchAll(PDO::FETCH_COLUMN);
+    $stmtLike = $db->prepare("SELECT checkin_id FROM checkin_likes WHERE user_id = ?");
+    $stmtLike->execute([$user['id']]);
+    $likes = $stmtLike->fetchAll(PDO::FETCH_COLUMN);
     $userLikes = array_fill_keys($likes, true);
 }
 
 include __DIR__ . '/../includes/header.php';
 ?>
 <style>
-.forum-container { max-width: 800px; margin: 40px auto; }
+.forum-container { max-width: 1040px; margin: 40px auto; }
 .forum-header { text-align: center; margin-bottom: 30px; }
 .forum-header h1 { color: var(--green-900); font-size: 32px; margin-bottom: 10px; }
 .forum-header p { color: #64748b; font-size: 16px; }

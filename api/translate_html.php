@@ -14,6 +14,10 @@ if (empty($html)) {
 
 $prompt = "Translate the text contents of the following HTML into " . ($targetLang === 'en' ? 'English' : 'Vietnamese') . ". Do not modify HTML tags, classes, or IDs. Only translate the human-readable text (keep emojis intact). Return ONLY the HTML code:\n\n" . $html;
 
-$translated = callGemini([['role' => 'user', 'content' => $prompt]], "You are a precise HTML translator.", 2000, 0.1);
+$translated = callGemini([['role' => 'user', 'content' => $prompt]], "You are a precise HTML translator.", 8192, 0.1);
 
-echo json_encode(['success' => true, 'html' => str_replace(['```html', '```'], '', trim($translated))]);
+$clean = trim($translated);
+$clean = preg_replace('/^```html\s*|\s*```$/m', '', $clean);
+$clean = trim($clean, "` \n");
+
+echo json_encode(['success' => true, 'html' => $clean]);

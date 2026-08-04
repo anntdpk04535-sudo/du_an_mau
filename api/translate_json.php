@@ -14,18 +14,21 @@ if (empty($data)) {
 }
 
 $langName = $targetLang === 'en' ? 'English' : 'Vietnamese';
-$prompt = "Translate all text values in the following JSON into $langName. DO NOT change the JSON structure or keys. ONLY translate the string values. Return ONLY the valid JSON without any markdown formatting.\n\n" . json_encode($data, JSON_UNESCAPED_UNICODE);
+$prompt = "Translate all natural language text values in the following JSON into $langName. DO NOT change any JSON keys, IDs, numeric values, or structure. ONLY translate human-readable sentence/phrase values. Return ONLY the valid JSON without any markdown formatting.\n\n" . json_encode($data, JSON_UNESCAPED_UNICODE);
 
-$translated = callGemini([['role' => 'user', 'content' => $prompt]], "You are a precise JSON translator.", 2500, 0.1, 'application/json');
+$translated = callGemini([['role' => 'user', 'content' => $prompt]], "You are a precise JSON translator.", 8192, 0.1, 'application/json');
 
-$translated = trim($translated);
+$clean = trim($translated);
+$clean = preg_replace('/^```json\s*|\s*```$/m', '', $clean);
+$clean = trim($clean, "` \n");
 
-// Cố gắng trích xuất cục JSON phòng khi Gemini trả về thêm văn bản rườm rà
-if (preg_match('/\{.*\}/s', $translated, $matches)) {
-    $decoded = json_decode($matches[0], true);
-} else {
-    $decoded = json_decode($translated, true);
+$firstBrace = strpos($clean, '{');
+$lastBrace  = strrpos($clean, '}');
+if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
+    $clean = substr($clean, $firstBrace, $lastBrace - $firstBrace + 1);
 }
+
+$decoded = json_decode($clean, true);
 
 if ($decoded) {
     echo json_encode(['success' => true, 'data' => $decoded]);
