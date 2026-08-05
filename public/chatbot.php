@@ -10,319 +10,240 @@ $askPrefill = $_GET['ask'] ?? '';
 include __DIR__ . '/../includes/header.php';
 ?>
 
+<!-- ── 1. CHATBOT HERO BANNER ── -->
 <section class="chat-hero">
   <div class="chat-hero-text">
-    <h1><?= __('chatbot_title') ?></h1>
-    <p><?= __('chatbot_sub') ?></p>
-    <a href="#chat-box" class="btn"><?= __('chat_start_btn') ?></a>
+    <div style="display:inline-flex; align-items:center; gap:8px; background:rgba(254, 240, 138, 0.2); color:#fef08a; padding:6px 16px; border-radius:30px; font-weight:800; font-size:13px; margin-bottom:16px; border:1px solid rgba(254,240,138,0.3);">
+      <span>✨ TRÍ TUỆ NHÂN TẠO AI 4.0</span>
+    </div>
+    <h1 style="font-size: 2.5rem; font-weight: 800; color: #ffffff; margin-bottom: 12px; line-height: 1.2;">
+      <?= __('chatbot_title') ?>
+    </h1>
+    <p style="color: #a7f3d0; font-size: 1.1rem; line-height: 1.6; max-width: 600px; margin-bottom: 24px;">
+      <?= __('chatbot_sub') ?>
+    </p>
+    <a href="#chat-box" class="btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff !important; padding: 12px 28px; border-radius: 40px; font-weight: 800; border: none; box-shadow: 0 8px 20px rgba(245,158,11,0.35);">
+      <?= __('chat_start_btn') ?> ➔
+    </a>
   </div>
+  
   <div class="chat-hero-art">
-    <svg viewBox="0 0 220 220" width="220" height="220">
-      <circle cx="110" cy="110" r="105" fill="rgba(255,255,255,0.08)" />
-      <circle cx="110" cy="110" r="80" fill="rgba(255,255,255,0.10)" />
-      <line x1="110" y1="40" x2="110" y2="58" stroke="#fff" stroke-width="4" stroke-linecap="round" />
-      <circle cx="110" cy="34" r="7" fill="#ffb703" />
-      <rect x="62" y="58" width="96" height="78" rx="22" fill="#ffffff" />
-      <circle cx="90" cy="96" r="9" fill="#2d6a4f" />
-      <circle cx="130" cy="96" r="9" fill="#2d6a4f" />
-      <path d="M85 114 Q110 130 135 114" stroke="#2d6a4f" stroke-width="5" fill="none" stroke-linecap="round" />
-      <rect x="74" y="142" width="72" height="50" rx="16" fill="#e9ecef" />
-      <circle cx="110" cy="167" r="10" fill="#ffb703" />
-      <circle cx="58" cy="160" r="10" fill="#ffffff" />
-      <circle cx="162" cy="160" r="10" fill="#ffffff" />
-    </svg>
+    <div style="background: rgba(255,255,255,0.08); backdrop-filter: blur(20px); border: 1px solid rgba(254,240,138,0.25); border-radius: 50%; padding: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.3);">
+      <svg viewBox="0 0 220 220" width="200" height="200">
+        <circle cx="110" cy="110" r="105" fill="rgba(255,255,255,0.05)" />
+        <circle cx="110" cy="110" r="80" fill="rgba(255,255,255,0.08)" />
+        <line x1="110" y1="40" x2="110" y2="58" stroke="#fef08a" stroke-width="4" stroke-linecap="round" />
+        <circle cx="110" cy="34" r="7" fill="#f59e0b" />
+        <rect x="62" y="58" width="96" height="78" rx="22" fill="#ffffff" />
+        <circle cx="90" cy="96" r="9" fill="#022c22" />
+        <circle cx="130" cy="96" r="9" fill="#022c22" />
+        <path d="M85 114 Q110 130 135 114" stroke="#022c22" stroke-width="5" fill="none" stroke-linecap="round" />
+        <rect x="74" y="142" width="72" height="50" rx="16" fill="#ecfdf5" />
+        <circle cx="110" cy="167" r="10" fill="#f59e0b" />
+        <circle cx="58" cy="160" r="10" fill="#ffffff" />
+        <circle cx="162" cy="160" r="10" fill="#ffffff" />
+      </svg>
+    </div>
   </div>
 </section>
 
-<div id="chat-box">
-  <p class="section-sub" style="margin-top:6px;"><?= __('chat_desc') ?></p>
+<!-- ── 2. GLASSMORPHIC CHAT CONTAINER ── -->
+<div id="chat-box" style="margin-top: -30px; position: relative; z-index: 10;">
+  
+  <!-- Header Bar của Khung Chat -->
+  <div style="background: linear-gradient(135deg, #022c22 0%, #047857 100%); padding: 18px 24px; border-radius: 24px 24px 0 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f59e0b;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 42px; height: 42px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(245,158,11,0.4);">
+        🤖
+      </div>
+      <div>
+        <h3 style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 800;">Trợ Lý AI Du Lịch Đắk Lắk</h3>
+        <p style="margin: 2px 0 0; color: #fef08a; font-size: 12.5px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block;"></span> Trực tuyến 24/7 · Sẵn sàng tư vấn
+        </p>
+      </div>
+    </div>
+    
+    <button type="button" onclick="restartChat()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #ffffff; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+      🔄 Làm mới chat
+    </button>
+  </div>
 
+  <!-- Cửa sổ tin nhắn Chat -->
   <div class="chat-window" id="chat-window">
     <div class="msg-row bot-row">
       <div class="msg-avatar">🤖</div>
-      <div class="msg bot" id="chat-greeting-bubble"><?= __('chat_greeting') ?></div>
+      <div class="msg bot" id="chat-greeting-bubble">
+        <?= __('chat_greeting') ?>
+      </div>
     </div>
   </div>
 
+  <!-- Gợi ý câu hỏi nhanh (Suggestion Chips) -->
   <div class="chat-suggestions" id="chat-suggestions">
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_1')) ?>')"><?= __('chat_sugg_1') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_2')) ?>')"><?= __('chat_sugg_2') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_3')) ?>')"><?= __('chat_sugg_3') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_4')) ?>')"><?= __('chat_sugg_4') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_5')) ?>')"><?= __('chat_sugg_5') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_6')) ?>')"><?= __('chat_sugg_6') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_7')) ?>')"><?= __('chat_sugg_7') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_8')) ?>')"><?= __('chat_sugg_8') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_9')) ?>')"><?= __('chat_sugg_9') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_1')) ?>')">📍 <?= __('chat_sugg_1') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_2')) ?>')">☕ <?= __('chat_sugg_2') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_3')) ?>')">☀️ <?= __('chat_sugg_3') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_4')) ?>')">🏛️ <?= __('chat_sugg_4') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_5')) ?>')">🛵 <?= __('chat_sugg_5') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_6')) ?>')">🎁 <?= __('chat_sugg_6') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_7')) ?>')">🏕️ <?= __('chat_sugg_7') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_8')) ?>')">🌧️ <?= __('chat_sugg_8') ?></button>
+    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_9')) ?>')">🏡 <?= __('chat_sugg_9') ?></button>
   </div>
 
+  <!-- Ô Nhập Tin Nhắn -->
   <form id="chat-form" class="chat-input-row">
-    <input type="text" id="chat-input" placeholder="<?= __('type_msg') ?>" autocomplete="off"
-      value="<?= e($askPrefill) ?>">
-    <button type="submit" class="btn"><?= __('send_btn') ?></button>
+    <input type="text" id="chat-input" placeholder="<?= __('type_msg') ?>" autocomplete="off" value="<?= e($askPrefill) ?>">
+    <button type="submit" class="btn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff !important; border: none; padding: 14px 28px; border-radius: 40px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(245,158,11,0.35);">
+      ✨ <?= __('send_btn') ?>
+    </button>
   </form>
 </div>
 
-<style>
-  .chat-suggestions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 10px 0;
-    padding: 0 16px;
-  }
-  .sugg-btn {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    color: #334155;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 13.5px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .sugg-btn:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    transform: translateY(-1px);
-  }
-
-  .chat-images {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .chat-images img {
-    width: 120px;
-    height: 85px;
-    object-fit: cover;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    border: 2px solid #e0e0e0;
-  }
-
-  .chat-images img:hover {
-    transform: scale(1.05);
-  }
-
-  #img-lightbox {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #img-lightbox.open {
-    display: flex;
-  }
-
-  #img-lightbox img {
-    max-width: 90vw;
-    max-height: 85vh;
-    border-radius: 12px;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
-  }
-
-  #img-lightbox span {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    color: white;
-    font-size: 2rem;
-    cursor: pointer;
-  }
-</style>
-
-<div id="img-lightbox">
+<!-- Lightbox xem ảnh trong chat -->
+<!-- Lightbox xem ảnh trong chat -->
+<div id="img-lightbox" style="display:none;">
   <span onclick="closeLightbox()">✕</span>
-  <img id="lightbox-img" src="" alt="">
+  <img id="lightbox-img" src="" alt="Xem ảnh phóng to">
 </div>
 
 <script>
+function restartChat() {
+  if (confirm('Bạn có muốn làm mới cuộc trò chuyện?')) {
+    const chatWindow = document.getElementById('chat-window');
+    chatWindow.innerHTML = `
+      <div class="msg-row bot-row">
+        <div class="msg-avatar">🤖</div>
+        <div class="msg bot" id="chat-greeting-bubble"><?= __('chat_greeting') ?></div>
+      </div>
+    `;
+  }
+}
+
 if (!window.chatbotEventsAttached) {
     window.chatbotEventsAttached = true;
     let savedChatHtml = '';
-    let savedInputValue = '';
+    
     document.addEventListener('beforeLangSwitch', function() {
-        const cw = document.getElementById('chat-window');
-        const ci = document.getElementById('chat-input');
-        if (cw) savedChatHtml = cw.innerHTML;
-        if (ci) savedInputValue = ci.value;
+        const chatWin = document.getElementById('chat-window');
+        if (chatWin) {
+            savedChatHtml = chatWin.innerHTML;
+        }
     });
+
     document.addEventListener('afterLangSwitch', function() {
-        const cw = document.getElementById('chat-window');
-        const ci = document.getElementById('chat-input');
-        
-        // Lấy câu chào mới đã được dịch từ DOM mới trước khi ghi đè
-        let newGreeting = '';
-        const newGreetingBubble = document.getElementById('chat-greeting-bubble');
-        if (newGreetingBubble) {
-            newGreeting = newGreetingBubble.innerHTML;
+        const chatWin = document.getElementById('chat-window');
+        if (chatWin && savedChatHtml) {
+            chatWin.innerHTML = savedChatHtml;
         }
         
-        if (cw && savedChatHtml) {
-            cw.innerHTML = savedChatHtml;
-            
-            // Cập nhật lại câu chào với ngôn ngữ mới
-            const restoredGreetingBubble = document.getElementById('chat-greeting-bubble');
-            if (restoredGreetingBubble && newGreeting) {
-                restoredGreetingBubble.innerHTML = newGreeting;
-            }
-            cw.scrollTop = cw.scrollHeight;
-
-            // Tự động dịch phần lịch sử chat
-            if (cw.querySelectorAll('.msg-row').length > 1) {
-                const translateDiv = document.createElement('div');
-                translateDiv.className = 'msg-row bot-row';
-                translateDiv.innerHTML = '<div class="msg-avatar">🤖</div><div class="msg bot loading-dots">Translating history...</div>';
-                cw.appendChild(translateDiv);
-                cw.scrollTop = cw.scrollHeight;
-
-                fetch('<?= url('/api/translate_html.php') ?>', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({html: savedChatHtml})
-                }).then(r => r.json()).then(data => {
-                    if (data.success && data.html) {
-                        cw.innerHTML = data.html;
-                        // Phục hồi lại câu chào để đảm bảo khớp 100%
-                        const updatedGreeting = document.getElementById('chat-greeting-bubble');
-                        if (updatedGreeting && newGreeting) {
-                            updatedGreeting.innerHTML = newGreeting;
-                        }
-                        cw.scrollTop = cw.scrollHeight;
-                    } else {
-                        cw.removeChild(translateDiv);
-                    }
-                }).catch(() => {
-                    if(translateDiv.parentNode) cw.removeChild(translateDiv);
-                });
-            }
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', handleChatSubmit);
         }
-        if (ci && savedInputValue) {
-            ci.value = savedInputValue;
+    });
+
+    function handleChatSubmit(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const text  = input.value.trim();
+        if (!text) return;
+
+        appendMsg('user', text);
+        input.value = '';
+
+        const typingId = appendMsg('bot', '<span class="loading-dots">🤖 <?= __('bot_thinking') ?></span>');
+
+        fetch('<?= url('/api/chat.php') ?>', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const typEl = document.getElementById(typingId);
+            if (data.reply) {
+                let html = data.reply;
+                if (data.images && data.images.length > 0) {
+                    html += '<div class="chat-images">';
+                    data.images.forEach(img => {
+                        html += `<img src="${img.url}" alt="${img.name}" onclick="openLightbox('${img.url}')">`;
+                    });
+                    html += '</div>';
+                }
+                if (typEl) typEl.innerHTML = html;
+            } else {
+                if (typEl) typEl.innerHTML = '❌ ' + (data.message || '<?= __('bot_error') ?>');
+            }
+            scrollToBottom();
+        })
+        .catch(err => {
+            const typEl = document.getElementById(typingId);
+            if (typEl) typEl.innerHTML = '❌ <?= __('bot_connect_error') ?>';
+            console.error(err);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatForm = document.getElementById('chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', handleChatSubmit);
         }
     });
 }
 
-(function() {
-  const chatWindow = document.getElementById('chat-window');
-  const chatForm = document.getElementById('chat-form');
-  const chatInput = document.getElementById('chat-input');
-
-  window.sendSuggestion = function(text) {
-    sendMessage(text);
-  };
-
-  window.openLightbox = function(src) {
-    document.getElementById('lightbox-img').src = src;
-    document.getElementById('img-lightbox').classList.add('open');
-  };
-  window.closeLightbox = function() {
-    document.getElementById('img-lightbox').classList.remove('open');
-  };
-  document.getElementById('img-lightbox').addEventListener('click', function (e) {
-    if (e.target === this) closeLightbox();
-  });
-
-  function addMessage(text, role, images = []) {
+let msgCount = 0;
+function appendMsg(role, content) {
+    msgCount++;
+    const id = 'msg-' + msgCount;
+    const chatWin = document.getElementById('chat-window');
+    const isBot   = role === 'bot';
+    
     const row = document.createElement('div');
-    row.className = 'msg-row ' + (role === 'user' ? 'user-row' : 'bot-row');
+    row.className = 'msg-row ' + (isBot ? 'bot-row' : 'user-row');
 
     const avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
-    avatar.textContent = role === 'user' ? '🧑' : '🤖';
+    avatar.textContent = isBot ? '🤖' : '👤';
 
-    const wrap = document.createElement('div');
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + role;
+    msg.id = id;
+    msg.innerHTML = content;
 
-    const bubble = document.createElement('div');
-    bubble.className = 'msg ' + role;
-    bubble.textContent = text.replace(/\*/g, '');
-    wrap.appendChild(bubble);
-
-    if (images && images.length > 0) {
-      const imgRow = document.createElement('div');
-      imgRow.className = 'chat-images';
-      images.forEach(img => {
-        const el = document.createElement('img');
-        el.src = img.url;
-        el.alt = img.title;
-        el.title = img.title;
-        el.onerror = function () { this.style.display = 'none'; };
-        el.onclick = () => openLightbox(img.url);
-        imgRow.appendChild(el);
-      });
-      wrap.appendChild(imgRow);
-    }
-
-    if (role === 'user') {
-      row.appendChild(wrap);
-      row.appendChild(avatar);
+    if (isBot) {
+        row.appendChild(avatar);
+row.appendChild(msg);
     } else {
-      row.appendChild(avatar);
-      row.appendChild(wrap);
+        row.appendChild(msg);
+        row.appendChild(avatar);
     }
 
-    chatWindow.appendChild(row);
-    chatWindow.scrollTop = chatWindow.scrollHeight;
-    return bubble;
-  }
+    chatWin.appendChild(row);
+    scrollToBottom();
+    return id;
+}
 
-  async function sendMessage(text) {
-    if (!text.trim()) return;
-    addMessage(text, 'user');
-    chatInput.value = '';
-    const loadingDiv = addMessage('<?= __('chat_answering') ?>', 'bot');
-    loadingDiv.classList.add('loading-dots');
+function sendSuggestion(text) {
+    const input = document.getElementById('chat-input');
+    input.value = text;
+    document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+}
 
-    try {
-      const res = await fetch('<?= url('/api/chat.php') ?>', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
-      });
-      const data = await res.json();
-      loadingDiv.classList.remove('loading-dots');
-      let replyText = data.reply || '<?= __('chat_error') ?>';
-      loadingDiv.textContent = replyText.replace(/\*/g, '');
+function scrollToBottom() {
+    const chatWin = document.getElementById('chat-window');
+    chatWin.scrollTop = chatWin.scrollHeight;
+}
 
-      if (data.images && data.images.length > 0) {
-        const imgRow = document.createElement('div');
-        imgRow.className = 'chat-images';
-        data.images.forEach(img => {
-          const el = document.createElement('img');
-          el.src = img.url;
-          el.alt = img.title;
-          el.title = img.title;
-          el.onerror = function () { this.style.display = 'none'; };
-          el.onclick = () => openLightbox(img.url);
-          imgRow.appendChild(el);
-        });
-        loadingDiv.parentNode.appendChild(imgRow);
-        chatWindow.scrollTop = chatWindow.scrollHeight;
-      }
-    } catch (err) {
-      loadingDiv.classList.remove('loading-dots');
-      loadingDiv.textContent = '<?= __('chat_connection_error') ?>';
-    }
-  }
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('img-lightbox').classList.add('open');
+}
 
-  chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    sendMessage(chatInput.value);
-  });
-
-  window.addEventListener('DOMContentLoaded', () => {
-    const prefill = chatInput.value;
-    if (prefill) sendMessage(prefill);
-  });
-})();
+function closeLightbox() {
+    document.getElementById('img-lightbox').classList.remove('open');
+}
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

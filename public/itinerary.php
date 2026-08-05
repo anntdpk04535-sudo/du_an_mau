@@ -64,7 +64,6 @@ include __DIR__ . '/../includes/header.php';
       <label><?= __('iti_form_extra') ?></label>
       <div style="display:flex; gap:10px;">
         <textarea name="notes" id="notes" rows="3" style="flex:1" placeholder="<?= __('iti_form_extra_ph') ?>"><?= $prefill ? __('iti_prefill_prefix') . ' ' . e($prefill) : '' ?></textarea>
-        <button type="button" id="mic-btn" class="btn secondary" style="align-self:flex-start; padding:10px 14px; min-width:48px;" title="<?= __('iti_mic_title') ?>">🎤</button>
       </div>
     </div>
     <button type="submit" class="btn">✨ <?= __('iti_form_submit') ?></button>
@@ -213,32 +212,58 @@ form.addEventListener('submit', async (e) => {
 
 window.renderItinerary = async function(data) {
     let html = `
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <h2 class="section-title" style="margin:0;"><?= __('iti_suggested_title') ?></h2>
-        <div style="display:flex; gap:10px;">
-          <button type="button" onclick="simulateRain()" class="btn" style="background:#dc2626; display:flex; align-items:center; gap:6px;">
-            <?= __('iti_reroute_btn') ?>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+        <h2 class="section-title" style="margin:0;font-size:2rem;color:#022c22;font-weight:800;"><?= __('iti_suggested_title') ?></h2>
+        <div style="display:flex; gap:12px;">
+          <button type="button" onclick="simulateRain()" class="btn" style="background:linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important; color:#ffffff !important; display:inline-flex; align-items:center; gap:8px; border-radius:40px; padding:12px 24px; font-weight:800; border:none; box-shadow:0 8px 20px rgba(220,38,38,0.35); cursor:pointer;">
+            🌧️ <?= __('iti_reroute_btn') ?>
           </button>
-          <button type="button" onclick="exportItineraryPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
+          <button type="button" onclick="exportItineraryPDF()" class="btn" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; color:#ffffff !important; display:inline-flex; align-items:center; gap:8px; border-radius:40px; padding:12px 24px; font-weight:800; border:none; box-shadow:0 8px 20px rgba(245,158,11,0.4); cursor:pointer;">
             📄 <?= __('iti_export_pdf') ?>
           </button>
         </div>
       </div>
-      <div id="pdf-export-content" style="margin-top:20px;">
+      <div id="pdf-export-content" style="margin-top:20px; background:#ffffff; padding:24px; border-radius:24px; box-shadow:0 10px 30px rgba(0,0,0,0.05); border:1px solid #cbd5e1;">
     `;
-    data.itinerary.forEach(day => {
-      html += `<div class="day-block"><h3><?= __('iti_day') ?> ${day.day}${day.title ? ': ' + day.title : ''}</h3>`;
-      day.items.forEach(item => {
-        const addr  = item.address  ? `<div class="time-slot-address">📍 ${item.address}</div>` : '';
-        const trans = item.transport? `<div class="time-slot-transport" style="font-size:13px;color:var(--green-700);margin-top:4px;font-weight:500;">🛵 ${item.transport}</div>` : '';
-        const price = item.price    ? `<div class="time-slot-price">🎟️ <strong><?= __('iti_cost') ?>:</strong> ${item.price}</div>` : '';
-        const sugg  = item.suggestion ? `<div class="time-slot-suggestion" style="margin-top:8px; padding:8px 12px; background-color:#fffbea; border-left:4px solid #f59e0b; color:#92400e; font-size:13px; border-radius:6px;"><?= __('iti_suggestion') ?>${item.suggestion}</div>` : '';
-        const reason = item.reason ? `<div class="time-slot-reason" style="margin-top:8px; padding:6px 10px; background-color:#e8f4fd; border-left:4px solid #3b82f6; color:#1e40af; font-size:13px; border-radius:6px;"><?= __('iti_reason') ?>${item.reason}</div>` : '';
-        const impact = item.community_impact ? `<div class="time-slot-impact" style="margin-top:6px; padding:6px 10px; background-color:#dcfce7; border-left:4px solid #22c55e; color:#166534; font-size:13px; border-radius:6px;"><?= __('iti_community_impact') ?>${item.community_impact}</div>` : '';
+    (data.itinerary || []).forEach(day => {
+      html += `
+        <div class="day-block" style="background:#ffffff; border-radius:20px; border:2px solid #047857; overflow:hidden; margin-bottom:32px; box-shadow:0 10px 25px rgba(2,44,34,0.08);">
+          <div class="day-block-header" style="background:linear-gradient(135deg, #022c22 0%, #047857 100%); color:#ffffff; padding:20px 28px; font-size:1.4rem; font-weight:800; display:flex; align-items:center; gap:12px; border-bottom:3px solid #f59e0b;">
+            <span>📅</span>
+            <span style="color:#fef08a !important;"><?= __('iti_day') ?> ${day.day}${day.title ? ': ' + day.title : ''}</span>
+          </div>
+          <div class="day-block-body" style="padding:28px; display:flex; flex-direction:column; gap:20px; background:#f8fafc;">
+      `;
+      (day.items || []).forEach(item => {
+        const timeBadge = item.time ? `<span style="background:#f59e0b; color:#ffffff; padding:6px 16px; border-radius:20px; font-size:14px; font-weight:800; display:inline-block;">${item.time}</span>` : '';
+        const reason = item.reason ? `<div style="margin-top:12px; padding:12px 18px; background:#eff6ff; border-left:5px solid #3b82f6; color:#1e40af; font-size:15px; border-radius:8px; line-height:1.6; font-weight:500;">💡 <strong><?= __('iti_reason') ?></strong> ${item.reason}</div>` : '';
+        const impact = item.community_impact ? `<div style="margin-top:10px; padding:12px 18px; background:#ecfdf5; border-left:5px solid #10b981; color:#065f46; font-size:15px; border-radius:8px; line-height:1.6; font-weight:500;">🌱 <strong><?= __('iti_community_impact') ?></strong> ${item.community_impact}</div>` : '';
+        const sugg  = item.suggestion ? `<div style="margin-top:10px; padding:12px 18px; background:#fffbeb; border-left:5px solid #f59e0b; color:#92400e; font-size:15px; border-radius:8px; line-height:1.6; font-weight:500;">💡 <strong><?= __('iti_suggestion') ?></strong> ${item.suggestion}</div>` : '';
         
-        html += `<div class="time-slot"><strong>${item.time || ''}:</strong> ${item.activity}${reason}${impact}${sugg}${addr}${trans}${price}</div>`;
+        let metaTags = [];
+        if (item.address) metaTags.push(`<span style="background:#f1f5f9; padding:6px 12px; border-radius:8px; border:1px solid #cbd5e1;">📍 ${item.address}</span>`);
+        if (item.transport) metaTags.push(`<span style="background:#e0f2fe; color:#0369a1; padding:6px 12px; border-radius:8px; border:1px solid #7dd3fc;">🛵 ${item.transport}</span>`);
+        if (item.price) metaTags.push(`<span style="background:#fef3c7; color:#92400e; padding:6px 12px; border-radius:8px; border:1px solid #fde68a;">🎟️ <strong><?= __('iti_cost') ?>:</strong> ${item.price}</span>`);
+
+        const metaHtml = metaTags.length > 0 ? `<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid #e2e8f0; font-size:14px; font-weight:700; color:#334155;">${metaTags.join('')}</div>` : '';
+        
+        html += `
+          <div class="time-slot" style="background:#ffffff; border-radius:16px; padding:24px; border:1px solid #cbd5e1; box-shadow:0 6px 18px rgba(0,0,0,0.04);">
+            <div style="font-size:1.25rem; font-weight:800; color:#022c22; margin-bottom:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              ${timeBadge}
+              <span>${item.activity}</span>
+            </div>
+            ${reason}
+            ${impact}
+            ${sugg}
+            ${metaHtml}
+          </div>
+        `;
       });
-      html += '</div>';
+      html += `
+          </div>
+        </div>
+      `;
     });
     html += '</div>'; // End pdf-export-content
     document.getElementById('result').innerHTML = html;
@@ -390,47 +415,6 @@ window.simulateRain = async function() {
     }
 }
 
-// Voice input
-const micBtn = document.getElementById('mic-btn');
-const notesEl = document.getElementById('notes');
-if (window.SpeechRecognition || window.webkitSpeechRecognition) {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'vi-VN';
-  recognition.interimResults = false;
-  
-  micBtn.addEventListener('click', () => {
-    if (micBtn.textContent === '🔴') {
-        recognition.stop();
-        return;
-    }
-    micBtn.textContent = '🔴';
-    recognition.start();
-  });
-  
-  recognition.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    notesEl.value += (notesEl.value ? ' ' : '') + transcript;
-  };
-  
-  recognition.onerror = (event) => {
-    console.error('Speech recognition error detected: ' + event.error);
-    if (event.error === 'not-allowed') {
-        alert('<?= __('iti_mic_blocked') ?>');
-    } else if (event.error === 'network') {
-        alert('<?= __('iti_mic_network') ?>');
-    } else {
-        alert('<?= __('iti_mic_error') ?>' + event.error + '<?= __('iti_mic_try_again') ?>');
-    }
-    micBtn.textContent = '🎤';
-  };
-  
-  recognition.onend = () => {
-    micBtn.textContent = '🎤';
-  };
-} else {
-  micBtn.style.display = 'none';
-}
 })();
 </script>
 

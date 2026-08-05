@@ -14,13 +14,23 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
 <?php endif; ?>
 <meta property="og:title" content="<?= e($pageTitle) ?>">
 <title><?= e($pageTitle) ?></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Playfair+Display:ital,wght@0,600..900;1,600..900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= url('/assets/css/style.css?v=' . time()) ?>">
+<link rel="stylesheet" href="<?= url('/assets/css/landing.css?v=' . time()) ?>">
 </head>
 <body>
 <header class="site-header">
   <div class="container header-inner">
-    <a href="<?= url('/public/index.php') ?>" class="logo">🌿 Đắk Lắk <span>Travel AI</span></a>
-    <nav class="main-nav">
+    <div class="header-mobile-bar">
+      <a href="<?= url('/public/index.php') ?>" class="logo" style="color:#ffffff !important; text-decoration:none !important;">🌿 Đắk Lắk <span style="color:#fef08a !important; font-family:'Playfair Display', Georgia, serif; font-style:italic;">Travel AI</span></a>
+      <button class="mobile-menu-toggle" onclick="document.querySelector('.site-header').classList.toggle('menu-open')" aria-label="Toggle menu">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="header-collapsible">
+      <nav class="main-nav">
       <a href="<?= url('/public/index.php') ?>"><?= __('home') ?></a>
       <a href="<?= url('/public/forum.php') ?>"><?= __('nav_forum') ?></a>
       <div class="nav-dropdown">
@@ -77,6 +87,7 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
         <a href="<?= url('/public/login.php') ?>" class="btn secondary"><?= __('login') ?></a>
         <a href="<?= url('/public/register.php') ?>" class="btn"><?= __('register') ?></a>
       <?php endif; ?>
+    </div>
     </div>
   </div>
 </header>

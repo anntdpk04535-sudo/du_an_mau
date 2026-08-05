@@ -23,6 +23,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             session_regenerate_id(true); // Ngăn chặn Session Hijacking/Fixation
             $_SESSION['user'] = ['id' => $u['id'], 'full_name' => $u['full_name'], 'role' => $u['role'], 'avatar' => $u['avatar'] ?? null];
+            
+            if (!empty($_POST['remember'])) {
+                $token = bin2hex(random_bytes(32));
+                $updateStmt = $db->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
+                $updateStmt->execute([$token, $u['id']]);
+                
+                setcookie(
+                    'remember_token', 
+                    $token, 
+                    time() + 30 * 24 * 3600, 
+                    '/', 
+                    '', 
+                    isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on', 
+                    true
+                );
+            }
+
             if ($u['role'] === 'admin') {
                 header('Location: ' . url('/admin/index.php'));
             } else {
