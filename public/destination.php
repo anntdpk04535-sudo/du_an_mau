@@ -1,8 +1,11 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
+require_once __DIR__ . '/../includes/geo.php';
 
 $slug = $_GET['slug'] ?? '';
-$d = getDestinationBySlug($slug);
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$d = $id > 0 ? getDestinationById($id) : getDestinationBySlug($slug);
+
 
 if (!$d) {
   http_response_code(404);
@@ -16,6 +19,25 @@ if (!$d) {
 
 $pageTitle = $d['name'] . ' - Đắk Lắk Travel AI';
 $metaDescription = $d['short_desc'] ?? '';
+$contentDb = getDB();
+$gallery = fetchEntityImages($contentDb, 'destination_images', 'destination_id', (int)$d['id']);
+// Ẩm thực & lưu trú gần đây: ưu tiên khoảng cách thật quanh toạ độ điểm đến,
+// fallback về destination_id/region như cũ khi điểm đến chưa có toạ độ hoặc quanh đó trống.
+$destLat = isset($d['latitude']) ? (float)$d['latitude'] : null;
+$destLng = isset($d['longitude']) ? (float)$d['longitude'] : null;
+$nearbyFoods = [];
+$nearbyStays = [];
+if (geoIsValidPoint($destLat, $destLng)) {
+    $nearbyFoods = geoFindNearby($contentDb, 'foods', $destLat, $destLng, 15.0, 6);
+    $nearbyStays = geoFindNearby($contentDb, 'accommodations', $destLat, $destLng, 15.0, 4);
+}
+if (!$nearbyFoods) {
+    $nearbyFoods = tableExists($contentDb, 'foods') ? (function() use ($contentDb, $d) { $s=$contentDb->prepare("SELECT f.*, COALESCE((SELECT image_url FROM food_images fi WHERE fi.food_id=f.id ORDER BY fi.is_primary DESC,fi.sort_order,fi.id LIMIT 1), f.image_url) AS card_image FROM foods f WHERE (f.destination_id=? OR (f.region=? AND f.region IS NOT NULL AND f.region!='')) AND f.status='published' ORDER BY (f.destination_id=?) DESC, f.is_featured DESC, f.id DESC LIMIT 6"); $s->execute([(int)$d['id'], $d['region'] ?? 'west', (int)$d['id']]); return $s->fetchAll(); })() : [];
+}
+if (!$nearbyStays) {
+    $nearbyStays = tableExists($contentDb, 'accommodations') ? (function() use ($contentDb, $d) { $s=$contentDb->prepare("SELECT a.*, COALESCE((SELECT image_url FROM accommodation_images ai WHERE ai.accommodation_id=a.id ORDER BY ai.is_primary DESC,ai.sort_order,ai.id LIMIT 1), a.image_url) AS card_image FROM accommodations a WHERE (a.destination_id=? OR (a.region=? AND a.region IS NOT NULL AND a.region!='')) AND a.status='published' ORDER BY (a.destination_id=?) DESC, a.is_featured DESC, a.id DESC LIMIT 4"); $s->execute([(int)$d['id'], $d['region'] ?? 'west', (int)$d['id']]); return $s->fetchAll(); })() : [];
+}
+
 include __DIR__ . '/../includes/header.php';
 ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -31,6 +53,7 @@ include __DIR__ . '/../includes/header.php';
     🌄
   <?php endif; ?>
 </div>
+<?php if ($gallery): ?><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0 22px"><?php foreach($gallery as $image): ?><a href="<?= e($image['image_url']) ?>" target="_blank"><img src="<?= e($image['image_url']) ?>" alt="<?= e($image['alt_text'] ?: $d['name']) ?>" loading="lazy" style="width:100%;height:120px;object-fit:cover;border-radius:12px"></a><?php endforeach; ?></div><?php endif; ?>
 <?php
 $user = currentUser();
 $isSaved = false;
@@ -195,6 +218,12 @@ echo $warningHtml;
   <h3><?= __('about_dest') ?></h3>
   <p><?= nl2br(e($d['description'])) ?></p>
 </div>
+<?php if ($nearbyFoods || $nearbyStays): ?>
+<section style="margin-top:24px"><h2>🍜 Ẩm thực & lưu trú gần đây</h2><div class="grid">
+<?php foreach($nearbyFoods as $food): $img = ($food['card_image'] ?? '') ?: ($food['image_url'] ?? ''); ?><article class="card"><div class="card-img"><?php if(!empty($img)): ?><img src="<?= url($img) ?>" alt="<?= e($food['name']) ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';"><?php else: ?>🍜<?php endif; ?></div><div class="card-body"><h3><?= e($food['name']) ?></h3><p><?= e($food['address']??'') ?></p><span class="badge"><?= e($food['entity_type'] ?? '') ?></span><?php if (!empty($food['distance_km'])): ?> <span class="badge" style="background:#e8f8ef;color:#1b4332;">📏 <?= e((string)$food['distance_km']) ?> km</span><?php endif; ?></div></article><?php endforeach; ?>
+<?php foreach($nearbyStays as $stay): $img = ($stay['card_image'] ?? '') ?: ($stay['image_url'] ?? ''); ?><article class="card"><div class="card-img"><?php if(!empty($img)): ?><img src="<?= url($img) ?>" alt="<?= e($stay['name']) ?>" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';"><?php else: ?>🛏️<?php endif; ?></div><div class="card-body"><h3><?= e($stay['name']) ?></h3><p><?= e($stay['address']??'') ?></p><span class="badge"><?= e($stay['accommodation_type'] ?? '') ?></span><?php if (!empty($stay['distance_km'])): ?> <span class="badge" style="background:#e8f8ef;color:#1b4332;">📏 <?= e((string)$stay['distance_km']) ?> km</span><?php endif; ?></div></article><?php endforeach; ?></div></section>
+<?php endif; ?>
+
 
 <?php
 // ── VIRTUAL TOUR 360° CTA ──
@@ -490,6 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="text-align:right;font-size:12px;color:#aaa;margin-top:3px;">
         <span id="destCharCount">0</span>/1000
       </div>
+      <div class="form-group"><label for="destReviewImages">📷 Ảnh trải nghiệm (tối đa 5)</label><input id="destReviewImages" type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple><div id="destReviewPreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div></div>
     </div>
     <button type="submit" class="btn" id="destSubmitBtn">🚀 <?= __('send_review') ?></button>
     <div id="destReviewMsg" style="margin-top:12px;font-size:14px;"></div>
@@ -710,6 +740,11 @@ document.addEventListener('DOMContentLoaded', function() {
           : `<p class="dest-rev-comment" style="color:#bbb;font-style:italic;"><?= __('dest_no_comment') ?></p>`}
         ${actionsHtml}
       `;
+      if (Array.isArray(r.images) && r.images.length) {
+        const gallery = document.createElement('div'); gallery.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:10px';
+        r.images.forEach(image=>{const img=document.createElement('img');img.src=image.image_url;img.alt=image.alt_text||'Ảnh review';img.loading='lazy';img.style.cssText='width:84px;height:64px;object-fit:cover;border-radius:8px';gallery.appendChild(img);});
+        card.appendChild(gallery);
+      }
       list.appendChild(card);
     });
 
@@ -723,6 +758,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Submit new review
   const form = document.getElementById('destReviewForm');
   if (form) {
+    document.getElementById('destReviewImages')?.addEventListener('change', function() {
+      const preview = document.getElementById('destReviewPreview'); preview.innerHTML='';
+      [...this.files].slice(0,5).forEach(file=>{const img=document.createElement('img');img.src=URL.createObjectURL(file);img.alt=file.name;img.style.cssText='width:72px;height:56px;object-fit:cover;border-radius:8px';preview.appendChild(img);});
+    });
     document.getElementById('destComment')?.addEventListener('input', function() {
       document.getElementById('destCharCount').textContent = this.value.length;
     });

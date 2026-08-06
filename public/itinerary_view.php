@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/weather.php';
 
 $user = currentUser();
 if (!$user) {
@@ -84,6 +85,31 @@ foreach ($daysData as $dayNum => $dayInfo) {
     }
 }
 
+// Điểm xuất phát & snapshot thời tiết đã lưu (cột mới — có thể chưa migrate nên đọc mềm)
+$originData = null;
+if (!empty($itinerary['origin_type']) && $itinerary['origin_type'] !== 'none'
+    && isset($itinerary['origin_lat'], $itinerary['origin_lng'])
+    && $itinerary['origin_lat'] !== null && $itinerary['origin_lng'] !== null) {
+    $originData = [
+        'type'      => $itinerary['origin_type'],
+        'label'     => $itinerary['origin_label'] ?: __('iti_origin_label'),
+        'lat'       => (float)$itinerary['origin_lat'],
+        'lng'       => (float)$itinerary['origin_lng'],
+        'radius_km' => (isset($itinerary['radius_km']) && $itinerary['radius_km'] !== null) ? (float)$itinerary['radius_km'] : null,
+    ];
+}
+
+$weatherSnap = null;
+$weatherAdvisories = [];
+if (!empty($itinerary['weather_snapshot'])) {
+    $decoded = json_decode($itinerary['weather_snapshot'], true);
+    if (is_array($decoded) && !empty($decoded['available']) && !empty($decoded['daily'])) {
+        $weatherSnap = $decoded;
+        $weatherAdvisories = weatherAdvisories($decoded);
+    }
+}
+$viewLang = $_SESSION['lang'] ?? 'vi';
+
 $pageTitle = $itinerary['title'] . ' - Đắk Lắk Travel AI';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -116,16 +142,39 @@ include __DIR__ . '/../includes/header.php';
 .route-step-info .step-addr { font-size:12px; color:#888; }
 .route-step-divider { font-size:11px; color:var(--green-700); font-weight:500; padding:3px 6px 3px 46px; }
 .day-separator { background:linear-gradient(135deg,var(--green-100),#fff); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; color:var(--green-700); margin:8px 0 4px; display:flex; align-items:center; gap:8px; }
+.edit-item { display:flex; flex-direction:column; gap:7px; }
+.edit-item input,.edit-item textarea { border:1px solid #dbe4df; border-radius:7px; padding:7px 9px; font:inherit; width:100%; box-sizing:border-box; }
+.drag-handle { cursor:grab; color:var(--green-700); font-weight:800; letter-spacing:2px; }
+.remove-item { margin-left:auto; border:0; background:#fee2e2; color:#991b1b; border-radius:6px; cursor:pointer; font-size:18px; width:28px; height:28px; }
+.edit-item.dragging { opacity:.55; }
+.origin-badge { display:inline-flex; align-items:center; gap:6px; background:#e8f8ef; color:var(--green-700); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; margin-top:8px; }
+.weather-days { display:flex; gap:10px; flex-wrap:wrap; }
+.weather-day { flex:1; min-width:110px; border-radius:10px; padding:10px 12px; text-align:center; }
+.weather-day-date { font-size:11px; font-weight:700; opacity:.8; }
+.weather-day-icon { font-size:26px; margin:4px 0; }
+.weather-day-desc { font-size:12px; font-weight:600; line-height:1.3; }
+.weather-day-temp { font-size:12px; margin-top:4px; opacity:.85; }
+.wd-good { background:#dcfce7; color:#166534; }
+.wd-caution { background:#fef9c3; color:#854d0e; }
+.wd-indoor_preferred { background:#ffedd5; color:#9a3412; }
+.wd-unsafe { background:#fee2e2; color:#7f1d1d; }
+.weather-advisories { margin-top:12px; font-size:13px; }
+.weather-advisory { background:#fff7ed; border-left:3px solid #fb923c; border-radius:0 8px 8px 0; padding:7px 10px; margin-top:6px; color:#7c2d12; }
 </style>
 
 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
     <div>
         <a href="<?= url('/public/profile.php') ?>" style="text-decoration:none; color:#666;">← <?= __('back_to_profile') ?></a>
         <h1 class="section-title" style="margin-bottom:0; margin-top:10px;"><?= e($itinerary['title']) ?></h1>
+        <?php if ($originData): ?>
+            <div class="origin-badge">🏨 <?= __('iti_origin_set') ?> <?= e($originData['label']) ?><?php if ($originData['radius_km']): ?> · <?= rtrim(rtrim(number_format($originData['radius_km'], 1), '0'), '.') ?> km<?php endif; ?></div>
+        <?php endif; ?>
     </div>
     <button onclick="exportPDF()" class="btn secondary" style="display:flex; align-items:center; gap:6px;">
         📄 <?= __('export_pdf') ?>
     </button>
+    <button id="saveItineraryBtn" class="btn" type="button">💾 Lưu chỉnh sửa</button>
+    <button id="optimizeItineraryBtn" class="btn secondary" type="button">🧭 Tối ưu tuyến</button>
 </div>
 
 <div id="pdf-content">
@@ -134,6 +183,34 @@ include __DIR__ . '/../includes/header.php';
         <p style="color: #666;"><?= __('iti_created_date') ?>: <?= date('d/m/Y', strtotime($itinerary['created_at'])) ?> | <?= __('iti_duration') ?>: <?= $itinerary['days'] ?> <?= __('days') ?></p>
         <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
     </div>
+
+    <?php if ($weatherSnap): ?>
+    <div class="route-info-panel">
+        <h3>⛅ <?= __('iti_weather_title') ?></h3>
+        <div class="weather-days">
+            <?php foreach (array_slice($weatherSnap['daily'], 0, 7) as $d):
+                $risk = in_array($d['risk'] ?? 'good', ['good', 'caution', 'indoor_preferred', 'unsafe'], true) ? $d['risk'] : 'good';
+                $desc = $d[$viewLang === 'en' ? 'text_en' : 'text_vi'] ?? '';
+                $rain = isset($d['precipitation_probability_max']) && $d['precipitation_probability_max'] !== null ? ' · ☔ ' . (int)$d['precipitation_probability_max'] . '%' : '';
+            ?>
+            <div class="weather-day wd-<?= $risk ?>">
+                <div class="weather-day-date"><?= e($d['date'] ?? '') ?></div>
+                <div class="weather-day-icon"><?= e($d['icon'] ?? '') ?></div>
+                <div class="weather-day-desc"><?= e($desc) ?></div>
+                <div class="weather-day-temp"><?= isset($d['temp_min'], $d['temp_max']) ? round($d['temp_min']) . '–' . round($d['temp_max']) . '°C' : '' ?><?= $rain ?></div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php if ($weatherAdvisories): ?>
+        <div class="weather-advisories">
+            <strong>⚠️ <?= __('iti_advisory_title') ?></strong>
+            <?php foreach (array_slice($weatherAdvisories, 0, 6) as $a): ?>
+                <div class="weather-advisory"><?= e($a) ?></div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
     <div id="stats-bar" class="map-stats-bar" style="display:none;">
         <div class="map-stat"><div class="map-stat-icon">📍</div><div class="map-stat-info"><div class="label"><?= __('destinations') ?></div><div class="value" id="stat-points">—</div></div></div>
@@ -157,14 +234,11 @@ include __DIR__ . '/../includes/header.php';
             <div class="day-block">
                 <h3><?= __('iti_day') ?> <?= $dayNum ?></h3>
                 <?php foreach ($day['itemsHtml'] as $item): ?>
-                    <div class="time-slot">
-                        <strong><?= e($item['time_slot']) ?>:</strong> <?= e($item['activity']) ?>
-                        <?php if ($item['address']): ?>
-                            <div class="time-slot-address">📍 <?= e($item['address']) ?></div>
-                        <?php endif; ?>
-                        <?php if (!empty($item['transport'])): ?>
-                            <div class="time-slot-transport" style="font-size:13px;color:var(--green-700);margin-top:4px;font-weight:500;">🛵 <?= e($item['transport']) ?></div>
-                        <?php endif; ?>
+                    <div class="time-slot edit-item" draggable="true" data-id="<?= (int)$item['id'] ?>" data-entity-type="<?= !empty($item['food_id'])?'food':(!empty($item['accommodation_id'])?'accommodation':'destination') ?>" data-entity-id="<?= (int)($item['food_id'] ?: ($item['accommodation_id'] ?: ($item['destination_id'] ?? 0))) ?>" data-day="<?= (int)$item['day_number'] ?>">
+                      <div style="display:flex;gap:8px;align-items:center"><span class="drag-handle" title="Kéo để sắp xếp">⋮⋮</span><input class="edit-time" value="<?= e($item['time_slot']) ?>" aria-label="Thời gian"><button type="button" class="remove-item" title="Xóa item">×</button></div>
+                      <textarea class="edit-activity" rows="2" aria-label="Hoạt động"><?= e($item['activity']) ?></textarea>
+                      <input class="edit-address" value="<?= e($item['address'] ?? '') ?>" placeholder="Địa chỉ">
+                      <input class="edit-transport" value="<?= e($item['transport'] ?? '') ?>" placeholder="Phương tiện">
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -194,6 +268,7 @@ function exportPDF() {
 
 // --- Map Logic ---
 const mapData = <?= json_encode($mapData, JSON_UNESCAPED_UNICODE) ?>;
+const originData = <?= json_encode($originData, JSON_UNESCAPED_UNICODE) ?>;
 const DAY_COLORS = ['#2d6a4f','#e76f51','#3a86c8','#8338ec','#ff006e'];
 
 function createNumberedIcon(num, color) {
@@ -227,7 +302,7 @@ function getShortName(activity) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-    if (mapData.length === 0) return;
+    if (mapData.length === 0 && !originData) return;
 
     document.getElementById('map-container').style.display = 'block';
     window.itineraryMap = L.map('itinerary-map', { zoomControl: true });
@@ -292,8 +367,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     window._markers = allMarkers;
-    if (allMarkers.length === 1) window.itineraryMap.setView(allMarkers[0].getLatLng(), 13);
-    else if (allMarkers.length > 1) window.itineraryMap.fitBounds(new L.featureGroup(allMarkers).getBounds().pad(0.18));
+
+    // Điểm xuất phát đã lưu: marker 🏨 + vòng bán kính tìm kiếm
+    const fitMarkers = allMarkers.slice();
+    if (originData) {
+      const oIcon = L.divIcon({
+        className: '',
+        html: '<div style="width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid #2d6a4f;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.3);">🏨</div>',
+        iconSize: [34,34], iconAnchor: [17,17], tooltipAnchor: [0,-20]
+      });
+      const oMarker = L.marker([originData.lat, originData.lng], { icon: oIcon, zIndexOffset: 1000 }).addTo(window.itineraryMap);
+      oMarker.bindTooltip('<?= __('iti_origin_set') ?> ' + (originData.label || ''), { direction: 'top' });
+      if (originData.radius_km) {
+        L.circle([originData.lat, originData.lng], {
+          radius: originData.radius_km * 1000,
+          color: '#2d6a4f', weight: 1.5, dashArray: '6,8', fillColor: '#2d6a4f', fillOpacity: 0.05
+        }).addTo(window.itineraryMap);
+      }
+      fitMarkers.push(oMarker);
+    }
+
+    if (fitMarkers.length === 1) window.itineraryMap.setView(fitMarkers[0].getLatLng(), 13);
+    else if (fitMarkers.length > 1) window.itineraryMap.fitBounds(new L.featureGroup(fitMarkers).getBounds().pad(0.18));
 
     document.getElementById('map-legend').innerHTML = legendHtml.join('');
 
@@ -319,6 +414,28 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
     });
 });
+</script>
+
+<script>
+(function(){
+  const list=document.getElementById('result'); if(!list) return;
+  let dragged=null;
+  document.querySelectorAll('.edit-item').forEach(el=>{
+    el.addEventListener('dragstart',()=>{dragged=el;el.classList.add('dragging');});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');dragged=null;});
+    el.addEventListener('dragover',e=>{e.preventDefault();if(dragged&&dragged!==el)el.parentNode.insertBefore(dragged,el);});
+    el.querySelector('.remove-item')?.addEventListener('click',()=>el.remove());
+  });
+  document.getElementById('saveItineraryBtn')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('saveItineraryBtn');btn.disabled=true;btn.textContent='⏳ Đang lưu...';
+    const items=[...document.querySelectorAll('.edit-item')].map((el,i)=>({entity_type:el.dataset.entityType,entity_id:+el.dataset.entityId||null,day_number:+el.dataset.day||1,time_slot:el.querySelector('.edit-time')?.value||'',activity:el.querySelector('.edit-activity')?.value||'',address:el.querySelector('.edit-address')?.value||'',transport:el.querySelector('.edit-transport')?.value||'',sort_order:i}));
+    try{const res=await fetch('<?= url('/api/itinerary_update.php') ?>',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({itinerary_id:<?= (int)$itinerary['id'] ?>,version:<?= (int)($itinerary['version']??1) ?>,items})});const data=await res.json();if(!data.success)throw new Error(data.error||'Không thể lưu');alert('Đã lưu chỉnh sửa.');location.reload();}catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='💾 Lưu chỉnh sửa';}
+  });
+  document.getElementById('optimizeItineraryBtn')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('optimizeItineraryBtn');btn.disabled=true;btn.textContent='⏳ Đang tính...';
+    try{const res=await fetch('<?= url('/api/itinerary_optimize.php') ?>',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({itinerary_id:<?= (int)$itinerary['id'] ?>})});const data=await res.json();if(!data.success)throw new Error(data.error||'Không thể tối ưu');const edit=[...document.querySelectorAll('.edit-item')];const byId=new Map(edit.map(el=>[+el.dataset.id,el]));data.items.forEach(item=>{const el=byId.get(+item.id);if(el)el.parentNode.appendChild(el);});alert(data.warning||'Đã sắp xếp lại tuyến. Hãy kiểm tra và lưu.');}catch(e){alert(e.message);}finally{btn.disabled=false;btn.textContent='🧭 Tối ưu tuyến';}
+  });
+})();
 </script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
