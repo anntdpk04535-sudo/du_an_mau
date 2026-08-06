@@ -121,21 +121,44 @@ final class SchemaImportTest extends BaseTestCase
     /**
      * Bộ tách dùng chung phải nhận diện được các statement DDL thật trong
      * dump — canary chống việc "lọc quá tay" làm mất luôn CREATE TABLE.
+     *
+     * Vòng sửa 5 — đối chiếu DANH SÁCH TÊN BẢNG đọc thẳng từ dump, thay cho
+     * `assertGreaterThanOrEqual(20, ...)`. Hai lý do, cả hai đều đã đo:
+     *
+     * - Hằng số 20 không bám theo hiện vật. Dump có thêm bảng thì ngưỡng vẫn
+     *   đứng yên ở 20 và lặng lẽ thôi bao phủ phần mới.
+     * - Đếm không phân biệt DANH TÍNH. Đột biến giữ nguyên tổng số 20 nhưng
+     *   thay lệnh CREATE TABLE cuối bằng bản sao của lệnh đầu — tức mất một
+     *   bảng — vẫn để bản đếm XANH (đã chạy thật để xác nhận). Đối chiếu tên
+     *   bắt được, và còn nói thẳng bảng nào biến mất.
+     *
+     * (Ghi chú: cách chẩn đoán "mất một CREATE TABLE vẫn xanh vì nằm sát
+     * ngưỡng" là SAI — 19 không thoả `>= 20`, chạy thật thấy đỏ. Lỗ hổng
+     * thật nằm ở danh tính và ở hằng số chết, không ở biên.)
      */
     public function test_van_giu_du_cac_lenh_tao_bang(): void
     {
-        $createCount = 0;
-        foreach (\testSchemaStatements($this->dump()) as $statement) {
-            [$codeOnly] = \sqlCodeOnlyView($statement);
-            if (preg_match('/^\s*CREATE\s+TABLE\b/i', $codeOnly)) {
-                $createCount++;
+        $sql = $this->dump();
+
+        preg_match_all('/^CREATE TABLE `([^`]+)`/m', $sql, $matches);
+        $expectedTables = $matches[1];
+        self::assertNotEmpty($expectedTables, 'không đọc được tên bảng nào từ dump nền');
+
+        $actualTables = [];
+        foreach (\testSchemaStatements($sql) as $statement) {
+            [$canonical] = \sqlClassifierView($statement);
+            if (preg_match('/^CREATE\s+TABLE\s+`([^`]+)`/i', $canonical, $m)) {
+                $actualTables[] = $m[1];
             }
         }
 
-        self::assertGreaterThanOrEqual(
-            20,
-            $createCount,
-            'dump nền phải còn đủ các lệnh CREATE TABLE sau khi lọc'
+        sort($expectedTables);
+        sort($actualTables);
+
+        self::assertSame(
+            $expectedTables,
+            $actualTables,
+            'danh sách bảng sau khi lọc phải trùng khít danh sách CREATE TABLE trong dump nền'
         );
     }
 }
