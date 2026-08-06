@@ -71,10 +71,19 @@ if (is_file($runner)) {
 /**
  * Nạp CẤU TRÚC từ bản dump, bỏ toàn bộ INSERT.
  * Test phải chạy trên lược đồ xác định, không phụ thuộc dữ liệu thật.
+ *
+ * Statement lỗi (vd. chỉ thị riêng của mysqldump) bị bỏ qua có chủ đích để
+ * không làm sập cả bộ test, nhưng KHÔNG được im lặng: đếm số lượng và giữ
+ * lại mẫu để cảnh báo ra STDERR sau khi nạp xong — cảnh báo, không throw,
+ * không exit, để lỗi thật (thiếu bảng do regex tách statement sai, v.d.)
+ * còn có dấu vết thay vì biến mất hoàn toàn.
  */
 function testImportSchema(PDO $db, string $dumpPath): void
 {
     $sql = (string)file_get_contents($dumpPath);
+
+    $failedCount = 0;
+    $failedSamples = [];
 
     foreach (preg_split('/;\s*\R/', $sql) ?: [] as $chunk) {
         $lines = preg_split('/\R/', $chunk) ?: [];
@@ -94,8 +103,18 @@ function testImportSchema(PDO $db, string $dumpPath): void
 
         try {
             $db->exec($statement);
-        } catch (PDOException) {
-            // Chỉ thị riêng của mysqldump không áp dụng được — bỏ qua.
+        } catch (PDOException $e) {
+            $failedCount++;
+            if (count($failedSamples) < 3) {
+                $failedSamples[] = substr($statement, 0, 80) . ' — ' . $e->getMessage();
+            }
+        }
+    }
+
+    if ($failedCount > 0) {
+        fwrite(STDERR, "CẢNH BÁO: {$failedCount} statement trong {$dumpPath} không áp dụng được khi nạp schema test.\n");
+        foreach ($failedSamples as $sample) {
+            fwrite(STDERR, "  - {$sample}\n");
         }
     }
 }
