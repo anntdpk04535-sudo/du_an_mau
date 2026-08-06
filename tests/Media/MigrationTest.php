@@ -859,6 +859,203 @@ final class MigrationTest extends TestCase
         );
     }
 
+    // ---------------------------------------------------------------------
+    // Vòng sửa 5 — đóng LỚP "tầng trên quăng regex neo đầu chuỗi vào đầu ra
+    // thô của một bộ quét đang tiến hoá".
+    //
+    // Bốn vòng trước đều hỏng theo cùng một kịch bản: sửa tầng dưới
+    // (sqlCharStates / sqlCodeOnlyView) làm đổi HÌNH DẠNG chuỗi mà tầng trên
+    // (statementHasSingleDdlClause) nhận, nhưng tầng trên vẫn giả định hình
+    // dạng cũ. Hai thay đổi cấu trúc đóng lớp này:
+    //
+    //   1. sqlClassifierView() — một bước CHUẨN HOÁ bắt buộc giữa hai tầng.
+    //      Tầng trên không bao giờ còn nhìn chuỗi thô nữa.
+    //   2. Danh sách CHO PHÉP thay cho nhánh mặc định `return true`. Hình dạng
+    //      lạ giờ rơi về "KHÔNG nuốt lỗi" — hướng an toàn. Một lỗ hổng cùng
+    //      loại trong tương lai sẽ làm migration dừng ồn ào thay vì ghi
+    //      schema_migrations trên một lược đồ chưa đầy đủ.
+    // ---------------------------------------------------------------------
+
+    /**
+     * Bảng ca thử dùng chung cho các test bất biến bên dưới.
+     *
+     * @return array<string, array{0: string, 1: bool}> tên ca => [SQL, kỳ vọng single-clause]
+     */
+    private static function bangCaThuPhanLoai(): array
+    {
+        return [
+            'ALTER 2 clause'            => ['ALTER TABLE t ADD COLUMN a int, ADD COLUMN b int', false],
+            'ALTER 3 clause'            => ['ALTER TABLE t ADD COLUMN a int, ADD COLUMN b int, ADD KEY k (a)', false],
+            'ALTER 1 clause'            => ['ALTER TABLE t ADD COLUMN a int', true],
+            'ALTER 1 clause + ALGORITHM' => ['ALTER TABLE t ADD COLUMN a int, ALGORITHM=INPLACE', true],
+            'ALTER 1 clause co literal' => ["ALTER TABLE t ADD COLUMN a varchar(20) DEFAULT 'x,y'", true],
+            'RENAME TABLE nhieu cap'    => ['RENAME TABLE a TO b, c TO d', false],
+            'CREATE TABLE khong INE'    => ['CREATE TABLE foo (id int, name varchar(10))', false],
+            'CREATE TABLE IF NOT EXISTS' => ['CREATE TABLE IF NOT EXISTS foo (id int)', true],
+            'CREATE INDEX'              => ['CREATE INDEX idx ON foo (a, b)', true],
+            'DROP INDEX'                => ['DROP INDEX idx ON foo', true],
+        ];
+    }
+
+    /**
+     * F7 [Critical] — bản sửa F3 ở vòng 4 đánh `/*!` và `/*M!` là state 'code',
+     * nên sqlCodeOnlyView() KHÔNG cắt chúng đi nữa: chuỗi tầng trên nhận bắt
+     * đầu bằng `/*!100200 `. Cả ba regex trong statementHasSingleDdlClause()
+     * đều neo `^\s*` nên không cái nào khớp, hàm rơi thẳng xuống nhánh mặc
+     * định `return true` — tức NUỐT lỗi "đã tồn tại" trên một `ALTER TABLE`
+     * nhiều clause mà MariaDB đã huỷ nguyên statement.
+     *
+     * `/*!100200 ... * /` là kỹ thuật MariaDB phổ thông (chính comment trong
+     * runMigrationFile() gọi tên nó), nên đây không phải rủi ro lý thuyết.
+     */
+    public function test_gate_phien_ban_khong_lam_hong_phan_loai(): void
+    {
+        $alterHaiClause = 'ALTER TABLE t ADD COLUMN a int, ADD COLUMN b int';
+
+        self::assertFalse(
+            \statementHasSingleDdlClause("/*!100200 {$alterHaiClause} */"),
+            'ALTER TABLE 2 clause bọc trong gate /*! vẫn phải bị nhận diện là nhiều clause'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause("/*M!100200 {$alterHaiClause} */"),
+            'ALTER TABLE 2 clause bọc trong gate /*M! vẫn phải bị nhận diện là nhiều clause'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause("/*!100200 /*M!100300 {$alterHaiClause} */ */"),
+            'gate lồng gate cũng phải được bóc hết'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause("/*!40000 {$alterHaiClause}"),
+            'gate KHÔNG đóng (mysqldump hay cắt ngang) cũng không được che mất số clause'
+        );
+
+        // Gate không được biến một statement 1-clause thật thành nhiều clause.
+        self::assertTrue(
+            \statementHasSingleDdlClause('/*!40000 ALTER TABLE t DISABLE KEYS */'),
+            'ALTER TABLE 1 clause bọc gate vẫn là 1 clause'
+        );
+    }
+
+    /**
+     * Ca đối chứng reviewer dùng làm chuẩn: sau bước bóc gate, bản chuẩn hoá
+     * của một statement BỌC GATE phải giống Y HỆT bản chuẩn hoá của cùng
+     * statement KHÔNG BỌC GATE. Đây là mệnh đề mạnh hơn "kết quả phân loại
+     * bằng nhau": nó khoá lại chính cái ĐẦU VÀO mà tầng trên nhận được.
+     */
+    public function test_ban_chuan_hoa_bo_gate_giong_het_ban_khong_gate(): void
+    {
+        $goc = 'ALTER TABLE t ADD a, ADD b';
+
+        [$chuanHoaGoc] = \sqlClassifierView($goc);
+        self::assertSame($goc, $chuanHoaGoc, 'statement đã chuẩn tắc thì chuẩn hoá không được đổi gì');
+
+        foreach ([
+            "/*!100200 {$goc} */",
+            "/*M!100200 {$goc} */",
+            "/*!100200 /*!100300 {$goc} */ */",
+            "  /*!100200\n  {$goc}\n  */  ",
+        ] as $bienThe) {
+            [$chuanHoa] = \sqlClassifierView($bienThe);
+            self::assertSame(
+                $chuanHoaGoc,
+                $chuanHoa,
+                'bọc gate không được làm đổi bản chuẩn hoá: ' . $bienThe
+            );
+        }
+    }
+
+    /**
+     * TEST CANH GÁC — diễn đạt bất biến ở mức LỚP chứ không ở mức ca: với MỌI
+     * mẫu SQL trong bảng ca thử, phiên bản BỌC GATE và phiên bản KHÔNG BỌC
+     * GATE phải cho cùng một kết quả statementHasSingleDdlClause().
+     *
+     * Đây là thứ sẽ bắt được "vòng thứ sáu" nếu nó tồn tại: bất kỳ thay đổi
+     * nào ở tầng dưới làm hình dạng đầu vào của tầng trên lệch đi giữa hai
+     * phiên bản sẽ làm test này đỏ, kể cả khi lỗ hổng nằm ở một dạng SQL chưa
+     * ai nghĩ tới.
+     */
+    public function test_canh_gac_gate_va_khong_gate_luon_cho_cung_ket_qua(): void
+    {
+        foreach (self::bangCaThuPhanLoai() as $ten => [$sql, $kyVong]) {
+            $khongGate = \statementHasSingleDdlClause($sql);
+            self::assertSame($kyVong, $khongGate, "ca '{$ten}' (không gate) phân loại sai");
+
+            foreach (['/*!100200 %s */', '/*M!100200 %s */', '/*!100200 /*!100300 %s */ */'] as $khuon) {
+                self::assertSame(
+                    $khongGate,
+                    \statementHasSingleDdlClause(sprintf($khuon, $sql)),
+                    "ca '{$ten}': bọc gate " . $khuon . ' cho kết quả khác bản không gate'
+                );
+            }
+        }
+    }
+
+    /**
+     * F8 [Minor] — `/^\s*CREATE\s+(?:...)TABLE\s+(?!IF\s+NOT\s+EXISTS\b)/i`:
+     * `\s+` tham lam rồi backtrack nhả lại một ký tự trắng, lookahead đứng ở
+     * khoảng trắng THỨ HAI nên không thấy `IF` — `CREATE TABLE  IF NOT EXISTS`
+     * (hai dấu cách) hay xuống dòng bị phân loại thành "không có IF NOT
+     * EXISTS", tức nguyên tử, tức mất tính idempotent.
+     *
+     * Bước chuẩn hoá gộp khoảng trắng + danh sách cho phép dùng mệnh đề
+     * KHẲNG ĐỊNH (`phải khớp IF NOT EXISTS`) thay cho lookahead PHỦ ĐỊNH nên
+     * cái bẫy backtracking này biến mất theo cấu trúc.
+     */
+    public function test_khoang_trang_du_thua_khong_lam_hong_nhan_dien_if_not_exists(): void
+    {
+        foreach ([
+            'CREATE TABLE IF NOT EXISTS foo (id int)',
+            'CREATE TABLE  IF NOT EXISTS foo (id int)',
+            "CREATE TABLE\n  IF NOT EXISTS foo (id int)",
+            "CREATE  TABLE\tIF   NOT\nEXISTS foo (id int)",
+            'CREATE TEMPORARY TABLE  IF NOT EXISTS foo (id int)',
+        ] as $sql) {
+            self::assertTrue(
+                \statementHasSingleDdlClause($sql),
+                'CREATE TABLE IF NOT EXISTS tự nó idempotent, khoảng trắng thừa không được đổi kết luận: ' . $sql
+            );
+        }
+
+        foreach ([
+            'CREATE TABLE foo (id int)',
+            "CREATE  TABLE\n foo (id int)",
+        ] as $sql) {
+            self::assertFalse(
+                \statementHasSingleDdlClause($sql),
+                'CREATE TABLE không có IF NOT EXISTS vẫn phải là nguyên tử: ' . $sql
+            );
+        }
+    }
+
+    /**
+     * Bất biến cấu trúc thứ hai: mặc định của bộ phân loại là AN TOÀN
+     * (không nuốt lỗi). Statement có hình dạng không nằm trong danh sách cho
+     * phép — kể cả rỗng, kể cả một dạng DDL chưa ai lường trước — phải trả
+     * false.
+     *
+     * Chính nhánh mặc định `return true` cũ là thứ biến mỗi lỗ hổng nhận
+     * diện thành một lỗi ÂM THẦM NUỐT. Đảo mặc định biến cùng lỗ hổng đó
+     * thành một lỗi ồn ào, khắc phục được.
+     */
+    public function test_hinh_dang_la_thi_mac_dinh_khong_duoc_nuot_loi(): void
+    {
+        foreach ([
+            '',
+            '   ',
+            'TRUNCATE TABLE foo',
+            'CREATE TRIGGER trg BEFORE INSERT ON foo FOR EACH ROW SET NEW.a = 1',
+            'ALTER DATABASE daklak_travel CHARACTER SET utf8mb4',
+            'RENAME TABLE a TO b',
+            'DROP TABLE foo',
+            'MOT DANG SQL CHUA AI LUONG TRUOC',
+        ] as $sql) {
+            self::assertFalse(
+                \statementHasSingleDdlClause($sql),
+                'hình dạng không nằm trong danh sách cho phép phải rơi về "không nuốt lỗi": ' . $sql
+            );
+        }
+    }
+
     /**
      * Canary mở rộng: mọi file migration THẬT trong repo phải tách ra ít nhất
      * một statement thi hành được, và không statement nào rỗng. Đọc file thật

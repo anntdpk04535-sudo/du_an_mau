@@ -243,30 +243,6 @@ function splitSqlStatements(string $sql): array
 }
 
 /**
- * Một `ALTER TABLE` nhiều clause (vd. `ADD COLUMN a, ADD COLUMN b, ADD KEY
- * c`) là MỘT thao tác nguyên tử trong MariaDB — nếu bất kỳ clause nào lỗi,
- * TOÀN BỘ statement bị huỷ, không có clause nào được áp dụng một phần. Vì
- * vậy không thể coi lỗi "đã tồn tại" ở một clause là vô hại rồi coi cả
- * statement là xong: các clause khác đứng trước/sau clause lỗi trên thực tế
- * KHÔNG được áp dụng, dù ta chỉ thấy lỗi ở một clause.
- *
- * Ca cụ thể từng xảy ra: `20260806_upgrade.sql` có
- * `ALTER TABLE itinerary_items ADD COLUMN ... (9 cột), ADD KEY ..., ADD KEY
- * ...` — hai clause `ADD KEY` cuối không có `IF NOT EXISTS` (nay đã vá
- * thành `ADD KEY IF NOT EXISTS`). Statement chỉ có một clause DDL thì không
- * có rủi ro "áp dụng một phần" này, nên vẫn được coi là an toàn để nuốt khi
- * lỗi thuộc nhóm "đã tồn tại".
- *
- * Đếm clause chỉ dựa trên ký tự ở trạng thái 'code' theo sqlCharStates() —
- * dấu `(`/`)`/`,` nằm trong một chuỗi literal (vd.
- * `DEFAULT 'closed)temporarily'` hay `DEFAULT 'ok,pending'`) không được
- * tính vào độ sâu ngoặc hay số clause. Bản trước duyệt ký tự thô, không
- * phân biệt literal, nên bị sai cả hai chiều: literal chứa `)` làm âm độ
- * sâu ngoặc khiến dấu phẩy ranh giới clause thật bị bỏ sót (nhiều clause
- * tưởng một), literal chứa `,` bị đếm nhầm thành ranh giới clause (một
- * clause tưởng nhiều, phá tính idempotent).
- */
-/**
  * Dựng bản sao "chỉ-chứa-code" của một chuỗi SQL: mọi ký tự ở trạng thái
  * 'comment' (theo sqlCharStates()) được THAY BẰNG MỘT KHOẢNG TRẮNG, ký tự ở
  * trạng thái 'code' và 'string' GIỮ NGUYÊN. Trả về cặp [chuỗi kết quả, mảng
@@ -309,57 +285,175 @@ function sqlCodeOnlyView(string $sql): array
 }
 
 /**
- * Statement nhiều clause (vd. ALTER TABLE ... ADD COLUMN a, ADD COLUMN b)
- * không được coi là an toàn để bỏ qua lỗi "already exists" — vì MariaDB
- * chạy nguyên statement như MỘT thao tác atomic, lỗi ở một clause sẽ
- * rollback toàn bộ statement.
+ * Bóc các lớp "gate phiên bản" `/*!12345 ... * /` và `/*M!12345 ... * /` khỏi
+ * bản sao chỉ-chứa-code, thay mỗi ký tự bị bóc bằng một khoảng trắng (giữ
+ * nguyên chỉ số ký tự và mảng trạng thái đi kèm).
  *
- * QUAN TRỌNG: cả việc nhận diện `ALTER TABLE` lẫn việc đếm clause đều phải
- * chạy trên bản sao "chỉ-chứa-code" (comment đã bị lược bỏ, string literal
- * giữ nguyên) do sqlCodeOnlyView() dựng ra — KHÔNG chạy trực tiếp trên
- * $statement gốc. Lý do: statement thật lấy từ splitSqlStatements() có thể
- * bắt đầu bằng một comment `--`/`/ * * /` đứng ngay trước, không có `;` xen
- * giữa (vd. dòng đầu của database/migrations/20260807_place_facts.sql).
- * Nếu regex chạy trên chuỗi gốc, comment đứng chắn phía trước sẽ làm
- * `preg_match('/^\s*ALTER\s+TABLE\b/i', ...)` không khớp, rơi vào nhánh
- * `return true` mặc định — bỏ qua đếm clause hoàn toàn, coi statement
- * nhiều clause là an toàn một cách sai lệch.
+ * Vì sao cần bước này: sqlCharStates() đánh `/*!` và `/*M!` là state 'code'
+ * — ĐÚNG, vì với MariaDB đó là mã thi hành thật, và chuỗi gửi $db->exec()
+ * bắt buộc phải giữ nguyên chúng. Nhưng hệ quả là bản sao chỉ-chứa-code bắt
+ * đầu bằng `/*!100200 ` chứ không bằng động từ SQL, nên MỌI regex neo đầu
+ * chuỗi ở tầng phân loại đều trượt. Lớp bóc gate này khôi phục lại điều mà
+ * tầng phân loại luôn giả định: chuỗi nó nhận mở đầu bằng động từ SQL.
+ *
+ * Đếm ĐỘ SÂU thay vì cắt cặp mở/đóng nên gate lồng gate
+ * (`/*!100200 /*M!100300 ... * / * /`) được bóc hết, và gate KHÔNG đóng
+ * (mysqldump hay cắt ngang) vẫn được bóc phần mở.
+ *
+ * @param array<int, 'code'|'string'> $states
+ * @return array{0: string, 1: array<int, 'code'|'string'>}
  */
-function statementHasSingleDdlClause(string $statement): bool
+function sqlStripVersionGates(string $view, array $states): array
 {
-    [$codeOnly, $codeOnlyStates] = sqlCodeOnlyView($statement);
-
-    // Statement nguyên tử KHÔNG phải ALTER TABLE, nhưng vẫn tạo/đổi nhiều đối
-    // tượng trong một thao tác — lỗi "đã tồn tại" ở đây cũng huỷ toàn bộ
-    // statement, nên tuyệt đối không được nuốt.
-    //
-    // - `RENAME TABLE a TO b, c TO d`: nhiều cặp trong một thao tác nguyên tử.
-    // - `CREATE TABLE` KHÔNG có `IF NOT EXISTS`: lỗi 1050 nghĩa là bảng cũ vẫn
-    //   nguyên trạng, có thể khác hẳn định nghĩa trong migration — nuốt lỗi
-    //   này là đánh dấu "xong" trên một lược đồ sai.
-    //
-    // `CREATE INDEX`/`DROP INDEX` chỉ đụng MỘT đối tượng nên nhánh mặc định
-    // `return true` bên dưới vẫn đúng với chúng.
-    if (preg_match('/^\s*RENAME\s+TABLE\b/i', $codeOnly)) {
-        return false;
-    }
-    if (preg_match('/^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:TEMPORARY\s+)?TABLE\s+(?!IF\s+NOT\s+EXISTS\b)/i', $codeOnly)) {
-        return false;
-    }
-
-    if (!preg_match('/^\s*ALTER\s+TABLE\b/i', $codeOnly)) {
-        return true;
-    }
-
+    $length = strlen($view);
+    $stripped = '';
+    $strippedStates = [];
     $depth = 0;
-    $clauseCount = 1;
-    $length = strlen($codeOnly);
+    $i = 0;
+
+    while ($i < $length) {
+        $state = $states[$i] ?? 'code';
+
+        if ($state === 'code') {
+            $markerLength = 0;
+            if (substr($view, $i, 3) === '/*!') {
+                $markerLength = 3;
+            } elseif (substr($view, $i, 4) === '/*M!') {
+                $markerLength = 4;
+            }
+
+            if ($markerLength > 0) {
+                // Nuốt luôn số phiên bản dính ngay sau marker (`/*!100200`).
+                // Gate không có số (`/*! ... * /`) cũng hợp lệ — khi đó vòng
+                // lặp dưới không chạy lần nào.
+                $end = $i + $markerLength;
+                while ($end < $length && $view[$end] >= '0' && $view[$end] <= '9') {
+                    $end++;
+                }
+                for (; $i < $end; $i++) {
+                    $stripped .= ' ';
+                    $strippedStates[] = 'code';
+                }
+                $depth++;
+                continue;
+            }
+
+            if ($depth > 0 && substr($view, $i, 2) === '*/') {
+                $stripped .= '  ';
+                $strippedStates[] = 'code';
+                $strippedStates[] = 'code';
+                $depth--;
+                $i += 2;
+                continue;
+            }
+        }
+
+        $stripped .= $view[$i];
+        $strippedStates[] = $state;
+        $i++;
+    }
+
+    return [$stripped, $strippedStates];
+}
+
+/**
+ * Gộp mọi dãy khoảng trắng ở state 'code' thành đúng MỘT dấu cách và cắt
+ * khoảng trắng hai đầu. Khoảng trắng bên trong vùng 'string' được giữ
+ * NGUYÊN VẸN — đó là dữ liệu, không phải định dạng.
+ *
+ * Bước này khoá lại một họ lỗi regex thay vì từng ca lẻ: khi chuỗi đầu vào
+ * đã chính tắc, `\s+` không còn cơ hội backtrack nhả lại một ký tự trắng để
+ * lookahead đứng sai chỗ (`CREATE TABLE  IF NOT EXISTS` với hai dấu cách
+ * từng bị nhận nhầm là không có `IF NOT EXISTS`), và mọi biến thể
+ * tab/xuống dòng/nhiều dòng đều quy về cùng một hình dạng.
+ *
+ * @param array<int, 'code'|'string'> $states
+ * @return array{0: string, 1: array<int, 'code'|'string'>}
+ */
+function sqlCollapseCodeWhitespace(string $view, array $states): array
+{
+    $length = strlen($view);
+    $collapsed = '';
+    $collapsedStates = [];
+    $pendingSpace = false;
 
     for ($i = 0; $i < $length; $i++) {
-        if (($codeOnlyStates[$i] ?? 'code') !== 'code') {
+        $state = $states[$i] ?? 'code';
+        $char = $view[$i];
+
+        if ($state === 'code' && strpos(" \t\n\r\v\f", $char) !== false) {
+            // Chưa phát ra gì => đang ở đầu chuỗi => cắt luôn. Khoảng trắng
+            // đuôi cũng tự biến mất vì $pendingSpace không bao giờ được xả.
+            $pendingSpace = $collapsed !== '';
             continue;
         }
-        $char = $codeOnly[$i];
+
+        if ($pendingSpace) {
+            $collapsed .= ' ';
+            $collapsedStates[] = 'code';
+            $pendingSpace = false;
+        }
+
+        $collapsed .= $char;
+        $collapsedStates[] = $state;
+    }
+
+    return [$collapsed, $collapsedStates];
+}
+
+/**
+ * Bản CHÍNH TẮC của một statement, dành riêng cho tầng phân loại.
+ *
+ * Đây là ranh giới cứng giữa hai tầng, và là bài học rút ra sau bốn vòng sửa
+ * liên tiếp cùng thủng một chỗ: mỗi lần tầng dưới (sqlCharStates /
+ * sqlCodeOnlyView) được sửa cho đúng hơn về mặt từ vựng, HÌNH DẠNG chuỗi mà
+ * tầng trên nhận lại đổi theo, trong khi tầng trên vẫn quăng regex neo đầu
+ * chuỗi vào đầu ra thô đó. Từ nay tầng trên KHÔNG bao giờ nhìn chuỗi thô
+ * nữa — nó chỉ nhìn đầu ra của hàm này:
+ *
+ *   nguyên bản -> bỏ comment (thay bằng khoảng trắng) -> bóc gate phiên bản
+ *   -> gộp khoảng trắng -> mới đưa cho regex
+ *
+ * Hệ quả kiểm chứng được, và đã có test canh gác khoá lại: bản chính tắc của
+ * `/*!100200 ALTER TABLE t ADD a, ADD b * /` GIỐNG HỆT bản chính tắc của
+ * `ALTER TABLE t ADD a, ADD b`.
+ *
+ * KHÔNG dùng cho chuỗi thật gửi $db->exec() — chuỗi thi hành luôn là bản
+ * nguyên vẹn chưa cắt gọt.
+ *
+ * @return array{0: string, 1: array<int, 'code'|'string'>}
+ */
+function sqlClassifierView(string $statement): array
+{
+    [$view, $states] = sqlCodeOnlyView($statement);
+    [$view, $states] = sqlStripVersionGates($view, $states);
+
+    return sqlCollapseCodeWhitespace($view, $states);
+}
+
+/**
+ * Đếm số clause DDL của một `ALTER TABLE` đã chính tắc hoá.
+ *
+ * Chỉ tính ký tự ở state 'code' — dấu `(`/`)`/`,` nằm trong chuỗi literal
+ * (`DEFAULT 'closed)temporarily'`, `DEFAULT 'ok,pending'`) không được tính
+ * vào độ sâu ngoặc hay số clause. Bản đời đầu duyệt ký tự thô nên sai cả hai
+ * chiều: literal chứa `)` làm âm độ sâu ngoặc khiến dấu phẩy ranh giới clause
+ * thật bị bỏ sót (nhiều clause tưởng một), literal chứa `,` bị đếm nhầm thành
+ * ranh giới clause (một clause tưởng nhiều, phá tính idempotent).
+ *
+ * @param array<int, 'code'|'string'> $states
+ */
+function sqlAlterTableClauseCount(string $canonical, array $states): int
+{
+    $depth = 0;
+    $clauseCount = 1;
+    $length = strlen($canonical);
+
+    for ($i = 0; $i < $length; $i++) {
+        if (($states[$i] ?? 'code') !== 'code') {
+            continue;
+        }
+        $char = $canonical[$i];
         if ($char === '(') {
             $depth++;
         } elseif ($char === ')') {
@@ -370,14 +464,79 @@ function statementHasSingleDdlClause(string $statement): bool
             // phẩy ở độ sâu 0. Đếm chúng như clause làm một statement 1-clause
             // thật bị coi là nhiều clause, phá tính idempotent (lần chạy thứ
             // hai ném lỗi thay vì được nuốt như thiết kế).
-            if (preg_match('/^\s*(?:ALGORITHM\s*=|LOCK\s*=|WAIT\b|NOWAIT\b)/i', substr($codeOnly, $i + 1))) {
+            if (preg_match('/^\s*(?:ALGORITHM\s*=|LOCK\s*=|WAIT\b|NOWAIT\b)/i', substr($canonical, $i + 1))) {
                 continue;
             }
             $clauseCount++;
         }
     }
 
-    return $clauseCount === 1;
+    return $clauseCount;
+}
+
+/**
+ * Statement này có an toàn để NUỐT một lỗi thuộc nhóm "đã tồn tại" không?
+ *
+ * Một `ALTER TABLE` nhiều clause (vd. `ADD COLUMN a, ADD COLUMN b, ADD KEY
+ * c`) là MỘT thao tác nguyên tử trong MariaDB — nếu bất kỳ clause nào lỗi,
+ * TOÀN BỘ statement bị huỷ, không clause nào được áp dụng một phần. Nuốt lỗi
+ * ở đó là ghi schema_migrations trên một lược đồ chưa đầy đủ: hỏng âm thầm,
+ * và lần chạy sau sẽ không bao giờ sửa lại nữa vì version đã được đánh dấu
+ * xong. (Ca thật: `20260806_upgrade.sql` có `ALTER TABLE itinerary_items` 10
+ * clause.)
+ *
+ * HAI QUYẾT ĐỊNH CẤU TRÚC ở đây, đều nhằm đóng cả LỚP lỗi chứ không riêng
+ * một ca:
+ *
+ * 1. Chỉ làm việc trên sqlClassifierView() — bản CHÍNH TẮC. Tầng này không
+ *    còn phụ thuộc vào việc bộ quét từ vựng bên dưới hôm nay biểu diễn
+ *    comment hay gate phiên bản thế nào.
+ *
+ * 2. DANH SÁCH CHO PHÉP, mặc định `false`. Trước đây hàm mặc định `return
+ *    true` (được nuốt), nên MỌI lỗ hổng nhận diện — mỗi lần tầng dưới đổi
+ *    hình dạng đầu vào — đều biến thành lỗi ÂM THẦM NUỐT, đúng hướng nguy
+ *    hiểm nhất. Nay hình dạng lạ rơi về `false`: migration DỪNG, ném lỗi
+ *    thật ra ngoài, schema_migrations không được ghi. Cùng một lỗ hổng, hậu
+ *    quả đổi từ "hỏng ngầm không cứu được" thành "ồn ào, sửa được".
+ *
+ * Chỉ bốn hình dạng được vào danh sách, mỗi hình dạng đều chỉ đụng MỘT đối
+ * tượng nên không có rủi ro "áp dụng một phần":
+ *   - `ALTER TABLE` đúng 1 clause DDL
+ *   - `CREATE [TEMPORARY] TABLE IF NOT EXISTS`
+ *   - `CREATE [UNIQUE|FULLTEXT|SPATIAL] INDEX`
+ *   - `DROP INDEX`
+ *
+ * Cố ý nằm NGOÀI danh sách: `CREATE TABLE` không có `IF NOT EXISTS` (lỗi
+ * 1050 nghĩa là bảng cũ vẫn nguyên trạng, có thể khác hẳn định nghĩa trong
+ * migration — nuốt là đánh dấu "xong" trên một lược đồ sai) và
+ * `RENAME TABLE a TO b, c TO d` (nhiều cặp trong một thao tác nguyên tử).
+ */
+function statementHasSingleDdlClause(string $statement): bool
+{
+    [$canonical, $states] = sqlClassifierView($statement);
+
+    if (preg_match('/^ALTER\s+TABLE\b/i', $canonical)) {
+        return sqlAlterTableClauseCount($canonical, $states) === 1;
+    }
+
+    // Mệnh đề KHẲNG ĐỊNH thay cho lookahead PHỦ ĐỊNH `(?!IF\s+NOT\s+EXISTS)`
+    // của bản cũ: lookahead phủ định đứng sau `\s+` tham lam bị backtrack nhả
+    // lại một ký tự trắng, nên với hai dấu cách nó soi vào khoảng trắng thứ
+    // hai và không bao giờ thấy `IF`. Hỏi thẳng "có IF NOT EXISTS không" thì
+    // cái bẫy đó không tồn tại.
+    if (preg_match('/^CREATE\s+(?:TEMPORARY\s+)?TABLE\s+IF\s+NOT\s+EXISTS\b/i', $canonical)) {
+        return true;
+    }
+
+    if (preg_match('/^CREATE\s+(?:UNIQUE\s+|FULLTEXT\s+|SPATIAL\s+)?INDEX\b/i', $canonical)) {
+        return true;
+    }
+
+    if (preg_match('/^DROP\s+INDEX\b/i', $canonical)) {
+        return true;
+    }
+
+    return false;
 }
 
 /** Tạo bảng theo dõi migration nếu chưa có. Idempotent, gọi bao nhiêu lần cũng an toàn. */
