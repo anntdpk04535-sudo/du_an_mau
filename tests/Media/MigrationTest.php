@@ -834,6 +834,32 @@ final class MigrationTest extends TestCase
     }
 
     /**
+     * F9 (vòng sửa 5) — `sqlCodeOnlyView()` XOÁ HẲN ký tự comment thay vì thay
+     * bằng khoảng trắng, nên hai token đứng hai bên một comment bị dính vào
+     * nhau: `ALTER/* x * /TABLE ...` cho ra `ALTERTABLE ...`, regex nhận diện
+     * `ALTER TABLE` không khớp, statement rơi vào nhánh mặc định.
+     *
+     * Comment là RANH GIỚI TỪ VỰNG trong SQL — bỏ nó đi phải để lại một khoảng
+     * trắng, đúng như trình phân tích của MariaDB làm.
+     */
+    public function test_comment_giua_hai_token_khong_lam_dinh_token(): void
+    {
+        $statement = 'ALTER/* x */TABLE t ADD COLUMN a int, ADD COLUMN b int';
+
+        [$codeOnly] = \sqlCodeOnlyView($statement);
+        self::assertSame(
+            'ALTER TABLE t ADD COLUMN a int, ADD COLUMN b int',
+            trim((string)preg_replace('/\s+/', ' ', $codeOnly)),
+            'comment phải được thay bằng khoảng trắng, không được xoá hẳn làm dính token'
+        );
+
+        self::assertFalse(
+            \statementHasSingleDdlClause($statement),
+            'ALTER TABLE 2 clause có comment chen giữa hai token vẫn phải bị nhận diện là nhiều clause'
+        );
+    }
+
+    /**
      * Canary mở rộng: mọi file migration THẬT trong repo phải tách ra ít nhất
      * một statement thi hành được, và không statement nào rỗng. Đọc file thật
      * nên bắt được mọi lần bộ quét tái phát bệnh nuốt statement.

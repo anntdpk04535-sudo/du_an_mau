@@ -267,10 +267,17 @@ function splitSqlStatements(string $sql): array
  * clause tưởng nhiều, phá tính idempotent).
  */
 /**
- * Dựng bản sao "chỉ-chứa-code" của một chuỗi SQL: bỏ hẳn mọi ký tự ở trạng
- * thái 'comment' (theo sqlCharStates()), GIỮ NGUYÊN ký tự ở trạng thái
- * 'code' và 'string'. Trả về cặp [chuỗi đã bỏ comment, mảng trạng thái ứng
- * với từng ký tự của chuỗi đó].
+ * Dựng bản sao "chỉ-chứa-code" của một chuỗi SQL: mọi ký tự ở trạng thái
+ * 'comment' (theo sqlCharStates()) được THAY BẰNG MỘT KHOẢNG TRẮNG, ký tự ở
+ * trạng thái 'code' và 'string' GIỮ NGUYÊN. Trả về cặp [chuỗi kết quả, mảng
+ * trạng thái ứng với từng ký tự của chuỗi đó].
+ *
+ * Thay-bằng-khoảng-trắng chứ KHÔNG xoá hẳn: comment là RANH GIỚI TỪ VỰNG
+ * trong SQL, đúng như trình phân tích của MariaDB coi nó. Xoá hẳn làm hai
+ * token hai bên dính vào nhau — `ALTER/x/TABLE t ADD a, ADD b` (với `/x/` là
+ * một comment khối) cho ra `ALTERTABLE t ...`, và mọi regex nhận diện động
+ * từ đứng đầu đều trượt. Giữ độ dài chuỗi không đổi cũng khiến chỉ số ký tự
+ * của bản sao trùng khít với bản gốc, tiện cho các bước xử lý sau.
  *
  * Dùng riêng cho việc PHÂN LOẠI statement (nhận diện `ALTER TABLE`, đếm
  * clause) — KHÔNG dùng cho chuỗi thật gửi tới $db->exec(). Một base dump
@@ -290,6 +297,8 @@ function sqlCodeOnlyView(string $sql): array
     for ($i = 0; $i < $length; $i++) {
         $state = $states[$i] ?? 'code';
         if ($state === 'comment') {
+            $codeOnly .= ' ';
+            $codeOnlyStates[] = 'code';
             continue;
         }
         $codeOnly .= $sql[$i];
