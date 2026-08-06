@@ -106,7 +106,7 @@ function testImportSchema(PDO $db, string $dumpPath): void
         } catch (PDOException $e) {
             $failedCount++;
             if (count($failedSamples) < 3) {
-                $failedSamples[] = substr($statement, 0, 80) . ' — ' . $e->getMessage();
+                $failedSamples[] = mb_substr($statement, 0, 80, 'UTF-8') . ' — ' . $e->getMessage();
             }
         }
     }

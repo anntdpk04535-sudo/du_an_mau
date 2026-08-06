@@ -29,28 +29,42 @@ final class SmokeTest extends TestCase
     }
 
     /**
-     * Cố định tổng số bảng của lược đồ nền, không chỉ kiểm tra một bảng lẻ.
-     * `testImportSchema()` trong bootstrap.php bỏ qua statement lỗi một cách
-     * im lặng có chủ đích (chỉ thị riêng của mysqldump); nếu về sau regex
-     * tách statement xử lý sai một CREATE TABLE (literal chứa ";\n", trigger,
-     * stored routine...), lược đồ sẽ nạp thiếu mà không gì báo động — trừ
-     * test này.
+     * Bảo vệ đúng bất biến: mọi bảng `CREATE TABLE` trong bản dump nền
+     * (`database/daklak_travel.sql`) phải có mặt trong DB test sau khi nạp.
      *
-     * Con số 20 lấy từ `grep -c '^CREATE TABLE' database/daklak_travel.sql`
-     * tại thời điểm viết test (Task 1, 2026-08-06), khớp với số bảng thực tế
-     * trong `daklak_travel_test` sau khi nạp. Cần cập nhật con số này khi
-     * `database/daklak_travel.sql` thêm/bớt bảng trong bản dump nền — KHÔNG
-     * cập nhật khi Task 2 trở đi thêm bảng qua `database/migrations/*.sql`
-     * (foods, accommodations, destination_images, food_images,
-     * accommodation_images, search_documents, events...), vì đó là schema do
-     * migration runner tạo, ngoài phạm vi hàm này.
+     * KHÔNG đếm tổng số bảng — Bước 6 của bootstrap.php áp toàn bộ
+     * `database/migrations/*.sql` vào chính DB test này ngay khi
+     * `scripts/migrate_media.php` tồn tại (từ Task 2 trở đi), nên tổng số
+     * bảng của `daklak_travel_test` sẽ tăng dần theo migration và không
+     * phải bất biến. Test này chỉ khẳng định `testImportSchema()` không bỏ
+     * sót bảng nào của *dump nền* — đúng lỗ hổng finding gốc nêu (statement
+     * lỗi bị nuốt âm thầm) — nên vẫn xanh dù DB test có thêm bao nhiêu bảng
+     * từ migration sau này.
      */
-    public function test_tong_so_bang_luoc_do_nen_dung_20(): void
+    public function test_moi_bang_trong_dump_nen_deu_duoc_nap(): void
     {
-        $count = (int)$this->db->query(
-            'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()'
-        )->fetchColumn();
-        self::assertSame(20, $count);
+        $sql = (string)file_get_contents(dirname(__DIR__) . '/database/daklak_travel.sql');
+        preg_match_all('/^CREATE TABLE `([^`]+)`/m', $sql, $matches);
+        $expectedTables = $matches[1];
+
+        self::assertNotEmpty(
+            $expectedTables,
+            'Không rút được tên bảng nào từ dump nền — regex có thể đã hỏng, test sẽ tự vô hiệu nếu bỏ qua điều này.'
+        );
+
+        $found = $this->db->prepare(
+            'SELECT COUNT(*) FROM information_schema.tables
+             WHERE table_schema = DATABASE() AND table_name = ?'
+        );
+
+        foreach ($expectedTables as $table) {
+            $found->execute([$table]);
+            self::assertSame(
+                1,
+                (int)$found->fetchColumn(),
+                "Bảng `{$table}` có trong dump nền nhưng không có trong DB test."
+            );
+        }
     }
 
     /** BASE_URL phải cố định, không phụ thuộc vào việc gọi phpunit từ đâu. */
