@@ -128,8 +128,9 @@ include __DIR__ . '/../includes/header.php';
         <?php foreach ($articles as $a): ?>
             <a href="<?= url('/cam-nang/' . urlencode($a['slug'])) ?>" class="article-card">
                 <?php if ($a['image_url']): ?>
-                    <img src="<?= e($a['image_url']) ?>" alt="<?= e($a['title']) ?>" class="article-img">
+                    <img src="<?= url($a['image_url']) ?>" alt="<?= e($a['title']) ?>" class="article-img" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
                 <?php else: ?>
+
                     <div class="article-img" style="background: linear-gradient(135deg, var(--green-600), var(--green-400)); display: flex; align-items: center; justify-content: center; color: white; font-size: 40px;">📝</div>
                 <?php endif; ?>
                 <div class="article-content">

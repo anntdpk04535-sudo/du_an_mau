@@ -35,6 +35,9 @@ $currentPath = basename($_SERVER['SCRIPT_NAME']);
     <a href="<?= url('/admin/dashboard_ai.php') ?>" class="<?= $currentPath == 'dashboard_ai.php' ? 'active' : '' ?>" style="background:var(--green-100); color:var(--green-900);"><?= __('admin_nav_dashboard_ai') ?></a>
     <a href="<?= url('/admin/users.php') ?>" class="<?= $currentPath == 'users.php' ? 'active' : '' ?>">👥 <?= __('admin_nav_users') ?></a>
     <a href="<?= url('/admin/destinations.php') ?>" class="<?= $currentPath == 'destinations.php' ? 'active' : '' ?>">📍 <?= __('admin_nav_destinations') ?></a>
+    <a href="<?= url('/admin/events.php') ?>" class="<?= $currentPath == 'events.php' ? 'active' : '' ?>">🎪 Sự kiện & Lễ hội</a>
+    <a href="<?= url('/admin/foods.php') ?>" class="<?= $currentPath == 'foods.php' ? 'active' : '' ?>">🍜 Ẩm thực</a>
+    <a href="<?= url('/admin/accommodations.php') ?>" class="<?= $currentPath == 'accommodations.php' ? 'active' : '' ?>">🛏️ Lưu trú</a>
     <a href="<?= url('/admin/categories.php') ?>" class="<?= $currentPath == 'categories.php' ? 'active' : '' ?>">🏷️ <?= __('admin_nav_categories') ?></a>
     <a href="<?= url('/admin/articles.php') ?>" class="<?= $currentPath == 'articles.php' ? 'active' : '' ?>">📝 <?= __('admin_nav_articles') ?></a>
     <a href="<?= url('/admin/contacts.php') ?>" class="<?= $currentPath == 'contacts.php' ? 'active' : '' ?>">📬 <?= __('admin_nav_contacts') ?></a>

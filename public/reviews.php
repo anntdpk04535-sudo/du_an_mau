@@ -339,6 +339,11 @@ include __DIR__ . '/../includes/header.php';
           <span id="charCount">0</span>/1000 <?= __('reviews_chars') ?>
         </div>
       </div>
+      <div class="form-group">
+        <label for="reviewImages">📷 Ảnh trải nghiệm (tối đa 5 ảnh, JPG/PNG/WebP)</label>
+        <input id="reviewImages" type="file" name="images[]" accept="image/jpeg,image/png,image/webp" multiple>
+        <div id="reviewImagePreview" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"></div>
+      </div>
       <button type="submit" class="btn" id="submitReviewBtn">🚀 <?= __('reviews_submit') ?></button>
       <div id="reviewMsg" style="margin-top:14px;font-size:14px;"></div>
     </form>
@@ -499,6 +504,11 @@ async function loadReviews(reset = false) {
       commentP.textContent = '<?= __('dest_no_comment') ?>';
     }
     card.appendChild(commentP);
+    if (Array.isArray(r.images) && r.images.length) {
+      const gallery = document.createElement('div'); gallery.style.cssText='display:flex;gap:7px;flex-wrap:wrap;margin:8px 0';
+      r.images.forEach(image=>{const img=document.createElement('img');img.src=image.image_url;img.alt=image.alt_text||'Ảnh review';img.loading='lazy';img.style.cssText='width:88px;height:66px;object-fit:cover;border-radius:8px';gallery.appendChild(img);});
+      card.appendChild(gallery);
+    }
 
     // Show actions: own review (edit+delete) or admin delete with reason
     const showOwnerActions = r.is_mine;
@@ -568,6 +578,17 @@ function loadMore() { loadReviews(false); }
 var form = document.getElementById('reviewForm');
 if (form) {
   const textarea = document.getElementById('reviewComment');
+  const imageInput = document.getElementById('reviewImages');
+  imageInput?.addEventListener('change', () => {
+    const preview = document.getElementById('reviewImagePreview');
+    preview.innerHTML = '';
+    [...(imageInput.files || [])].slice(0, 5).forEach(file => {
+      const img = document.createElement('img');
+      img.src = URL.createObjectURL(file); img.alt = file.name;
+      img.style.cssText = 'width:72px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #ddd';
+      preview.appendChild(img);
+    });
+  });
   textarea?.addEventListener('input', () => {
     document.getElementById('charCount').textContent = textarea.value.length;
   });

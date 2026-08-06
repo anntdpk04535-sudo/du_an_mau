@@ -12,48 +12,48 @@ include __DIR__ . '/../includes/header.php';
 
 <section class="chat-hero">
   <div class="chat-hero-text">
-    <h1><?= __('chatbot_title') ?></h1>
-    <p><?= __('chatbot_sub') ?></p>
-    <a href="#chat-box" class="btn"><?= __('chat_start_btn') ?></a>
+    <h1>Hỏi Đáp Cùng Voi Bản Đôn 🐘</h1>
+    <p>Trợ lý du lịch AI am hiểu từng buôn làng, thác nước, quán cà phê và điểm lưu trú tại Đắk Lắk.</p>
+    <a href="#chat-box" class="btn btn-jungle">Bắt đầu trò chuyện</a>
   </div>
   <div class="chat-hero-art">
-    <svg viewBox="0 0 220 220" width="220" height="220">
-      <circle cx="110" cy="110" r="105" fill="rgba(255,255,255,0.08)" />
-      <circle cx="110" cy="110" r="80" fill="rgba(255,255,255,0.10)" />
-      <line x1="110" y1="40" x2="110" y2="58" stroke="#fff" stroke-width="4" stroke-linecap="round" />
-      <circle cx="110" cy="34" r="7" fill="#ffb703" />
-      <rect x="62" y="58" width="96" height="78" rx="22" fill="#ffffff" />
-      <circle cx="90" cy="96" r="9" fill="#2d6a4f" />
-      <circle cx="130" cy="96" r="9" fill="#2d6a4f" />
-      <path d="M85 114 Q110 130 135 114" stroke="#2d6a4f" stroke-width="5" fill="none" stroke-linecap="round" />
-      <rect x="74" y="142" width="72" height="50" rx="16" fill="#e9ecef" />
-      <circle cx="110" cy="167" r="10" fill="#ffb703" />
-      <circle cx="58" cy="160" r="10" fill="#ffffff" />
-      <circle cx="162" cy="160" r="10" fill="#ffffff" />
-    </svg>
+    <img src="<?= url('/assets/images/voi_ban_don_avatar.png') ?>" alt="Voi Bản Đôn AI" width="180" height="180" style="border-radius: 50%; border: 4px solid rgba(255,255,255,0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
   </div>
 </section>
 
-<div id="chat-box">
-  <p class="section-sub" style="margin-top:6px;"><?= __('chat_desc') ?></p>
-
+<div id="chat-box" class="chat-research-shell">
+  <aside class="chat-sidebar" aria-label="Gợi ý tra cứu">
+    <span class="eyebrow">Ama Guide - Voi Bản Đôn</span>
+    <h2>Hỏi như đang trò chuyện với người bản địa.</h2>
+    <p><?= __('chat_desc') ?></p>
+    <button type="button" class="focus-mode-btn" id="focus-mode-btn">Tập trung khi tra cứu</button>
+    <div class="chat-sidebar-links">
+      <a href="<?= url('/diem-den?region=west') ?>">Phía Tây · Rừng & Thác</a>
+      <a href="<?= url('/diem-den?region=east') ?>">Phía Đông · Hồ & Đồi</a>
+      <a href="<?= url('/am-thuc') ?>">Ẩm thực & Cà phê BMT</a>
+      <a href="<?= url('/luu-tru') ?>">Homestay & Nơi ở</a>
+    </div>
+  </aside>
+  <div class="chat-main-panel">
   <div class="chat-window" id="chat-window">
     <div class="msg-row bot-row">
-      <div class="msg-avatar">🤖</div>
-      <div class="msg bot" id="chat-greeting-bubble"><?= __('chat_greeting') ?></div>
+      <div class="msg-avatar">
+        <img src="<?= url('/assets/images/voi_ban_don_avatar.png') ?>" alt="Voi Bản Đôn" width="34" height="34" style="border-radius:50%;">
+      </div>
+      <div class="msg bot" id="chat-greeting-bubble">
+        <strong>Xin chào! Mình là Voi Bản Đôn 🐘</strong><br>
+        Bạn cần tìm quán cà phê, điểm cắm trại hay homestay nào ở Đắk Lắk hôm nay?
+      </div>
     </div>
   </div>
 
   <div class="chat-suggestions" id="chat-suggestions">
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_1')) ?>')"><?= __('chat_sugg_1') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_2')) ?>')"><?= __('chat_sugg_2') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_3')) ?>')"><?= __('chat_sugg_3') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_4')) ?>')"><?= __('chat_sugg_4') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_5')) ?>')"><?= __('chat_sugg_5') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_6')) ?>')"><?= __('chat_sugg_6') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_7')) ?>')"><?= __('chat_sugg_7') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_8')) ?>')"><?= __('chat_sugg_8') ?></button>
-    <button class="sugg-btn" onclick="sendSuggestion('<?= e(__('chat_sugg_9')) ?>')"><?= __('chat_sugg_9') ?></button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Gợi ý top quán cà phê đẹp Buôn Ma Thuột')">☕ Cà phê BMT</button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Kinh nghiệm du lịch Thác Dray Nur')">💧 Thác Dray Nur</button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Trải nghiệm chèo sub cắm trại Hồ Lắk')">🏕️ Hồ Lắk</button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Ăn gì ngon ở Đắk Lắk?')">🍜 Ẩm thực địa phương</button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Buôn Đôn có hoạt động gì hấp dẫn?')">🐘 Buôn Đôn</button>
+    <button class="coffee-bean-pill" onclick="sendSuggestion('Tìm homestay gần trung tâm giá tốt')">🏡 Homestay đẹp</button>
   </div>
 
   <form id="chat-form" class="chat-input-row">
@@ -61,6 +61,7 @@ include __DIR__ . '/../includes/header.php';
       value="<?= e($askPrefill) ?>">
     <button type="submit" class="btn"><?= __('send_btn') ?></button>
   </form>
+  </div>
 </div>
 
 <style>
@@ -147,6 +148,11 @@ include __DIR__ . '/../includes/header.php';
 <script>
 if (!window.chatbotEventsAttached) {
     window.chatbotEventsAttached = true;
+    const focusModeButton = document.getElementById('focus-mode-btn');
+    if (focusModeButton) focusModeButton.addEventListener('click', function() {
+        document.body.classList.toggle('chat-focus-mode');
+        focusModeButton.textContent = document.body.classList.contains('chat-focus-mode') ? 'Thoát chế độ tập trung' : 'Tập trung khi tra cứu';
+    });
     let savedChatHtml = '';
     let savedInputValue = '';
     document.addEventListener('beforeLangSwitch', function() {
@@ -243,7 +249,8 @@ if (!window.chatbotEventsAttached) {
 
     const bubble = document.createElement('div');
     bubble.className = 'msg ' + role;
-    bubble.textContent = text.replace(/\*/g, '');
+    if (role === 'bot') renderAssistantText(bubble, text);
+    else bubble.textContent = text;
     wrap.appendChild(bubble);
 
     if (images && images.length > 0) {
@@ -274,6 +281,58 @@ if (!window.chatbotEventsAttached) {
     return bubble;
   }
 
+  function renderAssistantText(container, rawText) {
+    container.replaceChildren();
+    const normalized = String(rawText || '')
+      .replace(/\r/g, '')
+      .replace(/\s*(#{2,4}\s*Ngày\s*\d+\s*:)/gi, '\n$1')
+      .replace(/\s+(Sáng|Trưa|Chiều|Tối|Buổi sáng|Buổi trưa|Buổi chiều|Buổi tối)\s*:/g, '\n$1:');
+    const lines = normalized.split(/\n+/).map(line => line.trim()).filter(Boolean);
+    const fragment = document.createDocumentFragment();
+    let list = null;
+    const closeList = () => { if (list) { fragment.appendChild(list); list = null; } };
+    lines.forEach(line => {
+      const heading = line.match(/^#{2,4}\s*(.+)$/);
+      const bullet = line.match(/^[-•]\s+(.+)$/);
+      if (heading) {
+        closeList();
+        const el = document.createElement('h3');
+        el.className = 'assistant-heading';
+        el.textContent = heading[1];
+        fragment.appendChild(el);
+        return;
+      }
+      if (bullet) {
+        if (!list) { list = document.createElement('ul'); list.className = 'assistant-list'; }
+        const item = document.createElement('li');
+        appendInlineText(item, bullet[1]);
+        list.appendChild(item);
+        return;
+      }
+      closeList();
+      const paragraph = document.createElement('p');
+      paragraph.className = 'assistant-paragraph';
+      appendInlineText(paragraph, line);
+      fragment.appendChild(paragraph);
+    });
+    closeList();
+    container.appendChild(fragment);
+  }
+
+  function appendInlineText(parent, text) {
+    const parts = String(text).split(/(\*\*[^*]+\*\*)/g);
+    parts.forEach(part => {
+      if (!part) return;
+      if (/^\*\*[^*]+\*\*$/.test(part)) {
+        const strong = document.createElement('strong');
+        strong.textContent = part.slice(2, -2);
+        parent.appendChild(strong);
+      } else {
+        parent.appendChild(document.createTextNode(part.replace(/^\*|\*$/g, '')));
+      }
+    });
+  }
+
   async function sendMessage(text) {
     if (!text.trim()) return;
     addMessage(text, 'user');
@@ -290,7 +349,7 @@ if (!window.chatbotEventsAttached) {
       const data = await res.json();
       loadingDiv.classList.remove('loading-dots');
       let replyText = data.reply || '<?= __('chat_error') ?>';
-      loadingDiv.textContent = replyText.replace(/\*/g, '');
+      renderAssistantText(loadingDiv, replyText);
 
       if (data.images && data.images.length > 0) {
         const imgRow = document.createElement('div');
@@ -306,6 +365,16 @@ if (!window.chatbotEventsAttached) {
         });
         loadingDiv.parentNode.appendChild(imgRow);
         chatWindow.scrollTop = chatWindow.scrollHeight;
+      }
+      if (Array.isArray(data.results) && data.results.length) {
+        const cards = document.createElement('div'); cards.className='chat-result-cards';
+        data.results.slice(0,6).forEach(result=>{
+          const card=document.createElement('a'); card.href=result.url||'#'; card.target='_blank'; card.rel='noopener'; card.style.cssText='display:block;padding:10px;margin-top:8px;border:1px solid #dbe4df;border-radius:10px;text-decoration:none;color:inherit;background:#fff';
+          const title=document.createElement('strong'); title.textContent=result.title||''; card.appendChild(title);
+          if(result.address){const addr=document.createElement('div');addr.textContent='📍 '+result.address;addr.style.cssText='font-size:12px;color:#777;margin-top:3px';card.appendChild(addr);}
+          cards.appendChild(card);
+        });
+        loadingDiv.parentNode.appendChild(cards);
       }
     } catch (err) {
       loadingDiv.classList.remove('loading-dots');

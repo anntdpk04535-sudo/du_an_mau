@@ -3,7 +3,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -106,6 +106,14 @@ try {
         ]);
     }
 
+    if (tableExists($db, 'review_images')) {
+        $imgs = $db->prepare('SELECT image_url FROM review_images WHERE review_id=?');
+        $imgs->execute([$id]);
+        foreach ($imgs->fetchAll(PDO::FETCH_COLUMN) as $url) {
+            $path = parse_url((string)$url, PHP_URL_PATH);
+            if ($path && str_contains($path, '/assets/images/uploads/')) @unlink(__DIR__ . '/..' . $path);
+        }
+    }
     // Xóa đánh giá
     $db->prepare("DELETE FROM reviews WHERE id = ?")->execute([$id]);
 

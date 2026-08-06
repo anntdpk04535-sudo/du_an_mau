@@ -1,5 +1,7 @@
 <?php
+@set_time_limit(180);
 require_once __DIR__ . '/../includes/functions.php';
+
 require_once __DIR__ . '/../includes/geo.php';
 require_once __DIR__ . '/../includes/weather.php';
 

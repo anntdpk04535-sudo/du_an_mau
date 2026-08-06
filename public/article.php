@@ -214,8 +214,9 @@ include __DIR__ . '/../includes/header.php';
     </div>
     
     <?php if ($article['image_url']): ?>
-        <img src="<?= e($article['image_url']) ?>" alt="<?= e($article['title']) ?>" class="article-hero">
+        <img src="<?= url($article['image_url']) ?>" alt="<?= e($article['title']) ?>" class="article-hero" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
     <?php endif; ?>
+
 
     <div class="article-body">
         <?php if ($article['summary']): ?>

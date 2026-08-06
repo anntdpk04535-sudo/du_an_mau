@@ -277,8 +277,9 @@ include __DIR__ . '/../includes/header.php';
                 <?php foreach ($wishlists as $w): ?>
                     <a href="<?= url('/public/destination.php?slug=' . $w['slug']) ?>" class="itinerary-card" style="text-decoration: none; padding: 0; overflow: hidden;">
                         <?php if ($w['image_url']): ?>
-                            <img src="<?= e($w['image_url']) ?>" alt="<?= e($w['name']) ?>" style="width:100%; height:120px; object-fit:cover; border-bottom: 1px solid #f1f5f9;">
+                            <img src="<?= url($w['image_url']) ?>" alt="<?= e($w['name']) ?>" style="width:100%; height:120px; object-fit:cover; border-bottom: 1px solid #f1f5f9;" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
                         <?php else: ?>
+
                             <div style="width:100%; height:120px; background:#d8f3dc; display:flex; align-items:center; justify-content:center; font-size:30px;">🌄</div>
                         <?php endif; ?>
                         <div style="padding: 16px; display: flex; flex-direction: column; flex-grow: 1;">

@@ -9,7 +9,7 @@
 require_once __DIR__ . '/env.php';
 
 define('GEMINI_API_KEY', getenv('GEMINI_API_KEY') ?: '');
-define('GEMINI_MODEL', 'gemini-3.5-flash');
+define('GEMINI_MODEL', getenv('GEMINI_MODEL') ?: 'gemini-2.5-flash');
 define('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent');
 
 /**
@@ -22,6 +22,7 @@ define('GEMINI_API_URL', 'https://generativelanguage.googleapis.com/v1beta/model
  */
 function callGemini(array $messages, string $system = '', int $maxTokens = 1024, float $temperature = 1.0, string $responseMimeType = 'text/plain'): string
 {
+    @set_time_limit(180);
     if (empty(GEMINI_API_KEY)) {
         return 'Lỗi: Chưa cấu hình GEMINI_API_KEY trong file .env (xem .env.example).';
     }
@@ -53,42 +54,61 @@ function callGemini(array $messages, string $system = '', int $maxTokens = 1024,
         ];
     }
 
-    $ch = curl_init(GEMINI_API_URL . '?key=' . GEMINI_API_KEY);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-        ],
-        CURLOPT_TIMEOUT => 120,
-    ]);
+    // Tự động thử lại tối đa 3 lần nếu gặp sự cố cao điểm 503 / 429
+    $maxAttempts = 3;
+    $lastError = '';
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        $ch = curl_init(GEMINI_API_URL . '?key=' . GEMINI_API_KEY);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+            ],
+            CURLOPT_TIMEOUT => 120,
+        ]);
 
-    if ($curlError) {
-        return 'Lỗi kết nối AI: ' . $curlError;
-    }
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
 
-    $data = json_decode($response, true);
-
-    if ($httpCode !== 200) {
-        $msg = $data['error']['message'] ?? 'Lỗi không xác định từ API';
-        return 'Lỗi AI (' . $httpCode . '): ' . $msg;
-    }
-
-    $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-    $finishReason = $data['candidates'][0]['finishReason'] ?? null;
-
-    if ($text === null) {
-        if ($finishReason === 'MAX_TOKENS') {
-            return 'Lỗi: AI bị cắt do vượt giới hạn token, hãy tăng maxTokens khi gọi callGemini().';
+        if ($curlError) {
+            $lastError = 'Lỗi kết nối AI: ' . $curlError;
+            sleep(1);
+            continue;
         }
-        return 'AI không trả về nội dung hợp lệ.';
+
+        $data = json_decode($response, true);
+
+        if ($httpCode === 200) {
+            $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            $finishReason = $data['candidates'][0]['finishReason'] ?? null;
+
+            if ($text === null) {
+                if ($finishReason === 'MAX_TOKENS') {
+                    return 'Lỗi: AI bị cắt do vượt giới hạn token, hãy tăng maxTokens khi gọi callGemini().';
+                }
+                return 'AI không trả về nội dung hợp lệ.';
+            }
+
+            return $text;
+        }
+
+        $msg = $data['error']['message'] ?? 'Lỗi không xác định từ API';
+        $lastError = 'Lỗi AI (' . $httpCode . '): ' . $msg;
+
+        // Nếu gặp 503 (High demand) hoặc 429 (Rate limit), tạm nghỉ và thử lại
+        if ($httpCode === 503 || $httpCode === 429) {
+            sleep($attempt);
+            continue;
+        }
+
+        break;
     }
 
-    return $text;
+    return $lastError;
 }
+

@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -54,6 +54,14 @@ try {
 
     $upd = $db->prepare("UPDATE reviews SET rating = ?, comment = ? WHERE id = ?");
     $upd->execute([$rating, $comment ?: null, $id]);
+
+    $files = $_FILES['images'] ?? null;
+    if ($files && is_array($files['name'] ?? null) && tableExists($db, 'review_images')) {
+        foreach (array_slice($files['name'], 0, 5, true) as $i => $_) {
+            $file = ['name'=>$files['name'][$i], 'type'=>$files['type'][$i], 'tmp_name'=>$files['tmp_name'][$i], 'error'=>$files['error'][$i], 'size'=>$files['size'][$i]];
+            if (($url = uploadLocalImage($file, 'reviews')) !== null) $db->prepare('INSERT INTO review_images(review_id,image_url,sort_order) VALUES (?,?,?)')->execute([$id,$url,$i]);
+        }
+    }
 
     // Cập nhật lại rating trung bình điểm đến (nếu có)
     $destinationId = $review['destination_id'];

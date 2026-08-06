@@ -86,7 +86,21 @@ include __DIR__ . '/../includes/header.php';
 .nearby-chip { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:999px; padding:6px 14px; font-size:13px; color:#14532d; display:inline-flex; align-items:center; gap:6px; text-decoration:none; font-weight:600; transition:all 0.2s; }
 .nearby-chip:hover { background:#dcfce7; border-color:#86efac; transform:translateY(-1px); }
 .nearby-chip em { font-style:normal; font-size:11px; font-weight:800; color:var(--green-700); background:#fff; padding:2px 6px; border-radius:10px; }
+
+/* ── STUNNING AI LOADING ANIMATION ── */
+.iti-loading-box { background:#ffffff; border:1.5px solid #e2e8f0; border-radius:20px; padding:38px 24px; text-align:center; margin:32px auto; max-width:520px; box-shadow:0 12px 36px rgba(0,0,0,0.06); animation:fadeIn 0.4s ease; }
+.iti-loading-pulse { position:relative; width:80px; height:80px; margin:0 auto 20px; display:flex; align-items:center; justify-content:center; }
+.iti-loading-avatar { font-size:44px; z-index:2; animation:floatMascot 2s ease-in-out infinite; }
+.iti-loading-ripple { position:absolute; inset:-8px; border-radius:50%; border:3px solid #1E5631; opacity:0; animation:ripplePulse 2s cubic-bezier(0.1, 0.8, 0.3, 1) infinite; }
+@keyframes floatMascot { 0%, 100% { transform:translateY(0); } 50% { transform:translateY(-8px); } }
+@keyframes ripplePulse { 0% { transform:scale(0.6); opacity:0.8; } 100% { transform:scale(1.4); opacity:0; } }
+.iti-loading-title { font-size:18px; font-weight:800; color:var(--green-900,#14532d); margin-bottom:6px; }
+.iti-loading-sub { font-size:13px; color:#64748b; margin-bottom:20px; font-weight:500; }
+.iti-loading-progress-bar { width:100%; height:6px; background:#e2e8f0; border-radius:10px; overflow:hidden; position:relative; }
+.iti-loading-progress-fill { width:100%; height:100%; background:linear-gradient(90deg, #1E5631, #E5A93C, #8B261D); border-radius:10px; animation:progressIndeterminate 1.8s ease-in-out infinite; transform-origin:left; }
+@keyframes progressIndeterminate { 0% { transform:scaleX(0) translateX(0); } 50% { transform:scaleX(0.6) translateX(50%); } 100% { transform:scaleX(1) translateX(100%); } }
 </style>
+
 
 
 <section class="iti-hero-intro" aria-labelledby="iti-page-title">
@@ -553,7 +567,21 @@ form.addEventListener('submit', async (e) => {
   const prefs = Array.from(form.querySelectorAll('input[name="prefs[]"]:checked')).map(c => c.value);
   const notes = form.querySelector('textarea[name="notes"]').value;
 
-  resultBox.innerHTML = '<p class="loading-dots">🤖 <?= __('iti_loading') ?></p>';
+  resultBox.innerHTML = `
+    <div class="iti-loading-box">
+      <div class="iti-loading-pulse">
+        <div class="iti-loading-avatar">🤖</div>
+        <div class="iti-loading-ripple"></div>
+      </div>
+      <h3 class="iti-loading-title">🤖 <?= __('iti_loading') ?></h3>
+      <p class="iti-loading-sub">AI đang tính toán địa điểm, kiểm tra thời tiết & tối ưu hóa tuyến đường cho bạn...</p>
+      <div class="iti-loading-progress-bar">
+        <div class="iti-loading-progress-fill"></div>
+      </div>
+    </div>
+  `;
+  resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   document.getElementById('stats-bar').style.display     = 'none';
   document.getElementById('map-container').style.display = 'none';
   document.getElementById('route-panel').style.display   = 'none';
@@ -569,17 +597,30 @@ form.addEventListener('submit', async (e) => {
         use_weather: document.getElementById('use-weather').checked
       })
     });
+    if (!res.ok) {
+      throw new Error('HTTP ' + res.status);
+    }
     const data = await res.json();
-    if (!data.success) { resultBox.innerHTML = '<p style="color:red;">❌ ' + (data.message || '<?= __('dest_error_occurred') ?>') + '</p>'; return; }
+    if (!data.success) {
+      resultBox.innerHTML = '<div class="geo-warnings" style="margin:20px auto; max-width:600px;">❌ ' + escapeHtml(data.message || '<?= __('dest_error_occurred') ?>') + '</div>';
+      return;
+    }
     
     window.lastItineraryData = data;
     await renderItinerary(data);
 
   } catch (err) {
-    resultBox.innerHTML = '<p style="color:red;">❌ <?= __('dest_network_error') ?></p>';
-    console.error(err);
+    resultBox.innerHTML = `
+      <div class="geo-warnings" style="margin:20px auto; max-width:540px; text-align:center; padding:20px;">
+        <p style="font-weight:700; font-size:15px; margin-bottom:8px;">⚠️ Không thể kết nối hoặc phản hồi quá thời gian cho phép.</p>
+        <p style="font-size:13px; color:#7f1d1d; margin-bottom:14px;">Hệ thống AI đang xử lý lượng dữ liệu lớn. Bạn hãy nhấn thử lại nhé!</p>
+        <button type="button" class="btn" onclick="document.getElementById('itinerary-form').dispatchEvent(new Event('submit'))" style="background:#dc2626; color:#fff; border-radius:10px; font-weight:700;">🔄 Thử lại ngay</button>
+      </div>
+    `;
+    console.error("Itinerary generation error:", err);
   }
 });
+
 
 window.renderItinerary = async function(data) {
     let html = `

@@ -7,15 +7,18 @@ $catId = isset($_GET['cat']) && $_GET['cat'] !== '' ? (int) $_GET['cat'] : null;
 $keyword = trim($_GET['q'] ?? '');
 $priceLevel = $_GET['price'] ?? '';
 $minRating = isset($_GET['rating']) ? (float) $_GET['rating'] : 0;
+$region = in_array($_GET['region'] ?? '', ['east', 'west'], true) ? $_GET['region'] : '';
 
 $page = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
 $limit = 8;
 $offset = ($page - 1) * $limit;
 
-$totalDestinations = getTotalDestinations($catId, $keyword, $priceLevel, $minRating);
+$totalDestinations = getTotalDestinations($catId, $keyword, $priceLevel, $minRating, $region);
 $totalPages = ceil($totalDestinations / $limit);
+$paginationParams = $_GET;
+unset($paginationParams['page']);
 
-$destinations = getAllDestinations($catId, $keyword, $priceLevel, $minRating, $limit, $offset);
+$destinations = getAllDestinations($catId, $keyword, $priceLevel, $minRating, $limit, $offset, $region);
 
 /**
  * Render ★☆ stars HTML từ rating số thực (1–5).
@@ -57,10 +60,28 @@ include __DIR__ . '/../includes/header.php';
   font-weight: 500;
   opacity: .75;
 }
+.destination-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0;
+  padding: 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.04);
+}
+.destination-pagination__status { color: #59636e; font-size: 14px; margin: 0 8px; }
+.destination-pagination__link { min-width: 38px; text-align: center; padding: 8px 12px; border-radius: 9px; text-decoration: none; background: #f1f5f9; color: #1f513b; font-weight: 700; }
+.destination-pagination__link:hover, .destination-pagination__link.is-current { background: var(--green-500); color: #fff; }
+.destination-pagination__link.is-disabled { pointer-events: none; opacity: .4; }
 </style>
 
+<div class="catalog-page catalog-destinations">
 <h1 class="section-title"><?= __('dest_title') ?></h1>
-<p class="section-sub"><?= __('dest_sub') ?></p>
+<p class="section-sub catalog-lede"><?= __('dest_sub') ?></p>
 
 <div class="pills" style="margin-bottom: 10px;">
   <a href="<?= url('/diem-den') ?>" class="pill <?= $catId === null ? 'active' : '' ?>"><?= __('all_categories') ?></a>
@@ -71,6 +92,16 @@ include __DIR__ . '/../includes/header.php';
     </a>
   <?php endforeach; ?>
 </div>
+
+<div class="pills region-pills" aria-label="Lọc theo khu vực">
+  <?php $regionParams = $_GET; unset($regionParams['page']); ?>
+  <a href="<?= url('/diem-den') . ($regionParams ? '?' . e(http_build_query(array_diff_key($regionParams, ['region' => true]))) : '') ?>" class="pill <?= $region === '' ? 'active' : '' ?>">Tất cả khu vực</a>
+  <?php foreach (['east' => 'Đông Đắk Lắk (Phú Yên)', 'west' => 'Tây Đắk Lắk (Đắk Lắk)'] as $regionKey => $regionLabel): ?>
+    <?php $regionLinkParams = array_diff_key($regionParams, ['region' => true]); $regionLinkParams['region'] = $regionKey; ?>
+    <a href="<?= url('/diem-den') . '?' . e(http_build_query($regionLinkParams)) ?>" class="pill <?= $region === $regionKey ? 'active' : '' ?>"><?= $regionLabel ?></a>
+  <?php endforeach; ?>
+</div>
+
 
 <!-- Bộ lọc nâng cao -->
 <div style="background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 24px;">
@@ -105,11 +136,24 @@ include __DIR__ . '/../includes/header.php';
     </div>
 
     <button type="submit" class="btn" style="padding: 8px 20px;"><?= __('search_btn') ?></button>
-    <?php if ($keyword || $priceLevel || $minRating > 0): ?>
+    <?php if ($keyword || $priceLevel || $minRating > 0 || $region !== ''): ?>
       <a href="<?= url('/diem-den' . ($catId ? '?cat='.$catId : '')) ?>" class="btn secondary" style="padding: 8px 15px;"><?= __('clear_filter') ?></a>
     <?php endif; ?>
   </form>
 </div>
+
+<?php if ($totalPages > 1): ?>
+<nav class="destination-pagination" aria-label="Phân trang điểm đến">
+  <span class="destination-pagination__status">Trang <?= (int)$page ?> / <?= (int)$totalPages ?> · <?= (int)$totalDestinations ?> điểm đến</span>
+  <?php $prevParams = $paginationParams; $prevParams['page'] = max(1, $page - 1); ?>
+  <a class="destination-pagination__link <?= $page <= 1 ? 'is-disabled' : '' ?>" href="<?= url('/diem-den') . '?' . e(http_build_query($prevParams)) ?>" aria-label="Trang trước">‹ Trước</a>
+  <?php for ($i = 1; $i <= $totalPages; $i++): $pageParams = $paginationParams; $pageParams['page'] = $i; ?>
+    <a class="destination-pagination__link <?= $i === $page ? 'is-current' : '' ?>" href="<?= url('/diem-den') . '?' . e(http_build_query($pageParams)) ?>" <?= $i === $page ? 'aria-current="page"' : '' ?>><?= $i ?></a>
+  <?php endfor; ?>
+  <?php $nextParams = $paginationParams; $nextParams['page'] = min($totalPages, $page + 1); ?>
+  <a class="destination-pagination__link <?= $page >= $totalPages ? 'is-disabled' : '' ?>" href="<?= url('/diem-den') . '?' . e(http_build_query($nextParams)) ?>" aria-label="Trang sau">Sau ›</a>
+</nav>
+<?php endif; ?>
 
 <div id="destinations-map" style="height: 400px; border-radius: var(--radius); margin-bottom: 24px; box-shadow: 0 2px 10px rgba(0, 0, 0, .06); z-index: 1;"></div>
 
@@ -232,22 +276,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-<div class="grid">
+<div class="grid catalog-grid">
   <?php if (empty($destinations)): ?>
-    <p><?= __('no_dest') ?></p>
+    <div class="catalog-empty"><span class="catalog-empty-mark">⌁</span><h2>Chưa có điểm đến phù hợp</h2><p>Thử đổi từ khóa, khu vực hoặc bộ lọc giá để mở rộng hành trình.</p><a class="btn secondary" href="<?= url('/diem-den') ?>">Xóa bộ lọc</a></div>
   <?php endif; ?>
   <?php foreach ($destinations as $d): ?>
-    <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card">
+    <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card catalog-card">
       <div class="card-img">
         <?php if (!empty($d['image_url'])): ?>
-          <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" style="width:100%;height:100%;object-fit:cover;">
+          <img src="<?= url($d['image_url']) ?>" alt="<?= e($d['name']) ?>" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
         <?php else: ?>
+
           🌄
         <?php endif; ?>
       </div>
       <div class="card-body">
         <h3><?= e($d['name']) ?></h3>
         <p><?= e($d['short_desc']) ?></p>
+        <span class="catalog-card-link">Xem địa điểm <span aria-hidden="true">↗</span></span>
         <?= renderStarsBadge(
             $d['avg_rating'] !== null ? (float)$d['avg_rating'] : null,
             (int)$d['review_count']
@@ -259,18 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <?php endforeach; ?>
 </div>
 
-<?php if ($totalPages > 1): ?>
-<div style="display:flex; gap:10px; justify-content:center; margin-top:30px; margin-bottom: 20px;">
-    <?php
-    // Preserve query parameters
-    $queryParams = $_GET;
-    for ($i = 1; $i <= $totalPages; $i++): 
-        $queryParams['page'] = $i;
-        $queryString = http_build_query($queryParams);
-    ?>
-        <a href="?<?= $queryString ?>" class="btn <?= $i === $page ? 'secondary' : '' ?>" style="padding: 8px 16px; font-size:15px; border-radius:8px;"><?= $i ?></a>
-    <?php endfor; ?>
+<p class="catalog-footer-note">Hiển thị <?= count($destinations) ?> / <?= (int)$totalDestinations ?> điểm đến · Dữ liệu có nguồn tham chiếu</p>
 </div>
-<?php endif; ?>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

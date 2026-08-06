@@ -5,10 +5,8 @@ $pageTitle = __('forum_title');
 $db = getDB();
 $user = currentUser();
 
-// Lấy danh sách địa điểm để hiển thị trong select
 $destinations = getAllDestinations();
 
-// Lấy danh sách bài viết
 $page = isset($_GET['page']) && (int)$_GET['page'] > 0 ? (int)$_GET['page'] : 1;
 $limit = 10;
 $offset = ($page - 1) * $limit;
@@ -27,7 +25,6 @@ $stmt->bindValue(2, $offset, PDO::PARAM_INT);
 $stmt->execute();
 $checkins = $stmt->fetchAll();
 
-// Lấy lượt thích của user hiện tại
 $userLikes = [];
 if ($user) {
     $likes = $db->query("SELECT checkin_id FROM checkin_likes WHERE user_id = {$user['id']}")->fetchAll(PDO::FETCH_COLUMN);
@@ -37,447 +34,818 @@ if ($user) {
 include __DIR__ . '/../includes/header.php';
 ?>
 <style>
-.forum-container { max-width: 800px; margin: 40px auto; }
-.forum-header { text-align: center; margin-bottom: 30px; }
-.forum-header h1 { color: var(--green-900); font-size: 32px; margin-bottom: 10px; }
-.forum-header p { color: #64748b; font-size: 16px; }
+/* ── Forum News Feed Design ── */
+.feed-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 28px;
+  max-width: 1100px;
+  margin: 32px auto 60px;
+  align-items: start;
+}
 
-/* Tạo bài viết */
-.create-post { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 30px; }
-.create-post textarea { width: 100%; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; font-family: inherit; font-size: 15px; resize: vertical; margin-bottom: 15px; transition: border-color 0.2s; }
-.create-post textarea:focus { outline: none; border-color: var(--green-500); }
-.post-actions { display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
-.action-left { display: flex; gap: 10px; align-items: center; flex: 1; }
-.action-left select, .action-left input[type="file"] { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #475569; max-width: 200px; }
-.btn-post { background: var(--green-700); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-.btn-post:hover { background: var(--green-900); }
+/* ── Compose Box ── */
+.compose-box {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(61,35,13,.06);
+  margin-bottom: 20px;
+}
+.compose-trigger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+.compose-avatar {
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--line);
+  flex-shrink: 0;
+}
+.compose-placeholder {
+  flex: 1;
+  background: #FAF6F0;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 11px 18px;
+  font-size: 14px;
+  color: var(--coffee-light);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.compose-placeholder:hover { border-color: var(--basalt-red); background: #fff; }
 
-/* Bài viết */
-.post-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 25px; }
-.post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
-.post-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #e2e8f0; }
-.post-user-info { flex: 1; }
-.post-author { font-weight: 700; color: #1e293b; font-size: 15px; margin-bottom: 2px; display: block; }
-.post-time { font-size: 12px; color: #94a3b8; }
-.post-dest { display: inline-block; font-size: 11px; font-weight: 600; color: var(--green-700); background: #dcfce7; padding: 2px 8px; border-radius: 12px; margin-left: 8px; vertical-align: middle; }
-.post-content { font-size: 15px; color: #334155; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; }
-.post-img-item { width: 100%; height: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; background: #f8fafc; }
-.post-images-grid { display: grid; gap: 8px; margin-bottom: 15px; }
-.post-images-grid[data-count="1"] { grid-template-columns: 1fr; }
-.post-images-grid[data-count="1"] .post-img-item { max-height: 500px; object-fit: contain; }
-.post-images-grid[data-count="2"] { grid-template-columns: 1fr 1fr; }
-.post-images-grid[data-count="3"] { grid-template-columns: 1fr 1fr; }
-.post-images-grid[data-count="3"] .post-img-item:first-child { grid-column: 1 / -1; max-height: 350px; object-fit: cover; }
-.post-images-grid[data-count="4"] { grid-template-columns: 1fr 1fr; }
-.post-images-grid[data-count="4"] .post-img-item { max-height: 250px; }
-.post-stats { display: flex; gap: 20px; border-top: 1px solid #f1f5f9; padding-top: 15px; }
-.btn-stat { background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; transition: background 0.2s; }
-.btn-stat:hover { background: #f1f5f9; }
-.btn-stat.liked { color: #ef4444; }
+.compose-expanded { display: none; margin-top: 14px; }
+.compose-textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  resize: none;
+  background: #FAF6F0;
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color .2s;
+}
+.compose-textarea:focus { border-color: var(--basalt-red); background: #fff; }
+.compose-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.compose-tools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.compose-tool-btn {
+  background: #FAF6F0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--coffee-mid);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.compose-tool-btn:hover { border-color: var(--basalt-red); color: var(--basalt-red); }
+.compose-dest-select {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #FAF6F0;
+  color: var(--coffee-mid);
+  outline: none;
+  max-width: 180px;
+}
+.compose-submit-btn {
+  background: var(--basalt-red);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 9px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: background .2s, transform .15s;
+}
+.compose-submit-btn:hover { background: var(--basalt-dark); transform: translateY(-1px); }
+.compose-submit-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
 
-/* Bình luận */
-.comments-section { margin-top: 15px; display: none; }
-.comment-list { max-height: 300px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px; }
-.comment-item { display: flex; gap: 10px; margin-bottom: 12px; }
-.comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
-.comment-bubble { background: #f1f5f9; padding: 10px 14px; border-radius: 14px; flex: 1; }
-.comment-author { font-weight: 700; font-size: 13px; color: #1e293b; margin-bottom: 2px; }
-.comment-text { font-size: 14px; color: #475569; }
-.comment-time { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-.comment-form { display: flex; gap: 10px; }
-.comment-input { flex: 1; border: 1px solid #e5e7eb; border-radius: 20px; padding: 8px 15px; font-size: 14px; }
-.btn-comment { background: var(--green-700); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+/* ── Feed Posts ── */
+.feed-post {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(61,35,13,.05);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: box-shadow .2s;
+}
+.feed-post:hover { box-shadow: 0 8px 32px rgba(61,35,13,.1); }
 
-/* Trạng thái */
-.empty-state { text-align: center; padding: 40px; color: #94a3b8; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-.login-prompt { background: #fffbeb; color: #b45309; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 30px; border: 1px solid #fde68a; font-weight: 600; }
+.post-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 12px;
+}
+.post-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.post-avatar {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--line);
+}
+.post-meta-info { flex: 1; min-width: 0; }
+.post-author-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--coffee-brown);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.post-dest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jungle-dark);
+  background: rgba(30,86,49,.1);
+  border: 1px solid rgba(30,86,49,.2);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.post-time-str {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.post-menu-btn {
+  background: none;
+  border: none;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  color: #94a3b8;
+  transition: background .15s;
+}
+.post-menu-btn:hover { background: #f1f5f9; color: var(--coffee-brown); }
+
+.post-body {
+  padding: 0 20px 14px;
+  font-size: 15px;
+  color: #334155;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+.post-body p { margin: 0 0 8px; }
+.post-body p:last-child { margin-bottom: 0; }
+
+/* Post image grids */
+.post-img-grid {
+  display: grid;
+  gap: 3px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.post-img-grid[data-count="1"] { grid-template-columns: 1fr; }
+.post-img-grid[data-count="1"] img { height: 440px; object-fit: cover; width: 100%; }
+.post-img-grid[data-count="2"] { grid-template-columns: 1fr 1fr; }
+.post-img-grid[data-count="2"] img { height: 280px; object-fit: cover; width: 100%; }
+.post-img-grid[data-count="3"] { grid-template-columns: 1fr 1fr; }
+.post-img-grid[data-count="3"] img:first-child { grid-column: 1 / -1; height: 280px; object-fit: cover; width: 100%; }
+.post-img-grid[data-count="3"] img:not(:first-child) { height: 180px; object-fit: cover; width: 100%; }
+.post-img-grid[data-count="4"] { grid-template-columns: 1fr 1fr; }
+.post-img-grid[data-count="4"] img { height: 200px; object-fit: cover; width: 100%; }
+.post-img-grid img { transition: opacity .2s; }
+.post-img-grid img:hover { opacity: .9; }
+
+/* Reactions bar */
+.post-reactions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 20px 0;
+  border-top: 1px solid #f1f5f9;
+}
+.post-reaction-count {
+  font-size: 13px;
+  color: #94a3b8;
+  padding: 8px 0;
+}
+.post-actions-row {
+  display: flex;
+  border-top: 1px solid #f1f5f9;
+  margin: 0 20px;
+}
+.post-action-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  margin: 6px 2px;
+  transition: background .15s, color .15s;
+}
+.post-action-btn:hover { background: #f8fafc; color: var(--coffee-brown); }
+.post-action-btn.liked { color: var(--basalt-red); }
+.post-action-btn.liked svg, .post-action-btn.liked .like-icon { transform: scale(1.15); }
+
+/* Comments section */
+.comments-panel {
+  display: none;
+  padding: 0 20px 16px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 2px;
+}
+.comment-list { padding-top: 12px; }
+.comment-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.comment-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.comment-bubble {
+  background: #f1f5f9;
+  border-radius: 16px;
+  padding: 10px 14px;
+  flex: 1;
+}
+.comment-bubble .author { font-size: 13px; font-weight: 700; color: var(--coffee-brown); }
+.comment-bubble .text { font-size: 14px; color: #475569; margin-top: 2px; }
+.comment-bubble .ctime { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+.comment-compose {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  align-items: center;
+}
+.comment-compose img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.comment-input-wrap { flex: 1; position: relative; }
+.comment-input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 9px 44px 9px 16px;
+  font-size: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color .2s, background .2s;
+}
+.comment-input:focus { border-color: var(--basalt-red); background: #fff; }
+.comment-send-btn {
+  position: absolute;
+  right: 6px; top: 50%;
+  transform: translateY(-50%);
+  background: var(--basalt-red);
+  border: none;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.comment-send-btn:hover { background: var(--basalt-dark); }
+
+/* Inline edit form */
+.inline-edit-form {
+  display: none;
+  padding: 0 20px 16px;
+}
+.inline-edit-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px;
+  resize: vertical;
+  background: #FAF6F0;
+  outline: none;
+}
+.inline-edit-form textarea:focus { border-color: var(--basalt-red); background: #fff; }
+.inline-edit-actions {
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 10px;
+}
+
+/* ── Right Sidebar ── */
+.feed-sidebar {}
+.sidebar-widget {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  box-shadow: 0 4px 20px rgba(61,35,13,.05);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.sidebar-widget h3 {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--coffee-brown);
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 2px dashed var(--line);
+}
+.sidebar-dest-list { display: flex; flex-direction: column; gap: 8px; }
+.sidebar-dest-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text-dark);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s;
+}
+.sidebar-dest-item:hover { background: #FAF6F0; color: var(--basalt-red); }
+.sidebar-dest-icon { font-size: 18px; }
+
+.login-cta {
+  background: linear-gradient(135deg, var(--coffee-brown) 0%, var(--basalt-red) 100%);
+  border-radius: 20px;
+  padding: 24px 20px;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.login-cta h3 { font-size: 16px; margin: 0 0 8px; color: #fff; font-family: 'Playfair Display', serif; }
+.login-cta p { font-size: 13px; color: rgba(255,255,255,.75); margin: 0 0 16px; }
+.login-cta .cta-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.login-cta .cta-btn { padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.login-cta .cta-btn.primary { background: var(--brocade-gold); color: var(--coffee-brown); }
+.login-cta .cta-btn.ghost { background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3); }
+.login-cta .cta-btn:hover { opacity: .9; transform: translateY(-1px); }
+
+/* Empty feed state */
+.feed-empty {
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  padding: 60px 20px;
+  text-align: center;
+}
+.feed-empty-icon { font-size: 52px; margin-bottom: 16px; }
+.feed-empty h3 { font-size: 20px; color: var(--coffee-brown); margin: 0 0 8px; }
+.feed-empty p { color: #94a3b8; font-size: 14px; margin: 0; }
+
+/* Mobile responsive */
+@media (max-width: 860px) {
+  .feed-layout { grid-template-columns: 1fr; }
+  .feed-sidebar { order: -1; }
+  .sidebar-widget.destinations-widget { display: none; }
+}
+@media (max-width: 600px) {
+  .feed-layout { margin: 16px auto 40px; gap: 16px; }
+  .post-img-grid[data-count="1"] img { height: 280px; }
+}
 </style>
 
-<div class="forum-container">
-    <div class="forum-header">
-        <h1><?= __('forum_title') ?></h1>
-        <p><?= __('forum_desc') ?></p>
-    </div>
+<div class="feed-layout">
+  <!-- ── MAIN FEED ── -->
+  <main id="main-feed">
 
     <?php if ($user): ?>
-    <div class="create-post">
-        <form id="postForm" onsubmit="submitPost(event)">
-            <textarea name="content" id="postContentEditor" rows="3" placeholder="<?= __('forum_post_content_ph') ?>"></textarea>
-            <div class="post-actions">
-                <div class="action-left">
-                    <label style="font-size: 13px; font-weight: 600; color: #64748b;"><?= __('forum_post_image') ?></label>
-                    <input type="file" name="images[]" multiple accept="image/*">
-                    <select name="destination_id">
-                        <option value=""><?= __('forum_post_dest_ph') ?></option>
-                        <?php foreach ($destinations as $d): ?>
-                            <option value="<?= $d['id'] ?>"><?= e($d['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button type="submit" class="btn-post" id="btnSubmitPost"><?= __('forum_post_btn') ?></button>
+    <!-- Compose Box -->
+    <div class="compose-box">
+      <div class="compose-trigger" id="composeTrigger">
+        <img src="<?= e(get_avatar($user['avatar'])) ?>" class="compose-avatar" alt="Avatar">
+        <div class="compose-placeholder" id="composePlaceholder"><?= __('forum_post_content_ph') ?></div>
+      </div>
+      <div class="compose-expanded" id="composeExpanded">
+        <form id="postForm" onsubmit="submitPost(event)" enctype="multipart/form-data">
+          <textarea id="postContentInput" name="content" class="compose-textarea" placeholder="<?= __('forum_post_content_ph') ?>" rows="3"></textarea>
+          <div id="imagePreview" style="display:none; gap:8px; flex-wrap:wrap; margin-top:10px; display:none;"></div>
+          <div class="compose-footer">
+            <div class="compose-tools">
+              <label class="compose-tool-btn" style="cursor:pointer;">
+                <span>📷</span> Thêm ảnh
+                <input type="file" name="images[]" multiple accept="image/*" id="imgInput" style="display:none" onchange="previewImages(this)">
+              </label>
+              <select name="destination_id" class="compose-dest-select">
+                <option value=""><?= __('forum_post_dest_ph') ?></option>
+                <?php foreach ($destinations as $d): ?>
+                  <option value="<?= $d['id'] ?>"><?= e($d['name']) ?></option>
+                <?php endforeach; ?>
+              </select>
             </div>
+            <button type="submit" class="compose-submit-btn" id="btnSubmitPost"><?= __('forum_post_btn') ?></button>
+          </div>
         </form>
+      </div>
     </div>
     <?php else: ?>
-    <div class="login-prompt">
-        <?= __('forum_login_prompt') ?> <a href="<?= url('/public/login.php') ?>" style="color: #b45309; text-decoration: underline;">Đăng nhập</a>
+    <!-- Not logged in CTA -->
+    <div class="login-cta">
+      <h3>Chia sẻ trải nghiệm của bạn tại Đắk Lắk</h3>
+      <p>Đăng nhập để đăng bài, gửi ảnh và nhận phản hồi từ cộng đồng du lịch.</p>
+      <div class="cta-btns">
+        <a href="<?= url('/public/login.php') ?>" class="cta-btn primary">Đăng nhập</a>
+        <a href="<?= url('/public/register.php') ?>" class="cta-btn ghost">Đăng ký</a>
+      </div>
     </div>
     <?php endif; ?>
 
+    <!-- Feed Posts -->
     <div id="postsList">
-        <?php if (empty($checkins)): ?>
-            <div class="empty-state">
-                <div style="font-size: 40px; margin-bottom: 15px;">🏜️</div>
-                <?= __('forum_no_posts') ?>
-            </div>
-        <?php else: ?>
-            <?php foreach ($checkins as $c): ?>
-                <div class="post-card" id="post-<?= $c['id'] ?>">
-                    <div class="post-header">
-                        <img src="<?= e(get_avatar($c['avatar'])) ?>" alt="Avatar" class="post-avatar">
-                        <div class="post-user-info">
-                            <span class="post-author">
-                                <?= e($c['full_name']) ?>
-                                <?php if ($c['destination_id']): ?>
-                                    <?php $dn = (($_SESSION['lang'] ?? 'vi') === 'en' && !empty($c['dest_name_en'])) ? $c['dest_name_en'] : $c['dest_name']; ?>
-                                    <span class="post-dest">📍 <?= e($dn) ?></span>
-                                <?php endif; ?>
-                            </span>
-                            <span class="post-time"><?= date('d/m/Y H:i', strtotime($c['created_at'])) ?></span>
-                        </div>
-                        <?php if ($user && (int)$user['id'] === (int)$c['user_id']): ?>
-                        <div style="display:flex; gap:10px;">
-                            <button onclick="editPost(<?= $c['id'] ?>)" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:13px;padding:5px;">✏️</button>
-                            <button onclick="deletePost(<?= $c['id'] ?>)" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;padding:5px;">🗑️</button>
-                        </div>
-                        <?php endif; ?>
-                    </div>
-                    <div class="post-content ck-content" id="post-content-<?= $c['id'] ?>" style="word-wrap: break-word; overflow-wrap: break-word;"><?= strip_tags($c['content']) !== $c['content'] ? $c['content'] : nl2br(e($c['content'])) ?></div>
-                    
-                    <?php
-                    $postImages = [];
-                    if ($c['image_url']) {
-                        $decoded = json_decode($c['image_url'], true);
-                        if (is_array($decoded)) {
-                            $postImages = $decoded;
-                        } else {
-                            $postImages = [$c['image_url']];
-                        }
-                    }
-                    ?>
-                    <div id="post-edit-<?= $c['id'] ?>" style="display:none; margin-bottom:15px;">
-                        <textarea id="edit-text-<?= $c['id'] ?>" style="width:100%; border:1px solid #e5e7eb; border-radius:8px; padding:10px; font-family:inherit; font-size:15px; resize:vertical; margin-bottom:10px;"><?= e($c['content']) ?></textarea>
-                        
-                        <div style="margin-bottom:10px; padding:10px; background:#f8fafc; border-radius:8px;">
-                            <label style="font-size: 13px; font-weight: 600; color: #64748b; display:block; margin-bottom:5px;">Cập nhật ảnh:</label>
-                            
-                            <?php if (!empty($postImages)): ?>
-                                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-                                    <?php foreach ($postImages as $imgUrl): ?>
-                                        <div style="position:relative; width:80px; height:80px;">
-                                            <img src="<?= e($imgUrl) ?>" style="width:100%; height:100%; object-fit:cover; border-radius:6px;">
-                                            <label style="position:absolute; top:2px; right:2px; background:rgba(255,255,255,0.9); padding:2px; border-radius:4px; font-size:10px; cursor:pointer;">
-                                                <input type="checkbox" value="<?= e($imgUrl) ?>" class="remove-img-cb-<?= $c['id'] ?>"> Xóa
-                                            </label>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <input type="file" id="edit-image-<?= $c['id'] ?>" name="images[]" multiple accept="image/*" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 5px; font-size: 13px; background:white; width:100%; max-width:300px; margin-bottom:8px;">
-                        </div>
-
-                        <div style="text-align:right;">
-                            <button onclick="cancelEdit(<?= $c['id'] ?>)" style="background:#f1f5f9; color:#475569; border:none; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">Hủy</button>
-                            <button onclick="saveEdit(<?= $c['id'] ?>)" id="btnSaveEdit-<?= $c['id'] ?>" style="background:var(--green-700); color:white; border:none; padding:6px 12px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; margin-left:5px;">Lưu</button>
-                        </div>
-                    </div>
-                    <?php if (!empty($postImages)): ?>
-                        <?php $imgCount = count($postImages); ?>
-                        <div class="post-images-grid" data-count="<?= $imgCount > 4 ? 4 : $imgCount ?>">
-                            <?php foreach (array_slice($postImages, 0, 4) as $imgUrl): ?>
-                                <img src="<?= e($imgUrl) ?>" alt="Photo" class="post-img-item">
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <div class="post-stats">
-                        <button class="btn-stat <?= isset($userLikes[$c['id']]) ? 'liked' : '' ?>" onclick="toggleLike(<?= $c['id'] ?>, this)">
-                            <?= isset($userLikes[$c['id']]) ? '❤️' : '🤍' ?> <span class="like-count"><?= $c['likes_count'] ?></span> <?= __('forum_likes') ?>
-                        </button>
-                        <button class="btn-stat" onclick="toggleComments(<?= $c['id'] ?>)">
-                            💬 <?= __('forum_comments') ?>
-                        </button>
-                    </div>
-
-                    <div class="comments-section" id="comments-<?= $c['id'] ?>">
-                        <div class="comment-list" id="comment-list-<?= $c['id'] ?>">
-                            <!-- Comments will be loaded here via PHP or JS. For simplicity, fetch all published comments for this post now -->
-                            <?php
-                            $stmtC = $db->prepare("SELECT cc.*, u.full_name, u.avatar FROM checkin_comments cc JOIN users u ON cc.user_id = u.id WHERE cc.checkin_id = ? AND cc.status = 'published' ORDER BY cc.created_at ASC");
-                            $stmtC->execute([$c['id']]);
-                            $comments = $stmtC->fetchAll();
-                            foreach ($comments as $cm):
-                            ?>
-                                <div class="comment-item">
-                                    <img src="<?= e(get_avatar($cm['avatar'])) ?>" class="comment-avatar">
-                                    <div class="comment-bubble">
-                                        <div class="comment-author"><?= e($cm['full_name']) ?></div>
-                                        <div class="comment-text"><?= nl2br(e($cm['content'])) ?></div>
-                                        <div class="comment-time"><?= date('d/m H:i', strtotime($cm['created_at'])) ?></div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                        
-                        <?php if ($user): ?>
-                        <form class="comment-form" onsubmit="submitComment(event, <?= $c['id'] ?>)">
-                            <input type="text" class="comment-input" id="comment-input-<?= $c['id'] ?>" placeholder="<?= __('forum_write_comment') ?>" required>
-                            <button type="submit" class="btn-comment"><?= __('forum_send_comment') ?></button>
-                        </form>
-                        <?php endif; ?>
-                    </div>
+      <?php if (empty($checkins)): ?>
+        <div class="feed-empty">
+          <div class="feed-empty-icon">🌄</div>
+          <h3>Chưa có bài viết nào</h3>
+          <p><?= __('forum_no_posts') ?></p>
+        </div>
+      <?php else: ?>
+        <?php foreach ($checkins as $c): ?>
+          <?php
+          $postImages = [];
+          if ($c['image_url']) {
+            $decoded = json_decode($c['image_url'], true);
+            $postImages = is_array($decoded) ? $decoded : [$c['image_url']];
+          }
+          $destName = (($_SESSION['lang'] ?? 'vi') === 'en' && !empty($c['dest_name_en'])) ? $c['dest_name_en'] : ($c['dest_name'] ?? '');
+          $isOwner = $user && (int)$user['id'] === (int)$c['user_id'];
+          $isLiked = isset($userLikes[$c['id']]);
+          ?>
+          <article class="feed-post" id="post-<?= $c['id'] ?>">
+            <!-- Meta bar -->
+            <div class="post-meta-bar">
+              <div class="post-avatar-wrap">
+                <img src="<?= e(get_avatar($c['avatar'])) ?>" class="post-avatar" alt="<?= e($c['full_name']) ?>" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+              </div>
+              <div class="post-meta-info">
+                <div class="post-author-name">
+                  <?= e($c['full_name']) ?>
+                  <?php if ($destName): ?>
+                    <span class="post-dest-chip">📍 <?= e($destName) ?></span>
+                  <?php endif; ?>
                 </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
+                <div class="post-time-str"><?= date('H:i · d/m/Y', strtotime($c['created_at'])) ?></div>
+              </div>
+              <?php if ($isOwner): ?>
+              <div style="position:relative;">
+                <button class="post-menu-btn" onclick="togglePostMenu(<?= $c['id'] ?>)" title="Tùy chọn">⋯</button>
+                <div id="post-menu-<?= $c['id'] ?>" style="display:none; position:absolute; right:0; top:38px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:6px; min-width:140px; box-shadow:0 8px 24px rgba(0,0,0,.1); z-index:10;">
+                  <button onclick="editPost(<?= $c['id'] ?>)" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; border:none; background:none; cursor:pointer; border-radius:8px; font-size:13px; font-weight:600; color:var(--coffee-brown);">✏️ Chỉnh sửa</button>
+                  <button onclick="deletePost(<?= $c['id'] ?>)" style="display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; border:none; background:none; cursor:pointer; border-radius:8px; font-size:13px; font-weight:600; color:#ef4444;">🗑️ Xóa bài</button>
+                </div>
+              </div>
+              <?php endif; ?>
+            </div>
+
+            <!-- Post content -->
+            <div class="post-body" id="post-content-<?= $c['id'] ?>">
+              <?= strip_tags($c['content']) !== $c['content'] ? $c['content'] : nl2br(e($c['content'])) ?>
+            </div>
+
+            <!-- Inline edit -->
+            <div class="inline-edit-form" id="post-edit-<?= $c['id'] ?>">
+              <textarea id="edit-text-<?= $c['id'] ?>" rows="4"><?= e($c['content']) ?></textarea>
+              <?php if (!empty($postImages)): ?>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin:10px 0;">
+                  <?php foreach ($postImages as $imgUrl): ?>
+                    <div style="position:relative; width:72px; height:72px;">
+                      <img src="<?= e($imgUrl) ?>" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+                      <label style="position:absolute; top:2px; right:2px; background:rgba(255,255,255,.9); padding:1px 4px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:700;">
+                        <input type="checkbox" value="<?= e($imgUrl) ?>" class="remove-img-cb-<?= $c['id'] ?>"> ✕
+                      </label>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+              <input type="file" id="edit-image-<?= $c['id'] ?>" multiple accept="image/*" style="font-size:13px; margin-bottom:8px;">
+              <div class="inline-edit-actions">
+                <button onclick="cancelEdit(<?= $c['id'] ?>)" style="padding:7px 16px; border-radius:20px; border:1px solid var(--line); background:#f1f5f9; font-size:13px; font-weight:600; cursor:pointer; color:#475569;">Hủy</button>
+                <button onclick="saveEdit(<?= $c['id'] ?>)" id="btnSaveEdit-<?= $c['id'] ?>" style="padding:7px 16px; border-radius:20px; border:none; background:var(--basalt-red); color:#fff; font-size:13px; font-weight:700; cursor:pointer;">Lưu</button>
+              </div>
+            </div>
+
+            <!-- Images -->
+            <?php if (!empty($postImages)): ?>
+              <?php $imgCount = min(count($postImages), 4); ?>
+              <div class="post-img-grid" data-count="<?= $imgCount ?>">
+                <?php foreach (array_slice($postImages, 0, 4) as $imgUrl): ?>
+                  <img src="<?= e($imgUrl) ?>" alt="Ảnh bài viết" loading="lazy" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+
+            <!-- Reaction count -->
+            <div class="post-reactions-bar">
+              <span class="post-reaction-count">
+                <?php if ($c['likes_count'] > 0): ?><?= $c['likes_count'] ?> lượt thích<?php endif; ?>
+              </span>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="post-actions-row">
+              <button class="post-action-btn <?= $isLiked ? 'liked' : '' ?>" id="like-btn-<?= $c['id'] ?>" onclick="toggleLike(<?= $c['id'] ?>, this)">
+                <span class="like-icon"><?= $isLiked ? '❤️' : '🤍' ?></span>
+                <span class="like-count"><?= (int)$c['likes_count'] ?></span> <?= __('forum_likes') ?>
+              </button>
+              <button class="post-action-btn" onclick="toggleComments(<?= $c['id'] ?>)">
+                💬 <?= __('forum_comments') ?>
+              </button>
+            </div>
+
+            <!-- Comments panel -->
+            <div class="comments-panel" id="comments-<?= $c['id'] ?>">
+              <div class="comment-list" id="comment-list-<?= $c['id'] ?>">
+                <?php
+                $stmtC = $db->prepare("SELECT cc.*, u.full_name, u.avatar FROM checkin_comments cc JOIN users u ON cc.user_id = u.id WHERE cc.checkin_id = ? AND cc.status = 'published' ORDER BY cc.created_at ASC");
+                $stmtC->execute([$c['id']]);
+                $comments = $stmtC->fetchAll();
+                foreach ($comments as $cm):
+                ?>
+                  <div class="comment-row">
+                    <img src="<?= e(get_avatar($cm['avatar'])) ?>" class="comment-avatar" alt="<?= e($cm['full_name']) ?>" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+                    <div class="comment-bubble">
+                      <div class="author"><?= e($cm['full_name']) ?></div>
+                      <div class="text"><?= nl2br(e($cm['content'])) ?></div>
+                      <div class="ctime"><?= date('d/m H:i', strtotime($cm['created_at'])) ?></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+
+              <?php if ($user): ?>
+              <form class="comment-compose" onsubmit="submitComment(event, <?= $c['id'] ?>)">
+                <img src="<?= e(get_avatar($user['avatar'])) ?>" alt="Avatar" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+                <div class="comment-input-wrap">
+                  <input type="text" class="comment-input" id="comment-input-<?= $c['id'] ?>" placeholder="<?= __('forum_write_comment') ?>" required>
+                  <button type="submit" class="comment-send-btn">➤</button>
+                </div>
+              </form>
+              <?php endif; ?>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      <?php endif; ?>
     </div>
+  </main>
+
+  <!-- ── RIGHT SIDEBAR ── -->
+  <aside class="feed-sidebar">
+    <?php if (!$user): ?>
+    <div class="login-cta">
+      <h3>Tham gia cộng đồng</h3>
+      <p>Chia sẻ trải nghiệm du lịch và kết nối với mọi người.</p>
+      <div class="cta-btns">
+        <a href="<?= url('/public/login.php') ?>" class="cta-btn primary">Đăng nhập</a>
+        <a href="<?= url('/public/register.php') ?>" class="cta-btn ghost">Đăng ký</a>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <div class="sidebar-widget destinations-widget">
+      <h3>🗺️ Khám phá điểm đến</h3>
+      <div class="sidebar-dest-list">
+        <?php foreach (array_slice($destinations, 0, 8) as $d): ?>
+          <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="sidebar-dest-item">
+            <span class="sidebar-dest-icon">📍</span>
+            <span><?= e($d['name']) ?></span>
+          </a>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div class="sidebar-widget">
+      <h3>🐘 Trợ lý Voi Bản Đôn</h3>
+      <p style="font-size:13px; color:#64748b; margin:0 0 12px;">Hỏi về địa điểm, ăn uống, lịch trình — Voi Bản Đôn trả lời ngay.</p>
+      <a href="<?= url('/public/chatbot.php') ?>" class="compose-submit-btn" style="display:block; text-align:center; text-decoration:none; padding:10px;">💬 Hỏi Ama Guide</a>
+    </div>
+  </aside>
 </div>
 
-<style>
-.ck-editor__editable { min-height: 120px; }
-.ck-content { font-family: inherit; font-size: 15px; }
-</style>
-<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <script>
-let postEditor;
-document.addEventListener("DOMContentLoaded", function() {
-    if (document.querySelector('#postContentEditor')) {
-        ClassicEditor
-            .create( document.querySelector( '#postContentEditor' ), {
-                toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|', 'bulletedList', 'numberedList', 'outdent', 'indent' ]
-            } )
-            .then( editor => { window.postEditor = editor; } )
-            .catch( error => { console.error( error ); } );
+// Compose expand/collapse
+const composeTrigger = document.getElementById('composeTrigger');
+const composeExpanded = document.getElementById('composeExpanded');
+const composePlaceholder = document.getElementById('composePlaceholder');
+
+if (composeTrigger) {
+  composePlaceholder.addEventListener('click', function() {
+    composeExpanded.style.display = 'block';
+    composePlaceholder.style.display = 'none';
+    document.getElementById('postContentInput').focus();
+  });
+
+  document.addEventListener('click', function(e) {
+    const composeBox = document.querySelector('.compose-box');
+    if (composeBox && !composeBox.contains(e.target) && composeExpanded.style.display === 'block') {
+      // only collapse if textarea is empty
+      if (!document.getElementById('postContentInput').value.trim()) {
+        composeExpanded.style.display = 'none';
+        composePlaceholder.style.display = '';
+      }
     }
-});
+  });
+}
+
+function previewImages(input) {
+  const preview = document.getElementById('imagePreview');
+  if (!preview) return;
+  preview.innerHTML = '';
+  if (input.files.length > 0) {
+    preview.style.display = 'flex';
+    Array.from(input.files).forEach(function(file) {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement('img');
+      img.src = url;
+      img.style.cssText = 'width:80px; height:80px; object-fit:cover; border-radius:8px; border:1px solid var(--line);';
+      preview.appendChild(img);
+    });
+  } else {
+    preview.style.display = 'none';
+  }
+}
 
 async function submitPost(e) {
-    e.preventDefault();
-    <?php if (!$user): ?>
-    alert('<?= __('forum_login_prompt') ?>');
-    return;
-    <?php endif; ?>
+  e.preventDefault();
+  <?php if (!$user): ?>
+  window.location = '<?= url('/public/login.php') ?>';
+  return;
+  <?php endif; ?>
 
-    const form = e.target;
-    const btn = document.getElementById('btnSubmitPost');
-    const formData = new FormData(form);
-    if (window.postEditor) {
-        formData.set('content', window.postEditor.getData());
-    }
-    formData.append('action', 'post');
+  const form = e.target;
+  const btn = document.getElementById('btnSubmitPost');
+  const formData = new FormData(form);
+  formData.append('action', 'post');
 
-    btn.disabled = true;
-    btn.textContent = '...';
+  btn.disabled = true;
+  btn.textContent = '...';
 
-    try {
-        const res = await fetch('<?= url("/api/forum_action.php") ?>', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.message || 'Error');
-        }
-    } catch(err) {
-        alert('Lỗi kết nối mạng.');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = '<?= __('forum_post_btn') ?>';
-    }
+  try {
+    const res = await fetch('<?= url("/api/forum_action.php") ?>', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.success) { location.reload(); }
+    else { alert(data.message || 'Có lỗi xảy ra.'); }
+  } catch(err) { alert('Lỗi kết nối mạng.'); }
+  finally { btn.disabled = false; btn.textContent = '<?= __('forum_post_btn') ?>'; }
 }
 
 async function toggleLike(checkinId, btnEl) {
-    <?php if (!$user): ?>
-    alert('<?= __('forum_login_prompt') ?>');
-    return;
-    <?php endif; ?>
-
-    const formData = new FormData();
-    formData.append('action', 'like');
-    formData.append('checkin_id', checkinId);
-
-    try {
-        const res = await fetch('<?= url("/api/forum_action.php") ?>', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-            const countEl = btnEl.querySelector('.like-count');
-            let count = parseInt(countEl.textContent);
-            if (data.liked) {
-                btnEl.classList.add('liked');
-                btnEl.innerHTML = `❤️ <span class="like-count">${count + 1}</span> <?= __('forum_likes') ?>`;
-            } else {
-                btnEl.classList.remove('liked');
-                btnEl.innerHTML = `🤍 <span class="like-count">${count - 1}</span> <?= __('forum_likes') ?>`;
-            }
-        }
-    } catch(err) {}
+  <?php if (!$user): ?>
+  window.location = '<?= url('/public/login.php') ?>';
+  return;
+  <?php endif; ?>
+  const fd = new FormData();
+  fd.append('action', 'like');
+  fd.append('checkin_id', checkinId);
+  try {
+    const res = await fetch('<?= url("/api/forum_action.php") ?>', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      const countEl = btnEl.querySelector('.like-count');
+      let count = parseInt(countEl.textContent) || 0;
+      if (data.liked) {
+        btnEl.classList.add('liked');
+        btnEl.querySelector('.like-icon').textContent = '❤️';
+        countEl.textContent = count + 1;
+      } else {
+        btnEl.classList.remove('liked');
+        btnEl.querySelector('.like-icon').textContent = '🤍';
+        countEl.textContent = Math.max(0, count - 1);
+      }
+    }
+  } catch(err) {}
 }
 
-function toggleComments(checkinId) {
-    const el = document.getElementById('comments-' + checkinId);
-    if (el.style.display === 'block') {
-        el.style.display = 'none';
-    } else {
-        el.style.display = 'block';
-    }
+function toggleComments(id) {
+  const panel = document.getElementById('comments-' + id);
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  if (panel.style.display === 'block') {
+    const input = document.getElementById('comment-input-' + id);
+    if (input) input.focus();
+  }
 }
 
 async function submitComment(e, checkinId) {
-    e.preventDefault();
-    const input = document.getElementById('comment-input-' + checkinId);
-    const content = input.value.trim();
-    if (!content) return;
-
-    const btn = e.target.querySelector('button');
-    btn.disabled = true;
-
-    const formData = new FormData();
-    formData.append('action', 'comment');
-    formData.append('checkin_id', checkinId);
-    formData.append('content', content);
-
-    try {
-        const res = await fetch('<?= url("/api/forum_action.php") ?>', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-            // Append locally for quick feedback
-            const list = document.getElementById('comment-list-' + checkinId);
-            const div = document.createElement('div');
-            div.className = 'comment-item';
-            div.innerHTML = `
-                <img src="<?= e(get_avatar($user['avatar'] ?? null)) ?>" class="comment-avatar">
-                <div class="comment-bubble">
-                    <div class="comment-author"><?= e($user['full_name'] ?? 'Tôi') ?></div>
-                    <div class="comment-text">${content.replace(/\n/g, '<br>')}</div>
-                    <div class="comment-time">Vừa xong</div>
-                </div>
-            `;
-            list.appendChild(div);
-            input.value = '';
-            list.scrollTop = list.scrollHeight;
-        } else {
-            alert(data.message || 'Error');
-        }
-    } catch(err) {
-        alert('Lỗi kết nối mạng.');
-    } finally {
-        btn.disabled = false;
-    }
+  e.preventDefault();
+  const input = document.getElementById('comment-input-' + checkinId);
+  const content = input.value.trim();
+  if (!content) return;
+  const btn = e.target.querySelector('button[type="submit"]');
+  if (btn) btn.disabled = true;
+  const fd = new FormData();
+  fd.append('action', 'comment');
+  fd.append('checkin_id', checkinId);
+  fd.append('content', content);
+  try {
+    const res = await fetch('<?= url("/api/forum_action.php") ?>', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) {
+      const list = document.getElementById('comment-list-' + checkinId);
+      const div = document.createElement('div');
+      div.className = 'comment-row';
+      div.innerHTML = `
+        <img src="<?= e(get_avatar($user['avatar'] ?? null)) ?>" class="comment-avatar" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+        <div class="comment-bubble">
+          <div class="author"><?= e($user['full_name'] ?? '') ?></div>
+          <div class="text">${content.replace(/\n/g, '<br>')}</div>
+          <div class="ctime">Vừa xong</div>
+        </div>`;
+      list.appendChild(div);
+      input.value = '';
+    } else { alert(data.message || 'Lỗi.'); }
+  } catch(err) { alert('Lỗi kết nối.'); }
+  finally { if (btn) btn.disabled = false; }
 }
 
-let editEditors = {};
-function editPost(checkinId) {
-    document.getElementById('post-content-' + checkinId).style.display = 'none';
-    document.getElementById('post-edit-' + checkinId).style.display = 'block';
-    
-    if (!editEditors[checkinId]) {
-        ClassicEditor
-            .create( document.querySelector( '#edit-text-' + checkinId ), {
-                toolbar: [ 'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', 'blockQuote', 'insertTable', 'mediaEmbed', '|', 'bulletedList', 'numberedList', 'outdent', 'indent' ]
-            } )
-            .then( editor => { editEditors[checkinId] = editor; } )
-            .catch( error => { console.error( error ); } );
-    }
+function togglePostMenu(id) {
+  const menu = document.getElementById('post-menu-' + id);
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  document.querySelectorAll('[id^="post-menu-"]').forEach(m => m.style.display = 'none');
+  menu.style.display = isOpen ? 'none' : 'block';
 }
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.post-menu-btn') && !e.target.closest('[id^="post-menu-"]')) {
+    document.querySelectorAll('[id^="post-menu-"]').forEach(m => m.style.display = 'none');
+  }
+});
 
-function cancelEdit(checkinId) {
-    document.getElementById('post-content-' + checkinId).style.display = 'block';
-    document.getElementById('post-edit-' + checkinId).style.display = 'none';
+function editPost(id) {
+  document.getElementById('post-content-' + id).style.display = 'none';
+  document.getElementById('post-edit-' + id).style.display = 'block';
+  document.getElementById('post-menu-' + id).style.display = 'none';
 }
-
-async function saveEdit(checkinId) {
-    let content = '';
-    if (editEditors[checkinId]) {
-        content = editEditors[checkinId].getData().trim();
-    } else {
-        content = document.getElementById('edit-text-' + checkinId).value.trim();
-    }
-    if (!content) {
-        alert('Nội dung không được để trống!');
-        return;
-    }
-
-    const btn = document.getElementById('btnSaveEdit-' + checkinId);
-    btn.disabled = true;
-    btn.textContent = '...';
-
-    const formData = new FormData();
-    formData.append('action', 'edit_post');
-    formData.append('checkin_id', checkinId);
-    formData.append('content', content);
-
-    const imageInput = document.getElementById('edit-image-' + checkinId);
-    if (imageInput && imageInput.files.length > 0) {
-        for (let i = 0; i < imageInput.files.length; i++) {
-            formData.append('images[]', imageInput.files[i]);
-        }
-    }
-    const removeCbs = document.querySelectorAll('.remove-img-cb-' + checkinId);
-    removeCbs.forEach(cb => {
-        if (cb.checked) {
-            formData.append('remove_images[]', cb.value);
-        }
-    });
-
-    try {
-        const res = await fetch('<?= url("/api/forum_action.php") ?>', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.message || 'Error');
-            btn.disabled = false;
-            btn.textContent = 'Lưu';
-        }
-    } catch(err) {
-        alert('Lỗi kết nối mạng.');
-        btn.disabled = false;
-        btn.textContent = 'Lưu';
-    }
+function cancelEdit(id) {
+  document.getElementById('post-content-' + id).style.display = '';
+  document.getElementById('post-edit-' + id).style.display = 'none';
 }
-
-async function deletePost(checkinId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) return;
-
-    const formData = new FormData();
-    formData.append('action', 'delete_post');
-    formData.append('checkin_id', checkinId);
-
-    try {
-        const res = await fetch('<?= url("/api/forum_action.php") ?>', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await res.json();
-        if (data.success) {
-            location.reload();
-        } else {
-            alert(data.message || 'Error');
-        }
-    } catch(err) {
-        alert('Lỗi kết nối mạng.');
-    }
+async function saveEdit(id) {
+  const content = document.getElementById('edit-text-' + id).value.trim();
+  if (!content) { alert('Nội dung không được để trống.'); return; }
+  const btn = document.getElementById('btnSaveEdit-' + id);
+  btn.disabled = true; btn.textContent = '...';
+  const fd = new FormData();
+  fd.append('action', 'edit_post');
+  fd.append('checkin_id', id);
+  fd.append('content', content);
+  const imgInput = document.getElementById('edit-image-' + id);
+  if (imgInput) { for (let f of imgInput.files) fd.append('images[]', f); }
+  document.querySelectorAll('.remove-img-cb-' + id).forEach(cb => { if (cb.checked) fd.append('remove_images[]', cb.value); });
+  try {
+    const res = await fetch('<?= url("/api/forum_action.php") ?>', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) { location.reload(); }
+    else { alert(data.message || 'Lỗi.'); btn.disabled = false; btn.textContent = 'Lưu'; }
+  } catch(err) { alert('Lỗi kết nối.'); btn.disabled = false; btn.textContent = 'Lưu'; }
+}
+async function deletePost(id) {
+  if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
+  const fd = new FormData();
+  fd.append('action', 'delete_post');
+  fd.append('checkin_id', id);
+  try {
+    const res = await fetch('<?= url("/api/forum_action.php") ?>', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.success) { document.getElementById('post-' + id).remove(); }
+    else { alert(data.message || 'Lỗi.'); }
+  } catch(err) { alert('Lỗi kết nối.'); }
 }
 </script>
 

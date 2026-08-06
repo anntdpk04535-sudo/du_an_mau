@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -36,7 +36,16 @@ try {
     $db = getDB();
 
     $stmt = $db->prepare("INSERT INTO reviews (user_id, destination_id, rating, comment) VALUES (?, ?, ?, ?)");
+    $db->beginTransaction();
     $stmt->execute([$user['id'], $destinationId, $rating, $comment ?: null]);
+    $reviewId = (int)$db->lastInsertId();
+    $files = $_FILES['images'] ?? null;
+    if ($files && is_array($files['name'] ?? null) && tableExists($db, 'review_images')) {
+        foreach (array_slice($files['name'], 0, 5, true) as $i => $_) {
+            $file = ['name'=>$files['name'][$i], 'type'=>$files['type'][$i], 'tmp_name'=>$files['tmp_name'][$i], 'error'=>$files['error'][$i], 'size'=>$files['size'][$i]];
+            if (($url = uploadLocalImage($file, 'reviews')) !== null) $db->prepare('INSERT INTO review_images(review_id,image_url,sort_order) VALUES (?,?,?)')->execute([$reviewId,$url,$i]);
+        }
+    }
 
     // Nếu là đánh giá điểm đến → cập nhật lại rating trung bình
     if ($destinationId) {
@@ -47,8 +56,10 @@ try {
         $upd->execute([$newRating, $destinationId]);
     }
 
-    echo json_encode(['success' => true, 'message' => 'Cảm ơn bạn đã đánh giá!']);
+    $db->commit();
+    echo json_encode(['success' => true, 'message' => 'Cảm ơn bạn đã đánh giá!', 'review_id' => $reviewId]);
 } catch (Exception $e) {
+    if (isset($db) && $db->inTransaction()) $db->rollBack();
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'Lỗi server: ' . $e->getMessage()]);
 }

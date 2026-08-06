@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -57,6 +57,7 @@ try {
         // Giữ lại user_id và review_id cho frontend
         $r['review_id'] = (int)$r['review_id'];
         $r['user_id']   = (int)$r['user_id'];
+        $r['images'] = fetchEntityImages($db, 'review_images', 'review_id', (int)$r['review_id']);
     }
 
     echo json_encode([

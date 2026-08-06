@@ -7,6 +7,10 @@
 
     # Danh sách điểm đến
     RewriteRule ^diem-den/?$ public/destinations.php [L,QSA]
+
+    # Danh sách ẩm thực và lưu trú
+    RewriteRule ^am-thuc/?$ public/foods.php [L,QSA]
+    RewriteRule ^luu-tru/?$ public/accommodations.php [L,QSA]
     
     # Chi tiết điểm đến (slug)
     RewriteRule ^diem-den/([a-zA-Z0-9_-]+)/?$ public/destination.php?slug=$1 [L,QSA]
