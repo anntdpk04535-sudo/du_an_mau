@@ -1,0 +1,14 @@
+{
+  "name": "daklak/travel-ai",
+  "description": "Nền tảng du lịch AI Đắk Lắk - Phú Yên",
+  "type": "project",
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
+  },
+  "autoload-dev": {
+    "psr-4": { "Tests\\": "tests/" }
+  },
+  "config": {
+    "platform": { "php": "8.2.4" }
+  }
+}

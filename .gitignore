@@ -9,3 +9,9 @@ database/create_admin.php
 Thumbs.db
 .vscode/
 .idea/
+
+vendor/
+.phpunit.result.cache
+.phpunit.cache/
+/assets/images/media/
+/storage/place_photo_cache/
