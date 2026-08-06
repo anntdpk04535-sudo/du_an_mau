@@ -97,12 +97,25 @@ if (is_file($runner)) {
  * được thi hành. Với MariaDB đó là mã thi hành thật, và mọi task sau đều
  * assert trên nội dung tiếng Việt nên mất nó là bẫy charset chờ sẵn.
  *
- * LƯU Ý QUAN TRỌNG khi đọc hàm này: bộ quét dùng chung GIỮ NGUYÊN comment
- * đứng trước statement (`-- Dumping data for table ...`), nên bộ lọc INSERT
- * BẮT BUỘC phải chạy trên bản sao chỉ-chứa-code do sqlCodeOnlyView() dựng.
- * Chạy trên chuỗi thô thì comment đứng chắn phía trước làm regex không khớp
- * và 19 lệnh INSERT của dump lọt thẳng vào DB test — phá đúng bất biến "nạp
- * cấu trúc, không nạp dữ liệu" mà hàm này tồn tại để bảo vệ.
+ * LƯU Ý QUAN TRỌNG khi đọc hàm này: bộ lọc INSERT BẮT BUỘC phải chạy trên
+ * bản CHÍNH TẮC do sqlClassifierView() dựng, không phải trên chuỗi thô.
+ * Đây là điểm gọi thứ hai của cùng một lớp lỗi đã làm thủng
+ * statementHasSingleDdlClause() bốn vòng liền — một regex neo đầu chuỗi
+ * quăng vào đầu ra của bộ quét — và ở đây nó có hai cách thủng đã đo được:
+ *
+ * - Bộ quét GIỮ NGUYÊN comment đứng trước statement (`-- Dumping data for
+ *   table ...`). Chạy regex trên chuỗi thô thì comment đứng chắn phía trước
+ *   làm nó không khớp và 19 lệnh INSERT của dump lọt thẳng vào DB test.
+ * - mysqldump sinh `/*!40000 INSERT ... * /` (bỏ khoảng trắng khi đọc) hợp
+ *   lệ, và gate `/*!` là state 'code' nên bản chỉ-chứa-code KHÔNG cắt nó —
+ *   regex lại trượt lần nữa.
+ *
+ * Bản chính tắc bóc cả hai thứ đó trước khi regex được chạy, nên bất biến
+ * "nạp cấu trúc, không nạp dữ liệu" không còn phụ thuộc vào việc hôm nay bộ
+ * quét biểu diễn comment hay gate phiên bản thế nào.
+ *
+ * Chuỗi TRẢ VỀ vẫn là bản nguyên vẹn — bản chính tắc chỉ dùng để quyết định
+ * giữ hay bỏ, không bao giờ được đem đi thi hành.
  *
  * @return string[]
  */
@@ -111,10 +124,10 @@ function testSchemaStatements(string $sql): array
     $statements = [];
 
     foreach (splitSqlStatements($sql) as $statement) {
-        [$codeOnly] = sqlCodeOnlyView($statement);
+        [$canonical] = sqlClassifierView($statement);
 
-        if (trim($codeOnly) === ''
-            || preg_match('/^\s*(INSERT|REPLACE|LOCK\s+TABLES|UNLOCK\s+TABLES)\b/i', $codeOnly)
+        if ($canonical === ''
+            || preg_match('/^(INSERT|REPLACE|LOCK\s+TABLES|UNLOCK\s+TABLES)\b/i', $canonical)
         ) {
             continue;
         }

@@ -81,6 +81,44 @@ final class SchemaImportTest extends BaseTestCase
     }
 
     /**
+     * Vòng sửa 5 — `testSchemaStatements()` là ĐIỂM GỌI THỨ HAI của đúng cái
+     * lớp lỗi vừa đóng trong `statementHasSingleDdlClause()`: một regex neo
+     * đầu chuỗi quăng vào đầu ra thô của bộ quét. mysqldump sinh
+     * `/*!40000 INSERT ... * /` (bỏ khoảng trắng khi đọc) hoàn toàn hợp lệ,
+     * và với gate đứng chắn phía trước thì `/^\s*INSERT\b/i` không khớp — dữ
+     * liệu THẬT lọt thẳng vào DB test, phá đúng bất biến "nạp cấu trúc,
+     * không nạp dữ liệu" mà hàm này tồn tại để bảo vệ.
+     *
+     * Cách chữa giống hệt: lọc trên bản CHÍNH TẮC do `sqlClassifierView()`
+     * dựng, chứ không trên bản chỉ-chứa-code thô.
+     */
+    public function test_insert_boc_trong_gate_phien_ban_khong_lot_luoi(): void
+    {
+        $sql = "CREATE TABLE `t` (`id` int);\n"
+             . "/*!40000 INSERT INTO `t` VALUES (1) */;\n"
+             . "/*M!40000 INSERT INTO `t` VALUES (2) */;\n"
+             . "  /*!40000 LOCK TABLES `t` WRITE */;\n";
+
+        $joined = implode("\n", \testSchemaStatements($sql));
+
+        self::assertStringNotContainsString(
+            'INSERT INTO',
+            $joined,
+            'INSERT bọc trong gate /*! vẫn phải bị loại — dữ liệu thật không được vào DB test'
+        );
+        self::assertStringNotContainsString(
+            'LOCK TABLES',
+            $joined,
+            'LOCK TABLES bọc trong gate /*! vẫn phải bị loại'
+        );
+        self::assertStringContainsString(
+            'CREATE TABLE',
+            $joined,
+            'phần cấu trúc vẫn phải được giữ lại'
+        );
+    }
+
+    /**
      * Bộ tách dùng chung phải nhận diện được các statement DDL thật trong
      * dump — canary chống việc "lọc quá tay" làm mất luôn CREATE TABLE.
      */
