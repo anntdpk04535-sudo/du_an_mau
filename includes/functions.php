@@ -36,7 +36,9 @@ function __(string $key): string
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
 if (!defined('BASE_URL')) {
-    if (php_sapi_name() === 'cli') {
+    // CLI không có ngữ cảnh HTTP nên BASE_URL rỗng — trừ khi caller (vd: tests/bootstrap.php)
+    // đã giả lập HTTP_HOST/SCRIPT_NAME để BASE_URL cố định giữa các lần chạy.
+    if (php_sapi_name() === 'cli' && empty($_SERVER['HTTP_HOST'])) {
         define('BASE_URL', '');
     } else {
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || (($_SERVER['SERVER_PORT'] ?? null) == 443)) ? "https://" : "http://";

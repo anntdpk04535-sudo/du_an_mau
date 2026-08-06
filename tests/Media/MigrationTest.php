@@ -1064,7 +1064,7 @@ final class MigrationTest extends TestCase
     public function test_canary_moi_file_migration_that_tach_ra_statement_hop_le(): void
     {
         $files = glob(__DIR__ . '/../../database/migrations/*.sql') ?: [];
-        self::assertCount(5, $files, 'mong đợi đúng 5 file migration đang được track');
+        self::assertCount(6, $files, 'mong đợi đúng 6 file migration đang được track');
 
         foreach ($files as $file) {
             $statements = \splitSqlStatements((string)file_get_contents($file));
