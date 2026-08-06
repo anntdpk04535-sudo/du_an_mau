@@ -274,8 +274,17 @@ sinh ra:
      width="800" height="600" loading="lazy" decoding="async" alt="…">
 ```
 
-- Derivative 400/800/1600 WebP sinh lúc nạp ảnh, lưu theo
+- Derivative 400/800/1600 sinh lúc nạp ảnh, lưu theo
   `/assets/images/media/<hash[0:2]>/<hash[2:4]>/` để không dồn vạn file vào một thư mục.
+
+  **Ràng buộc môi trường:** GD của PHP 8.2.4 trong XAMPP **không có WebP và AVIF**
+  (`imagewebp()` không tồn tại), cũng không có ImageMagick. Chỉ JPEG/PNG là chắc chắn.
+  Binary `cwebp` có trên máy dev nhưng không đảm bảo có trên server.
+
+  Do đó pipeline hạ cấp có kiểm soát: **luôn** sinh derivative JPEG bằng GD; sinh thêm
+  WebP **chỉ khi** dò được encoder (`imagewebp()` hoặc binary `cwebp`). `media_assets`
+  ghi lại biến thể nào thực sự tồn tại. `mediaImg()` phát `<picture>` có nguồn WebP khi
+  có, ngược lại phát `<img>` JPEG thuần. Không bao giờ trỏ tới file không tồn tại.
 - **`width`/`height` luôn có** → CLS về 0. Card hiện tại có `loading="lazy"` mà không
   khai báo kích thước, đó là nguồn layout shift.
 - Ảnh hero dùng `loading="eager" fetchpriority="high"` theo ngưỡng LCP < 2.5s.
