@@ -173,6 +173,193 @@ final class MigrationTest extends TestCase
         }
     }
 
+    /**
+     * Hướng 1 reviewer chứng minh bằng thực nghiệm: dấu ')' nằm TRONG một
+     * chuỗi literal (`DEFAULT 'closed)temporarily'`) từng bị đếm nhầm là
+     * đóng ngoặc, kéo $depth xuống -1, khiến dấu phẩy ngăn cách 2 clause
+     * thật KHÔNG còn được đếm ở $depth === 0 — statement 2 clause bị nhận
+     * nhầm là 1 clause, tức lỗi "đã tồn tại" lại bị nuốt sai (thủng lại
+     * đúng lỗ hổng Important #1 vừa vá).
+     */
+    public function test_dem_clause_khong_bi_nham_boi_dau_ngoac_dong_trong_chuoi_literal(): void
+    {
+        $statement = "ALTER TABLE destinations\n"
+            . "  ADD COLUMN note varchar(50) DEFAULT 'closed)temporarily',\n"
+            . "  ADD COLUMN extra varchar(50) DEFAULT NULL";
+
+        self::assertFalse(
+            \statementHasSingleDdlClause($statement),
+            "statement thực chất có 2 clause dù chuỗi literal chứa ')'"
+        );
+    }
+
+    /**
+     * Hướng 2 reviewer chứng minh: dấu ',' nằm TRONG một chuỗi literal
+     * (`DEFAULT 'ok,pending'`) từng bị đếm nhầm là ranh giới clause ở
+     * $depth === 0, khiến statement 1 clause bị nhận nhầm là nhiều clause —
+     * phá tính idempotent (chạy lại migration lần 2 sẽ ném lỗi ra ngoài
+     * thay vì được nuốt như lần đầu).
+     */
+    public function test_dem_clause_khong_bi_nham_boi_dau_phay_trong_chuoi_literal(): void
+    {
+        $statement = "ALTER TABLE destinations ADD COLUMN note varchar(50) DEFAULT 'ok,pending'";
+
+        self::assertTrue(
+            \statementHasSingleDdlClause($statement),
+            "statement thực chất chỉ có 1 clause dù chuỗi literal chứa ','"
+        );
+    }
+
+    /**
+     * 3 ca hồi quy đã đúng ở bản trước (dấu ',' bên trong ngoặc `()` của cú
+     * pháp SQL hợp lệ, KHÔNG phải trong string literal) — phải tiếp tục
+     * đúng sau khi đổi statementHasSingleDdlClause() sang dùng sqlCharStates()
+     * dùng chung với bộ tách statement.
+     */
+    public function test_dem_clause_van_dung_voi_cac_ca_hoi_quy_da_biet(): void
+    {
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE foo ADD KEY idx (a, b)'),
+            "dấu ',' trong ngoặc () của ADD KEY không được tính là ranh giới clause"
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE foo ADD COLUMN price DECIMAL(12,2)'),
+            "dấu ',' trong DECIMAL(12,2) không được tính là ranh giới clause"
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause("ALTER TABLE foo ADD COLUMN status enum('a','b') DEFAULT 'a'"),
+            "dấu ',' trong enum('a','b') không được tính là ranh giới clause"
+        );
+    }
+
+    /**
+     * Case (c) reviewer nêu: dấu ';' nằm TRONG một chuỗi literal không được
+     * bộ tách statement coi là ranh giới statement — trước đây bộ tách chỉ
+     * lọc dòng bắt đầu bằng `--` rồi explode(';') thô, không biết gì về
+     * string literal.
+     */
+    public function test_tach_statement_khong_bi_cat_nham_boi_dau_cham_phay_trong_chuoi_literal(): void
+    {
+        $sql = "INSERT INTO foo (note) VALUES ('a;b');\nINSERT INTO foo (note) VALUES ('c');";
+
+        $statements = \splitSqlStatements($sql);
+
+        self::assertSame(
+            ["INSERT INTO foo (note) VALUES ('a;b')", "INSERT INTO foo (note) VALUES ('c')"],
+            $statements,
+            "dấu ';' trong chuỗi literal không được coi là ranh giới statement"
+        );
+    }
+
+    /**
+     * Case (d) reviewer nêu: dấu ';' nằm TRONG một comment khối `/* ... * /`
+     * (bỏ khoảng trắng giữa `*` và `/` khi đọc) nhiều dòng không được coi là
+     * ranh giới statement — bản trước chỉ lọc DÒNG bắt đầu bằng `--`, không
+     * xử lý comment khối, nên vẫn cắt sai ở trường hợp này.
+     */
+    public function test_tach_statement_khong_bi_cat_nham_boi_dau_cham_phay_trong_comment_khoi(): void
+    {
+        $sql = "/* ghi chú nhiều dòng có dấu ;\n   vẫn tiếp tục ở đây */\nCREATE TABLE foo (id int);";
+
+        $statements = \splitSqlStatements($sql);
+
+        self::assertCount(1, $statements, "comment khối chứa ';' không được tách thành statement riêng");
+        self::assertStringContainsString('CREATE TABLE foo', $statements[0]);
+    }
+
+    /**
+     * Một statement toàn comment (không còn SQL thật sau khi loại comment)
+     * đứng ngay sau statement cuối cùng của file không được đưa vào danh
+     * sách statement để exec() — gửi statement rỗng/toàn-comment cho
+     * MariaDB sẽ bị lỗi 1065 "Query was empty".
+     */
+    public function test_migration_co_comment_don_o_cuoi_file_khong_bi_loi_query_rong(): void
+    {
+        $table = 'test_trailingcomment_' . bin2hex(random_bytes(4));
+        $version = 'test_trailingcomment_' . bin2hex(random_bytes(4));
+        $path = sys_get_temp_dir() . '/' . $version . '.sql';
+
+        try {
+            file_put_contents(
+                $path,
+                "CREATE TABLE IF NOT EXISTS `{$table}` (id int PRIMARY KEY);\n-- Hết migration, không còn gì thêm\n"
+            );
+
+            $applied = \runMigrationFile($this->db, $path, $version);
+
+            self::assertTrue($applied, 'migration có comment đơn ở cuối vẫn phải áp thành công');
+            $exists = $this->db->prepare(
+                'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?'
+            );
+            $exists->execute([$table]);
+            self::assertSame(1, (int)$exists->fetchColumn());
+        } finally {
+            @unlink($path);
+            $this->db->exec("DROP TABLE IF EXISTS `{$table}`");
+            $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version));
+        }
+    }
+
+    /**
+     * Nhỏ 2 reviewer yêu cầu: `--limit=abc` (giá trị không phải số) trước
+     * đây bị lờ đi im lặng (regex không khớp, $limit giữ null, chạy KHÔNG
+     * giới hạn) — im lặng theo hướng nguy hiểm hơn vì người gõ nhầm tưởng
+     * mình đang giới hạn. Giờ phải ném lỗi rõ ràng.
+     */
+    public function test_parse_cli_options_nem_loi_khi_limit_khong_phai_so(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        \parseMigrateCliOptions(['migrate_media.php', '--limit=abc']);
+    }
+
+    /**
+     * Nhỏ 1 reviewer yêu cầu: `--dry-run` phải trung thực tuyệt đối — kể cả
+     * khi bảng schema_migrations CHƯA TỪNG tồn tại (chưa ai chạy migration
+     * thật lần nào), --dry-run vẫn không được tự tạo bảng đó. Test này xoá
+     * tạm bảng schema_migrations khỏi DB test rồi phục hồi đầy đủ (kể cả dữ
+     * liệu) ở khối finally — DB test được giữ xuyên suốt giữa các lần chạy
+     * phpunit nên bắt buộc phải khôi phục đúng, kể cả khi assertion fail.
+     */
+    public function test_dry_run_khi_bang_schema_migrations_chua_ton_tai_khong_tu_tao_bang(): void
+    {
+        $backupRows = $this->db->query('SELECT version, applied_at FROM schema_migrations')->fetchAll(\PDO::FETCH_ASSOC);
+
+        $table1 = 'test_dryrun_notable_' . bin2hex(random_bytes(4));
+        $version1 = 'test_dryrun_notable_' . bin2hex(random_bytes(4));
+        $path1 = sys_get_temp_dir() . '/' . $version1 . '.sql';
+
+        try {
+            $this->db->exec('DROP TABLE IF EXISTS schema_migrations');
+
+            file_put_contents($path1, "CREATE TABLE IF NOT EXISTS `{$table1}` (id int PRIMARY KEY);");
+
+            $log = \runPendingMigrations($this->db, [$path1], true, null);
+
+            self::assertSame(
+                ['SẼ ÁP DỤNG  ' . $version1],
+                $log,
+                '--dry-run vẫn phải coi migration là đang chờ khi bảng schema_migrations chưa tồn tại'
+            );
+
+            $existsAfter = $this->db->query(
+                "SELECT COUNT(*) FROM information_schema.tables
+                 WHERE table_schema = DATABASE() AND table_name = 'schema_migrations'"
+            )->fetchColumn();
+            self::assertSame(0, (int)$existsAfter, '--dry-run không được tự tạo bảng schema_migrations khi nó chưa tồn tại');
+        } finally {
+            @unlink($path1);
+            $this->db->exec("DROP TABLE IF EXISTS `{$table1}`");
+            // Khôi phục schema_migrations về đúng trạng thái trước test.
+            ensureSchemaMigrationsTable($this->db);
+            if ($backupRows !== false) {
+                $insert = $this->db->prepare('INSERT INTO schema_migrations (version, applied_at) VALUES (?, ?)');
+                foreach ($backupRows as $row) {
+                    $insert->execute([$row['version'], $row['applied_at']]);
+                }
+            }
+        }
+    }
+
     public function test_limit_chi_ap_toi_da_so_migration_dang_cho(): void
     {
         $table1 = 'test_limit_1_' . bin2hex(random_bytes(4));

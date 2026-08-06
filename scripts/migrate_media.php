@@ -19,6 +19,154 @@ function migrationErrorIsBenign(PDOException $e): bool
 }
 
 /**
+ * Duyệt một chuỗi SQL đúng một lượt, gán cho MỖI ký tự một trong ba trạng
+ * thái: 'code' (SQL thật, đáng để phân tích cấu trúc — dấu `;`, `,`, `(`,
+ * `)`...), 'string' (bên trong chuỗi literal `'...'`, escape `''` được xử
+ * lý đúng), 'comment' (bên trong `-- ...`, `# ...` hoặc `/* ... * /`, kể cả
+ * khối nhiều dòng — bỏ khoảng trắng giữa `*` và `/` khi đọc, viết liền ở
+ * đây sẽ tự đóng luôn docblock này).
+ *
+ * Đây là bộ quét DUY NHẤT, dùng chung cho cả splitSqlStatements() (tách
+ * statement) lẫn statementHasSingleDdlClause() (đếm clause) — trước đây hai
+ * nơi này quét SQL độc lập bằng cách "mù" (không phân biệt code/string/
+ * comment), nên cùng một gốc bệnh gây ra 2 lỗi khác nhau: bộ tách cắt sai
+ * tại `;` nằm trong literal/comment khối, còn bộ đếm đếm sai `(`/`)`/`,`
+ * nằm trong literal. Sửa một chỗ, dùng chung, để hai bên không thể lệch
+ * pha với nhau nữa.
+ *
+ * @return array<int, 'code'|'string'|'comment'>
+ */
+function sqlCharStates(string $sql): array
+{
+    $length = strlen($sql);
+    $states = [];
+    $i = 0;
+
+    while ($i < $length) {
+        $char = $sql[$i];
+        $next = $i + 1 < $length ? $sql[$i + 1] : '';
+
+        if ($char === "'") {
+            // Chuỗi literal '...'; '' bên trong chuỗi là escape của chính
+            // dấu nháy đơn (chuẩn SQL), không kết thúc chuỗi.
+            $states[$i] = 'string';
+            $i++;
+            while ($i < $length) {
+                if ($sql[$i] === "'" && ($i + 1 < $length) && $sql[$i + 1] === "'") {
+                    $states[$i] = 'string';
+                    $states[$i + 1] = 'string';
+                    $i += 2;
+                    continue;
+                }
+                $states[$i] = 'string';
+                $i++;
+                if ($sql[$i - 1] === "'") {
+                    break;
+                }
+            }
+            continue;
+        }
+
+        if ($char === '-' && $next === '-') {
+            // Comment dòng đơn `-- ...`, kết thúc ở cuối dòng.
+            while ($i < $length && $sql[$i] !== "\n") {
+                $states[$i] = 'comment';
+                $i++;
+            }
+            continue;
+        }
+
+        if ($char === '#') {
+            // Comment dòng đơn kiểu MySQL `# ...`, kết thúc ở cuối dòng.
+            while ($i < $length && $sql[$i] !== "\n") {
+                $states[$i] = 'comment';
+                $i++;
+            }
+            continue;
+        }
+
+        if ($char === '/' && $next === '*') {
+            // Comment khối `/* ... */`, có thể trải nhiều dòng.
+            $states[$i] = 'comment';
+            $states[$i + 1] = 'comment';
+            $i += 2;
+            while ($i < $length) {
+                if ($sql[$i] === '*' && ($i + 1 < $length) && $sql[$i + 1] === '/') {
+                    $states[$i] = 'comment';
+                    $states[$i + 1] = 'comment';
+                    $i += 2;
+                    break;
+                }
+                $states[$i] = 'comment';
+                $i++;
+            }
+            continue;
+        }
+
+        $states[$i] = 'code';
+        $i++;
+    }
+
+    return $states;
+}
+
+/**
+ * Tách một chuỗi SQL nhiều statement thành mảng các statement riêng lẻ, chỉ
+ * cắt tại dấu `;` khi nó thật sự ở trạng thái 'code' (ngoài chuỗi literal
+ * và ngoài mọi loại comment) theo sqlCharStates().
+ *
+ * Thay thế cách cũ (lọc bỏ từng DÒNG có nội dung bắt đầu bằng `--` rồi
+ * explode(';') thô trên phần còn lại): cách cũ vẫn cắt sai khi dấu `;` nằm
+ * trong comment khối `/* ... * /` nhiều dòng (không bắt đầu dòng bằng `--`
+ * nên không bị lọc, nhưng dấu `;` bên trong vẫn bị explode cắt), hoặc khi
+ * `;` nằm trong một chuỗi literal.
+ *
+ * Một "statement" mà sau khi loại phần comment không còn ký tự SQL/chuỗi
+ * nào (toàn comment + khoảng trắng — vd. một block comment độc lập đứng
+ * giữa hai statement thật) bị loại bỏ, không đưa vào kết quả: gửi một
+ * statement toàn comment cho `PDO::exec()` sẽ bị MariaDB báo lỗi 1065
+ * "Query was empty".
+ *
+ * @return string[]
+ */
+function splitSqlStatements(string $sql): array
+{
+    $states = sqlCharStates($sql);
+    $length = strlen($sql);
+    $statements = [];
+    $start = 0;
+
+    for ($i = 0; $i <= $length; $i++) {
+        $atEnd = $i === $length;
+        $isTopLevelSemicolon = !$atEnd && $sql[$i] === ';' && ($states[$i] ?? 'code') === 'code';
+
+        if (!$isTopLevelSemicolon && !$atEnd) {
+            continue;
+        }
+
+        $chunk = substr($sql, $start, $i - $start);
+        $hasRealCode = false;
+        for ($offset = $start; $offset < $i; $offset++) {
+            $state = $states[$offset] ?? 'code';
+            if ($state === 'comment') {
+                continue;
+            }
+            if (trim($sql[$offset]) !== '') {
+                $hasRealCode = true;
+                break;
+            }
+        }
+
+        if ($hasRealCode) {
+            $statements[] = trim($chunk);
+        }
+        $start = $i + 1;
+    }
+
+    return $statements;
+}
+
+/**
  * Một `ALTER TABLE` nhiều clause (vd. `ADD COLUMN a, ADD COLUMN b, ADD KEY
  * c`) là MỘT thao tác nguyên tử trong MariaDB — nếu bất kỳ clause nào lỗi,
  * TOÀN BỘ statement bị huỷ, không có clause nào được áp dụng một phần. Vì
@@ -32,6 +180,15 @@ function migrationErrorIsBenign(PDOException $e): bool
  * thành `ADD KEY IF NOT EXISTS`). Statement chỉ có một clause DDL thì không
  * có rủi ro "áp dụng một phần" này, nên vẫn được coi là an toàn để nuốt khi
  * lỗi thuộc nhóm "đã tồn tại".
+ *
+ * Đếm clause chỉ dựa trên ký tự ở trạng thái 'code' theo sqlCharStates() —
+ * dấu `(`/`)`/`,` nằm trong một chuỗi literal (vd.
+ * `DEFAULT 'closed)temporarily'` hay `DEFAULT 'ok,pending'`) không được
+ * tính vào độ sâu ngoặc hay số clause. Bản trước duyệt ký tự thô, không
+ * phân biệt literal, nên bị sai cả hai chiều: literal chứa `)` làm âm độ
+ * sâu ngoặc khiến dấu phẩy ranh giới clause thật bị bỏ sót (nhiều clause
+ * tưởng một), literal chứa `,` bị đếm nhầm thành ranh giới clause (một
+ * clause tưởng nhiều, phá tính idempotent).
  */
 function statementHasSingleDdlClause(string $statement): bool
 {
@@ -39,10 +196,15 @@ function statementHasSingleDdlClause(string $statement): bool
         return true;
     }
 
+    $states = sqlCharStates($statement);
     $depth = 0;
     $clauseCount = 1;
     $length = strlen($statement);
+
     for ($i = 0; $i < $length; $i++) {
+        if (($states[$i] ?? 'code') !== 'code') {
+            continue;
+        }
         $char = $statement[$i];
         if ($char === '(') {
             $depth++;
@@ -65,10 +227,33 @@ function ensureSchemaMigrationsTable(PDO $db): void
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
 }
 
-/** true nếu $version CHƯA có trong schema_migrations (còn đang chờ áp dụng). */
-function migrationIsPending(PDO $db, string $version): bool
+/** true nếu bảng schema_migrations đã tồn tại (không tạo mới nếu chưa có). */
+function schemaMigrationsTableExists(PDO $db): bool
 {
-    ensureSchemaMigrationsTable($db);
+    $stmt = $db->query(
+        "SELECT COUNT(*) FROM information_schema.tables
+         WHERE table_schema = DATABASE() AND table_name = 'schema_migrations'"
+    );
+    return $stmt !== false && (int)$stmt->fetchColumn() > 0;
+}
+
+/**
+ * true nếu $version CHƯA có trong schema_migrations (còn đang chờ áp dụng).
+ *
+ * $createTableIfMissing mặc định true (hành vi gốc, dùng cho áp dụng thật —
+ * bảng phải tồn tại để sau đó ghi INSERT). Truyền false cho chế độ xem
+ * trước (`--dry-run`): KHÔNG được tạo bảng chỉ vì đang kiểm tra trạng thái;
+ * nếu bảng chưa tồn tại thì coi mọi migration là đang chờ (đúng thực tế —
+ * chưa có bảng nghĩa là chưa migration nào từng được ghi nhận).
+ */
+function migrationIsPending(PDO $db, string $version, bool $createTableIfMissing = true): bool
+{
+    if ($createTableIfMissing) {
+        ensureSchemaMigrationsTable($db);
+    } elseif (!schemaMigrationsTableExists($db)) {
+        return true;
+    }
+
     $seen = $db->prepare('SELECT COUNT(*) FROM schema_migrations WHERE version = ?');
     $seen->execute([$version]);
     return (int)$seen->fetchColumn() === 0;
@@ -85,24 +270,7 @@ function runMigrationFile(PDO $db, string $path, string $version): bool
         throw new RuntimeException("Không đọc được migration: {$path}");
     }
 
-    // Bỏ các dòng `-- comment` TRƯỚC KHI tách theo dấu `;`. Một vài migration
-    // cũ (vd. 20260806_upgrade.sql, 20260807_region_split.sql) có câu văn kiểu
-    // "Safe to run; all statements are idempotent." trong phần chú thích đầu
-    // file — nếu tách bằng explode(';') trên toàn bộ nội dung thô, dấu `;`
-    // nằm giữa câu chú thích đó sẽ cắt chú thích làm đôi và phần đuôi (không
-    // còn bắt đầu bằng `--`) sẽ bị đem đi exec() như SQL thật, gây lỗi cú
-    // pháp. Lọc theo từng dòng trước rồi mới ghép lại và tách theo `;` để
-    // tránh lệ thuộc vào việc `;` có xuất hiện trong chú thích hay không.
-    $codeLines = array_filter(
-        preg_split('/\R/', $sql) ?: [],
-        static fn (string $line): bool => !str_starts_with(trim($line), '--')
-    );
-    $sqlWithoutComments = implode("\n", $codeLines);
-
-    foreach (array_filter(array_map('trim', explode(';', $sqlWithoutComments))) as $statement) {
-        if ($statement === '') {
-            continue;
-        }
+    foreach (splitSqlStatements($sql) as $statement) {
         try {
             $db->exec($statement);
         } catch (PDOException $e) {
@@ -126,8 +294,16 @@ function runMigrationFile(PDO $db, string $path, string $version): bool
  * Đọc `--dry-run` và `--limit=N` từ argv CLI. Không đụng tới các phần tử
  * khác của argv (vd. đường dẫn script ở argv[0]).
  *
+ * `--limit=` phải là số nguyên không âm hợp lệ (`\d+`). Một giá trị không
+ * khớp (vd. `--limit=abc`, `--limit=`, `--limit=-1`) KHÔNG được lờ đi im
+ * lặng — im lặng nghĩa là $limit giữ null và migration chạy KHÔNG giới hạn,
+ * tức người gõ sai cú pháp tưởng mình đang an toàn nhưng thực ra áp toàn
+ * bộ. Ném lỗi ngay để tầng gọi (khối CLI cuối file) dừng lại và báo rõ
+ * thay vì âm thầm chạy sai ý định.
+ *
  * @param string[] $argv
  * @return array{dryRun: bool, limit: int|null}
+ * @throws InvalidArgumentException nếu giá trị --limit không phải số nguyên không âm.
  */
 function parseMigrateCliOptions(array $argv): array
 {
@@ -138,8 +314,14 @@ function parseMigrateCliOptions(array $argv): array
             $dryRun = true;
             continue;
         }
-        if (preg_match('/^--limit=(\d+)$/', $arg, $m) === 1) {
-            $limit = (int)$m[1];
+        if (str_starts_with($arg, '--limit=')) {
+            $value = substr($arg, strlen('--limit='));
+            if (preg_match('/^\d+$/', $value) !== 1) {
+                throw new InvalidArgumentException(
+                    "Giá trị --limit không hợp lệ: '{$value}'. Phải là số nguyên không âm, vd. --limit=3."
+                );
+            }
+            $limit = (int)$value;
         }
     }
     return ['dryRun' => $dryRun, 'limit' => $limit];
@@ -151,7 +333,10 @@ function parseMigrateCliOptions(array $argv): array
  * trực tiếp để test có thể gọi mà không cần bắt output buffer.
  *
  * - `$dryRun = true`: không exec statement nào, không ghi schema_migrations,
- *   chỉ báo migration nào SẼ được áp nếu chạy thật.
+ *   KHÔNG tạo bảng schema_migrations nếu nó chưa tồn tại (xem
+ *   migrationIsPending()) — chỉ báo migration nào SẼ được áp nếu chạy thật.
+ *   Đây phải là thao tác "chỉ đọc" tuyệt đối, đúng đúng vai trò công cụ xem
+ *   trước an toàn trước khi động vào DB thật.
  * - `$limit`: chỉ áp (hoặc xem trước) tối đa $limit migration ĐANG CHỜ trong
  *   lần gọi này; các migration đã áp từ trước vẫn được liệt kê "BỎ QUA" bất
  *   kể limit (không tính vào hạn mức). Khi chạm limit, dừng xử lý toàn bộ —
@@ -169,7 +354,7 @@ function runPendingMigrations(PDO $db, array $files, bool $dryRun = false, ?int 
     foreach ($files as $file) {
         $version = basename($file, '.sql');
 
-        if (!migrationIsPending($db, $version)) {
+        if (!migrationIsPending($db, $version, !$dryRun)) {
             $log[] = 'BỎ QUA      ' . $version;
             continue;
         }
@@ -191,8 +376,14 @@ function runPendingMigrations(PDO $db, array $files, bool $dryRun = false, ?int 
 }
 
 if (PHP_SAPI === 'cli' && realpath($argv[0] ?? '') === realpath(__FILE__)) {
+    try {
+        $options = parseMigrateCliOptions($argv);
+    } catch (InvalidArgumentException $e) {
+        fwrite(STDERR, 'LỖI: ' . $e->getMessage() . PHP_EOL);
+        exit(1);
+    }
+
     $db = getDB();
-    $options = parseMigrateCliOptions($argv);
     // Quét cả thư mục theo thứ tự tên file — không hardcode danh sách, để
     // migration mới thêm sau này tự được nhận.
     $files = glob(__DIR__ . '/../database/migrations/*.sql') ?: [];
