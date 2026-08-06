@@ -1,8 +1,19 @@
 <?php
-require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/content_helpers.php';
 requireAdmin();
 $pageTitle = __('admin_destinations_title');
 $db = getDB();
+
+// Xử lý Quick Toggle Nổi bật
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_featured') {
+  $destId = (int) $_POST['id'];
+  $currentVal = (int) $_POST['current_val'];
+  $newVal = $currentVal ? 0 : 1;
+  $stmt = $db->prepare("UPDATE destinations SET is_featured = ? WHERE id = ?");
+  $stmt->execute([$newVal, $destId]);
+  header('Location: ' . url('/admin/destinations.php?page=' . ($_GET['page'] ?? 1)));
+  exit;
+}
 
 // Xử lý xoá
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete') {
@@ -25,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $priceLevel = $_POST['price_level'] ?? 'low';
   $tags = trim($_POST['tags'] ?? '');
   $imageUrl = trim($_POST['image_url'] ?? '');
+  $isFeatured = isset($_POST['is_featured']) ? 1 : 0;
   
   // Handle Image Upload
   if (isset($_FILES['image_upload']) && $_FILES['image_upload']['error'] === UPLOAD_ERR_OK) {
@@ -42,20 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($id > 0) {
     // ✅ $id > 0 → đang SỬA → dùng UPDATE
     $stmt = $db->prepare(
-      "UPDATE destinations SET name=?, slug=?, short_desc=?, description=?, category_id=?, avg_visit_hours=?, price_level=?, tags=?, image_url=?, latitude=?, longitude=? WHERE id=?"
+      "UPDATE destinations SET name=?, slug=?, short_desc=?, description=?, category_id=?, avg_visit_hours=?, price_level=?, tags=?, image_url=?, is_featured=?, latitude=?, longitude=? WHERE id=?"
     );
-    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude, $id]);
+    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $isFeatured, $latitude, $longitude, $id]);
   } else {
     // ✅ $id == 0 → đang THÊM MỚI → dùng INSERT
     $stmt = $db->prepare(
-      "INSERT INTO destinations (name, slug, short_desc, description, category_id, avg_visit_hours, price_level, tags, image_url, latitude, longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+      "INSERT INTO destinations (name, slug, short_desc, description, category_id, avg_visit_hours, price_level, tags, image_url, is_featured, latitude, longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
     );
-    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude]);
+    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $isFeatured, $latitude, $longitude]);
+    $id = (int) $db->lastInsertId();
+  }
+
+  // Phân loại thời tiết (cột chỉ có sau migration 20260808_itinerary_geo)
+  if ($id > 0 && columnExists($db, 'destinations', 'indoor_type')) {
+    $indoorType = in_array($_POST['indoor_type'] ?? '', ['indoor', 'outdoor', 'mixed'], true) ? $_POST['indoor_type'] : null;
+    $sensitivity = ($_POST['weather_sensitivity'] ?? '') !== '' ? max(0, min(3, (int) $_POST['weather_sensitivity'])) : null;
+    $db->prepare("UPDATE destinations SET indoor_type = ?, weather_sensitivity = ? WHERE id = ?")
+      ->execute([$indoorType, $sensitivity, $id]);
   }
 
   header('Location: ' . url('/admin/destinations.php'));
   exit;
 }
+
 
 if (isset($_GET['edit'])) {
   $stmt = $db->prepare("SELECT * FROM destinations WHERE id = ?");
@@ -141,6 +163,27 @@ include __DIR__ . '/../includes/header.php';
       <label><?= __('admin_destinations_tags') ?></label>
       <input type="text" name="tags" value="<?= e($editing['tags'] ?? '') ?>">
     </div>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+      <div class="form-group" style="flex: 1; min-width: 200px;">
+        <label>Không gian (lọc theo thời tiết)</label>
+        <select name="indoor_type">
+          <option value="">— Chưa phân loại —</option>
+          <?php foreach (['indoor' => 'Trong nhà', 'outdoor' => 'Ngoài trời', 'mixed' => 'Kết hợp'] as $it => $itLabel): ?>
+            <option value="<?= $it ?>" <?= ($editing['indoor_type'] ?? '') === $it ? 'selected' : '' ?>><?= $itLabel ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="form-group" style="flex: 1; min-width: 200px;">
+        <label>Độ nhạy thời tiết</label>
+        <select name="weather_sensitivity">
+          <option value="">— Chưa đánh giá —</option>
+          <?php foreach ([0 => '0 — Không ảnh hưởng mưa', 1 => '1 — Ảnh hưởng nhẹ', 2 => '2 — Nên tránh khi mưa', 3 => '3 — Rất nhạy (thác, trekking)'] as $ws => $wsLabel): ?>
+            <option value="<?= $ws ?>" <?= ($editing['weather_sensitivity'] ?? '') !== '' && (int) ($editing['weather_sensitivity'] ?? -1) === $ws ? 'selected' : '' ?>><?= $wsLabel ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
     <div class="form-group">
       <label><?= __('admin_destinations_image') ?></label>
       <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -148,7 +191,7 @@ include __DIR__ . '/../includes/header.php';
           <input type="text" name="image_url" value="<?= e($editing['image_url'] ?? '') ?>" placeholder="<?= __('admin_destinations_image_ph') ?>" style="flex:1;">
       </div>
       <?php if (!empty($editing['image_url'])): ?>
-        <img src="<?= e($editing['image_url']) ?>" style="margin-top:8px;max-width:200px;border-radius:8px;">
+        <img src="<?= url($editing['image_url']) ?>" style="margin-top:8px;max-width:200px;border-radius:8px;" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
       <?php endif; ?>
     </div>
 
@@ -226,6 +269,11 @@ include __DIR__ . '/../includes/header.php';
     });
     </script>
 
+    <div class="form-group" style="display:flex; align-items:center; gap:10px; margin: 15px 0;">
+      <input type="checkbox" name="is_featured" id="is_featured_cb" value="1" <?= !empty($editing['is_featured']) ? 'checked' : '' ?> style="width:20px; height:20px;">
+      <label for="is_featured_cb" style="margin:0; font-weight:700; color:var(--basalt-red); cursor:pointer;">🌟 Đánh dấu làm Điểm đến nổi bật (Trang chủ)</label>
+    </div>
+
     <button type="submit" class="btn"><?= $editing ? __('admin_destinations_save') : __('admin_destinations_submit') ?></button>
   </form>
 </div>
@@ -233,27 +281,42 @@ include __DIR__ . '/../includes/header.php';
 <h3 class="section-title"><?= __('admin_destinations_list') ?></h3>
 <table style="width:100%;background:white;border-radius:14px;overflow:hidden;border-collapse:collapse;">
   <tr style="background:#f1f1f1;text-align:left;">
+    <th style="padding:10px; width:70px;">Hình ảnh</th>
     <th style="padding:10px;"><?= __('admin_destinations_th_name') ?></th>
     <th style="padding:10px;"><?= __('admin_destinations_category') ?></th>
-    <th style="padding:10px;"><?= __('admin_destinations_th_rating') ?></th>
+    <th style="padding:10px;">Nổi bật</th>
     <th style="padding:10px;"><?= __('admin_destinations_th_action') ?></th>
   </tr>
   <?php foreach ($destinations as $d): ?>
     <tr style="border-top:1px solid #eee;">
-      <td style="padding:10px;"><?= e($d['name']) ?></td>
+      <td style="padding:10px;">
+        <img src="<?= url($d['image_url'] ?: '/assets/images/placeholder.svg') ?>" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onerror="this.onerror=null;this.src='<?= url('/assets/images/placeholder.svg') ?>';">
+
+      </td>
+      <td style="padding:10px; font-weight:600;"><?= e($d['name']) ?></td>
       <td style="padding:10px;"><?= e((string) ($d['category_name'] ?? '-')) ?></td>
-      <td style="padding:10px;"><?= e((string) $d['rating']) ?></td>
+      <td style="padding:10px;">
+        <form method="post" style="display:inline;">
+          <input type="hidden" name="action" value="toggle_featured">
+          <input type="hidden" name="id" value="<?= $d['id'] ?>">
+          <input type="hidden" name="current_val" value="<?= (int)$d['is_featured'] ?>">
+          <button type="submit" style="background:none; border:none; cursor:pointer; font-size:16px;">
+            <?= !empty($d['is_featured']) ? '🌟 <span style="font-size:12px; color:#15803d; font-weight:700;">Nổi bật</span>' : '⚪ <span style="font-size:12px; color:#94a3b8;">Thường</span>' ?>
+          </button>
+        </form>
+      </td>
       <td style="padding:10px;">
         <a href="<?= url('/admin/destinations.php') ?>?edit=<?= e((string) $d['id']) ?>"><?= __('admin_destinations_edit_btn') ?></a> |
         <form method="post" style="display:inline;">
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="delete_id" value="<?= e((string) $d['id']) ?>">
-          <button type="submit" onclick="return confirm('<?= __('admin_destinations_delete_confirm') ?>')" style="background:none; border:none; color:inherit; text-decoration:underline; font:inherit; cursor:pointer; padding:0;"><?= __('admin_destinations_delete_btn') ?></button>
+          <button type="submit" onclick="return confirm('<?= __('admin_destinations_delete_confirm') ?>')" style="background:none; border:none; color:#ef4444; text-decoration:underline; font:inherit; cursor:pointer; padding:0;"><?= __('admin_destinations_delete_btn') ?></button>
         </form>
       </td>
     </tr>
   <?php endforeach; ?>
 </table>
+
 
 <?php if ($totalPages > 1): ?>
 <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
