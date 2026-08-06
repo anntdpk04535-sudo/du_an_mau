@@ -36,17 +36,25 @@ function __(string $key): string
 // Tự động nhận diện đường dẫn gốc của project (vd: /daklak-travel) để mọi link
 // hoạt động đúng cả khi project nằm trong thư mục con của domain.
 if (!defined('BASE_URL')) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-    $base = preg_replace('#/(public|admin|api)$#', '', $scriptDir);
-    define('BASE_URL', $protocol . $host . rtrim($base, '/'));
+    if (php_sapi_name() === 'cli') {
+        define('BASE_URL', '');
+    } else {
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || (($_SERVER['SERVER_PORT'] ?? null) == 443)) ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $base = preg_replace('#/(public|admin|api|scripts)$#', '', $scriptDir);
+        define('BASE_URL', $protocol . $host . rtrim($base, '/'));
+    }
 }
 
 function url(string $path): string
 {
-    return BASE_URL . $path;
+    if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+        return $path;
+    }
+    return BASE_URL . (str_starts_with($path, '/') ? $path : '/' . $path);
 }
+
 
 function e(?string $str): string
 {
@@ -164,7 +172,7 @@ function getAllCategories(): array
     return $rows;
 }
 
-function getAllDestinations(?int $categoryId = null, string $keyword = '', string $priceLevel = '', float $minRating = 0, int $limit = 0, int $offset = 0): array
+function getAllDestinations(?int $categoryId = null, string $keyword = '', string $priceLevel = '', float $minRating = 0, int $limit = 0, int $offset = 0, string $region = ''): array
 {
     $db = getDB();
     $sql = "
@@ -194,6 +202,11 @@ function getAllDestinations(?int $categoryId = null, string $keyword = '', strin
         $sql .= " AND d.price_level = ?";
         $params[] = $priceLevel;
     }
+
+    if ($region !== '') {
+        $sql .= " AND d.region = ?";
+        $params[] = $region;
+    }
     
     $sql .= " GROUP BY d.id";
     
@@ -217,7 +230,7 @@ function getAllDestinations(?int $categoryId = null, string $keyword = '', strin
     return $rows;
 }
 
-function getTotalDestinations(?int $categoryId = null, string $keyword = '', string $priceLevel = '', float $minRating = 0): int
+function getTotalDestinations(?int $categoryId = null, string $keyword = '', string $priceLevel = '', float $minRating = 0, string $region = ''): int
 {
     $db = getDB();
     $sql = "
@@ -244,6 +257,11 @@ function getTotalDestinations(?int $categoryId = null, string $keyword = '', str
         $sql .= " AND d.price_level = ?";
         $params[] = $priceLevel;
     }
+
+    if ($region !== '') {
+        $sql .= " AND d.region = ?";
+        $params[] = $region;
+    }
     
     if ($minRating > 0) {
         $sql .= " GROUP BY d.id HAVING COALESCE(AVG(r.rating), MAX(d.rating)) >= ?";
@@ -259,7 +277,29 @@ function getTotalDestinations(?int $categoryId = null, string $keyword = '', str
     return (int)$stmt->fetchColumn();
 }
 
+function getDestinationById(int $id): ?array
+{
+    $db = getDB();
+    $stmt = $db->prepare("
+        SELECT d.*,
+               COALESCE(AVG(r.rating), d.rating)  AS display_rating,
+               ROUND(AVG(r.rating), 1)             AS avg_rating,
+               COUNT(r.id)                         AS review_count
+        FROM destinations d
+        LEFT JOIN reviews r ON r.destination_id = d.id
+        WHERE d.id = ?
+        GROUP BY d.id
+    ");
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    if ($row) {
+        $row = translateDbRow($row, ['name', 'short_desc', 'description']);
+    }
+    return $row ?: null;
+}
+
 function getDestinationBySlug(string $slug): ?array
+
 {
     $db = getDB();
     $stmt = $db->prepare("
