@@ -50,7 +50,15 @@ if (DB_NAME !== $testDb) {
 
 $db = getDB();
 
-// Bước 5: nạp lược đồ nền nếu DB test còn trống.
+// Bước 5: nạp runner migration TRƯỚC khi nạp lược đồ — testSchemaStatements()
+// dùng chung splitSqlStatements()/sqlCodeOnlyView() định nghĩa trong file này.
+// File chỉ tồn tại từ Task 2 trở đi.
+$runner = __DIR__ . '/../scripts/migrate_media.php';
+if (is_file($runner)) {
+    require_once $runner;
+}
+
+// Bước 6: nạp lược đồ nền nếu DB test còn trống.
 $tableCount = (int)$db->query(
     'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()'
 )->fetchColumn();
@@ -58,11 +66,9 @@ if ($tableCount === 0) {
     testImportSchema($db, __DIR__ . '/../database/daklak_travel.sql');
 }
 
-// Bước 6: áp dụng mọi migration. runMigrationFile() có ghi schema_migrations
-// nên chạy lại không tốn gì. File này chỉ tồn tại từ Task 2 trở đi.
-$runner = __DIR__ . '/../scripts/migrate_media.php';
+// Bước 7: áp dụng mọi migration. runMigrationFile() có ghi schema_migrations
+// nên chạy lại không tốn gì.
 if (is_file($runner)) {
-    require_once $runner;
     foreach (glob(__DIR__ . '/../database/migrations/*.sql') ?: [] as $file) {
         runMigrationFile($db, $file, basename($file, '.sql'));
     }
@@ -78,6 +84,47 @@ if (is_file($runner)) {
  * không exit, để lỗi thật (thiếu bảng do regex tách statement sai, v.d.)
  * còn có dấu vết thay vì biến mất hoàn toàn.
  */
+/**
+ * Chọn danh sách statement sẽ được nạp từ bản dump: giữ phần CẤU TRÚC, bỏ
+ * toàn bộ INSERT/REPLACE/LOCK TABLES.
+ *
+ * Tách riêng khỏi testImportSchema() để test được mà không cần chạm DB.
+ *
+ * Dùng CHUNG splitSqlStatements() của scripts/migrate_media.php thay cho bộ
+ * tách riêng cũ (`preg_split('/;\s*\R/')` + lọc dòng đầu). Bộ tách cũ coi
+ * `/*!40101 ... * /` (bỏ khoảng trắng khi đọc) là comment rồi vứt bỏ, nên cả
+ * 7 chỉ thị `/*!` của dump — trong đó có `SET NAMES utf8mb4` — không bao giờ
+ * được thi hành. Với MariaDB đó là mã thi hành thật, và mọi task sau đều
+ * assert trên nội dung tiếng Việt nên mất nó là bẫy charset chờ sẵn.
+ *
+ * LƯU Ý QUAN TRỌNG khi đọc hàm này: bộ quét dùng chung GIỮ NGUYÊN comment
+ * đứng trước statement (`-- Dumping data for table ...`), nên bộ lọc INSERT
+ * BẮT BUỘC phải chạy trên bản sao chỉ-chứa-code do sqlCodeOnlyView() dựng.
+ * Chạy trên chuỗi thô thì comment đứng chắn phía trước làm regex không khớp
+ * và 19 lệnh INSERT của dump lọt thẳng vào DB test — phá đúng bất biến "nạp
+ * cấu trúc, không nạp dữ liệu" mà hàm này tồn tại để bảo vệ.
+ *
+ * @return string[]
+ */
+function testSchemaStatements(string $sql): array
+{
+    $statements = [];
+
+    foreach (splitSqlStatements($sql) as $statement) {
+        [$codeOnly] = sqlCodeOnlyView($statement);
+
+        if (trim($codeOnly) === ''
+            || preg_match('/^\s*(INSERT|REPLACE|LOCK\s+TABLES|UNLOCK\s+TABLES)\b/i', $codeOnly)
+        ) {
+            continue;
+        }
+
+        $statements[] = $statement;
+    }
+
+    return $statements;
+}
+
 function testImportSchema(PDO $db, string $dumpPath): void
 {
     $sql = (string)file_get_contents($dumpPath);
@@ -85,22 +132,7 @@ function testImportSchema(PDO $db, string $dumpPath): void
     $failedCount = 0;
     $failedSamples = [];
 
-    foreach (preg_split('/;\s*\R/', $sql) ?: [] as $chunk) {
-        $lines = preg_split('/\R/', $chunk) ?: [];
-        while ($lines !== []) {
-            $first = trim($lines[0]);
-            if ($first === '' || str_starts_with($first, '--') || str_starts_with($first, '/*')) {
-                array_shift($lines);
-                continue;
-            }
-            break;
-        }
-
-        $statement = trim(implode("\n", $lines));
-        if ($statement === '' || preg_match('/^(INSERT|REPLACE|LOCK TABLES|UNLOCK TABLES)\b/i', $statement)) {
-            continue;
-        }
-
+    foreach (testSchemaStatements($sql) as $statement) {
         try {
             $db->exec($statement);
         } catch (PDOException $e) {
