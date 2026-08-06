@@ -528,4 +528,327 @@ final class MigrationTest extends TestCase
             'ALTER TABLE itinerary_items (10 clause: 8 ADD COLUMN + 2 ADD KEY) phải được nhận diện là nhiều clause'
         );
     }
+
+    // ---------------------------------------------------------------------
+    // Vòng sửa 4 — sqlCharStates() mô hình hoá thiếu ngữ cảnh trích dẫn của
+    // MariaDB. Mỗi dạng trích dẫn chưa được mô hình hoá là một lần trạng thái
+    // lệch pha 'code' <-> 'string', kéo sập cả bộ tách statement lẫn bộ đếm
+    // clause xây bên trên. Các test dưới đây khoá lại từng dạng.
+    // ---------------------------------------------------------------------
+
+    /**
+     * F1 — MariaDB mặc định BẬT backslash escape (`sql_mode` không chứa
+     * `NO_BACKSLASH_ESCAPES`; đã xác minh trên MariaDB 10.4.28 của máy này:
+     * `SELECT 'M\'gar'` trả về `M'gar`). Nên `'Cư M\'gar'` là MỘT chuỗi.
+     * Bộ quét cũ chỉ hiểu escape `''` nên `\'` đóng chuỗi sớm và đảo pha toàn
+     * bộ phần SQL đứng sau.
+     *
+     * Không phải rủi ro lý thuyết: `database/daklak_travel.sql` có 128 lần
+     * `\'`, và địa danh Đắk Lắk đầy dấu nháy (`Cư M'gar`, `Ea M'roh`, `M'rô`).
+     */
+    public function test_backslash_escape_khong_dao_pha_bo_dem_clause(): void
+    {
+        self::assertFalse(
+            \statementHasSingleDdlClause(
+                "ALTER TABLE destinations\n"
+                . "  ADD COLUMN huyen varchar(50) DEFAULT 'Cư M\\'gar',\n"
+                . "  ADD COLUMN ghi_chu varchar(50) DEFAULT NULL"
+            ),
+            "statement thực chất có 2 clause dù literal chứa backslash escape \\'"
+        );
+
+        self::assertTrue(
+            \statementHasSingleDdlClause(
+                "ALTER TABLE destinations ADD COLUMN huyen varchar(80) DEFAULT 'Ea H\\'leo, Krông Năng'"
+            ),
+            "statement thực chất chỉ có 1 clause: dấu ',' nằm trong literal có backslash escape"
+        );
+    }
+
+    /**
+     * F1 (tiếp) — dấu `;` phân cách hai statement bị che thành 'string' khi
+     * `\'` đảo pha bộ quét, làm `splitSqlStatements()` gộp nhầm hai statement
+     * làm một.
+     */
+    public function test_backslash_escape_khong_lam_gop_nham_hai_statement(): void
+    {
+        $sql = "-- Backfill tên huyện, dữ liệu thật có dấu nháy trong tên.\n"
+            . "UPDATE destinations SET huyen = 'Cư M\\'gar' WHERE id = 1;\n"
+            . "UPDATE destinations SET huyen = 'Ea M\\'roh' WHERE id = 2;";
+
+        $statements = \splitSqlStatements($sql);
+
+        self::assertCount(2, $statements, "backslash escape không được làm gộp nhầm hai statement");
+        self::assertStringContainsString("WHERE id = 1", $statements[0]);
+        self::assertStringContainsString("WHERE id = 2", $statements[1]);
+    }
+
+    /**
+     * F1 (bất biến thật) — đây là hậu quả nghiêm trọng nhất của việc lệch
+     * pha: một `ALTER TABLE` NHIỀU clause chứa `\'` bị đếm nhầm thành 1
+     * clause, nên lỗi "đã tồn tại" bị NUỐT, và `schema_migrations` được ghi
+     * dù cột thứ hai chưa hề tồn tại (ALTER TABLE nhiều clause là nguyên tử —
+     * một clause lỗi thì cả statement bị huỷ).
+     */
+    public function test_alter_table_nhieu_clause_co_backslash_escape_khong_bi_nuot_loi(): void
+    {
+        $table = 'test_bs_multi_' . bin2hex(random_bytes(4));
+        $version = 'test_bs_multi_' . bin2hex(random_bytes(4));
+        $path = sys_get_temp_dir() . '/' . $version . '.sql';
+
+        try {
+            $this->db->exec("CREATE TABLE `{$table}` (id int PRIMARY KEY, huyen varchar(50) DEFAULT NULL)");
+            // `huyen` đã tồn tại (lỗi 1060 ở clause đầu), `ghi_chu` thì chưa.
+            file_put_contents(
+                $path,
+                "-- Backfill theo tên huyện; tên thật có dấu nháy nên phải escape.\n"
+                . "ALTER TABLE `{$table}`\n"
+                . "  ADD COLUMN huyen varchar(50) DEFAULT 'Cư M\\'gar',\n"
+                . "  ADD COLUMN ghi_chu varchar(50) DEFAULT NULL;"
+            );
+
+            $threw = false;
+            try {
+                \runMigrationFile($this->db, $path, $version);
+            } catch (\PDOException $e) {
+                $threw = true;
+            }
+            self::assertTrue(
+                $threw,
+                'ALTER TABLE nhiều clause chứa backslash escape phải ném lỗi ra ngoài, không được nuốt'
+            );
+
+            $seen = $this->db->prepare('SELECT COUNT(*) FROM schema_migrations WHERE version = ?');
+            $seen->execute([$version]);
+            self::assertSame(0, (int)$seen->fetchColumn(), 'version KHÔNG được ghi khi migration chưa thật sự xong');
+
+            $col = $this->db->prepare(
+                'SELECT COUNT(*) FROM information_schema.columns
+                 WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?'
+            );
+            $col->execute([$table, 'ghi_chu']);
+            self::assertSame(0, (int)$col->fetchColumn(), 'cột thứ hai thật sự KHÔNG được tạo — đúng bản chất nguyên tử của ALTER TABLE');
+        } finally {
+            @unlink($path);
+            $this->db->exec("DROP TABLE IF EXISTS `{$table}`");
+            $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version));
+        }
+    }
+
+    /**
+     * F2 — `"..."` và `` `...` `` cũng phải được nhảy qua. Mặc định (`sql_mode`
+     * không chứa `ANSI_QUOTES`, đã xác minh: `SELECT "Lee's"` trả về `Lee's`)
+     * thì `"..."` LÀ string literal; bật `ANSI_QUOTES` nó thành định danh.
+     * Nhưng dù là literal hay định danh, bộ quét vẫn phải nhảy qua nội dung —
+     * nếu không, một dấu nháy đơn lạc bên trong sẽ mở nhầm state 'string' và
+     * đảo pha toàn bộ phần sau.
+     */
+    public function test_nhay_kep_va_backtick_duoc_nhay_qua_khi_dem_clause(): void
+    {
+        self::assertFalse(
+            \statementHasSingleDdlClause('ALTER TABLE t ADD COLUMN a int COMMENT "Lee\'s", ADD COLUMN b int'),
+            'dấu nháy đơn lạc trong "..." không được mở state string'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause("ALTER TABLE t ADD COLUMN `M'gar` int, ADD COLUMN b int"),
+            'dấu nháy đơn lạc trong `...` không được mở state string'
+        );
+    }
+
+    /**
+     * F2 (tiếp) — escape kiểu nhân đôi ký tự đóng phải tiếp tục hoạt động cho
+     * cả ba loại nháy, và backslash KHÔNG phải ký tự escape bên trong backtick
+     * (đã xác minh: `` SELECT `a\` `` là định danh hợp lệ trên MariaDB 10.4.28).
+     */
+    public function test_escape_nhan_doi_va_backslash_trong_backtick(): void
+    {
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE t ADD COLUMN a int COMMENT "nói ""xin chào"", rồi đi"'),
+            'escape nhân đôi "" phải giữ nguyên state string, dấu phẩy bên trong không phải ranh giới clause'
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause("ALTER TABLE t ADD COLUMN `cot``la, ky` int"),
+            'escape nhân đôi `` phải giữ nguyên state, dấu phẩy bên trong không phải ranh giới clause'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause("ALTER TABLE t ADD COLUMN `duong_dan\\` int, ADD COLUMN b int"),
+            'backslash trong backtick là ký tự thường, không escape — backtick ngay sau nó vẫn đóng định danh'
+        );
+    }
+
+    /**
+     * F3 — `/*!40101 SET NAMES utf8mb4 * /` (bỏ khoảng trắng khi đọc) là MÃ
+     * THI HÀNH THẬT với MariaDB, không phải comment. Đã xác minh trên máy này:
+     * chạy `/*!40101 SELECT ... * /` cho ra kết quả thật.
+     *
+     * Bộ quét cũ coi nó là comment, rồi `splitSqlStatements()` loại chunk
+     * toàn-comment → statement biến mất, không bao giờ tới `exec()`. Cả 7 dòng
+     * `/*!` trong `database/daklak_travel.sql` đều bị nuốt như vậy.
+     */
+    public function test_conditional_comment_la_ma_thi_hanh_khong_bi_loai_bo(): void
+    {
+        $sql = "/*!40101 SET NAMES utf8mb4 */;\nCREATE TABLE foo (id int);";
+
+        $statements = \splitSqlStatements($sql);
+
+        self::assertCount(2, $statements, 'conditional comment /*! */ phải còn lại như một statement thi hành');
+        self::assertStringContainsString('SET NAMES utf8mb4', $statements[0]);
+        self::assertStringContainsString('CREATE TABLE foo', $statements[1]);
+    }
+
+    /**
+     * F3 (tiếp) — canary trên bản dump nền THẬT: cả 7 dòng `/*!` phải sống
+     * sót qua `splitSqlStatements()`, không bị loại như comment thuần.
+     */
+    public function test_canary_conditional_comment_trong_dump_nen_that(): void
+    {
+        $dump = (string)file_get_contents(__DIR__ . '/../../database/daklak_travel.sql');
+        self::assertNotSame('', $dump, 'không đọc được database/daklak_travel.sql');
+
+        $expected = preg_match_all('~/\*!~', $dump);
+        self::assertGreaterThan(0, $expected, 'dump nền phải có ít nhất một conditional comment');
+
+        $survived = 0;
+        foreach (\splitSqlStatements($dump) as $statement) {
+            $survived += preg_match_all('~/\*!~', $statement);
+        }
+
+        self::assertSame(
+            $expected,
+            $survived,
+            'mọi conditional comment /*! trong dump nền phải sống sót qua bộ tách statement'
+        );
+    }
+
+    /**
+     * F3 (tiếp) — một file migration tách ra 0 statement thi hành được là
+     * LỖI, không phải thành công. Trước đây `runMigrationFile()` chạy
+     * `foreach` 0 vòng rồi vẫn `INSERT INTO schema_migrations` — một migration
+     * mà mọi DDL đều bị bộ quét nuốt sẽ được đánh dấu "đã áp dụng" trong khi
+     * không câu lệnh nào chạy.
+     */
+    public function test_file_migration_khong_co_statement_thi_hanh_phai_nem_loi(): void
+    {
+        $version = 'test_empty_' . bin2hex(random_bytes(4));
+        $path = sys_get_temp_dir() . '/' . $version . '.sql';
+
+        try {
+            file_put_contents(
+                $path,
+                "-- Migration này chỉ còn comment, mọi DDL đã bị gỡ.\n"
+                . "/* không còn câu lệnh nào ở đây */\n"
+            );
+
+            $threw = false;
+            try {
+                \runMigrationFile($this->db, $path, $version);
+            } catch (\RuntimeException $e) {
+                $threw = true;
+            }
+            self::assertTrue($threw, 'file migration không có statement thi hành được phải ném lỗi');
+
+            $seen = $this->db->prepare('SELECT COUNT(*) FROM schema_migrations WHERE version = ?');
+            $seen->execute([$version]);
+            self::assertSame(0, (int)$seen->fetchColumn(), 'version KHÔNG được ghi khi không statement nào chạy');
+        } finally {
+            @unlink($path);
+            $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version));
+        }
+    }
+
+    /**
+     * F4 — nhánh mặc định `return true` bỏ sót các statement nguyên tử không
+     * phải `ALTER TABLE`. `RENAME TABLE a TO b, c TO d` và `CREATE TABLE` không
+     * có `IF NOT EXISTS` đều nguyên tử, nên lỗi 1050 ở đó KHÔNG được nuốt.
+     * `CREATE INDEX`/`DROP INDEX` thì nhánh mặc định vẫn đúng (một đối tượng).
+     */
+    public function test_statement_nguyen_tu_khong_phai_alter_table_duoc_nhan_dien(): void
+    {
+        self::assertFalse(
+            \statementHasSingleDdlClause('RENAME TABLE a TO b, c TO d'),
+            'RENAME TABLE nhiều cặp là nguyên tử, lỗi "đã tồn tại" không được nuốt'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause('CREATE TABLE foo (id int PRIMARY KEY, name varchar(10))'),
+            'CREATE TABLE không có IF NOT EXISTS: lỗi 1050 không được nuốt'
+        );
+
+        self::assertTrue(
+            \statementHasSingleDdlClause('CREATE TABLE IF NOT EXISTS foo (id int PRIMARY KEY)'),
+            'CREATE TABLE IF NOT EXISTS tự nó đã idempotent'
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause('CREATE INDEX idx_foo ON foo (a, b)'),
+            'CREATE INDEX chỉ tạo một đối tượng — nhánh mặc định vẫn đúng'
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause('DROP INDEX idx_foo ON foo'),
+            'DROP INDEX chỉ bỏ một đối tượng — nhánh mặc định vẫn đúng'
+        );
+    }
+
+    /**
+     * F5 — `ALGORITHM=`/`LOCK=`/`WAIT`/`NOWAIT` là TUỲ CHỌN của ALTER TABLE,
+     * không phải clause DDL, nhưng vẫn phân tách bằng dấu phẩy ở độ sâu 0. Đếm
+     * chúng như clause làm một statement 1-clause thật bị coi là nhiều clause,
+     * phá tính idempotent (chạy lại lần 2 ném lỗi thay vì được nuốt).
+     */
+    public function test_algorithm_va_lock_khong_bi_dem_nhu_clause_ddl(): void
+    {
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE t ADD COLUMN a int, ALGORITHM=INPLACE, LOCK=NONE'),
+            'ALGORITHM=/LOCK= là tuỳ chọn, không phải clause DDL'
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE t ADD COLUMN a int, ALGORITHM = COPY'),
+            'ALGORITHM có khoảng trắng quanh dấu = vẫn là tuỳ chọn'
+        );
+        self::assertTrue(
+            \statementHasSingleDdlClause('ALTER TABLE t WAIT 5 ADD COLUMN a int, LOCK=SHARED'),
+            'WAIT/LOCK không phải clause DDL'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause('ALTER TABLE t ADD COLUMN a int, ADD COLUMN b int, ALGORITHM=INPLACE'),
+            'bỏ qua tuỳ chọn không được che mất 2 clause DDL thật'
+        );
+    }
+
+    /**
+     * F6 — trong MariaDB, `--` chỉ mở comment khi theo sau là khoảng trắng,
+     * tab hoặc xuống dòng. `DEFAULT 1--1` là `1 - (-1)` (đã xác minh:
+     * `SELECT 1--1` trả về 2), không phải comment — bản cũ cắt cụt phần sau.
+     */
+    public function test_hai_gach_ngang_khong_co_khoang_trang_khong_phai_comment(): void
+    {
+        $sql = 'ALTER TABLE t ADD COLUMN a int DEFAULT 1--1';
+        [$codeOnly] = \sqlCodeOnlyView($sql);
+        self::assertSame($sql, $codeOnly, "'--' không có khoảng trắng theo sau không được coi là comment");
+
+        $withComment = "ALTER TABLE t ADD COLUMN a int -- ghi chú thật\n";
+        [$codeOnlyComment] = \sqlCodeOnlyView($withComment);
+        self::assertStringNotContainsString(
+            'ghi chú thật',
+            $codeOnlyComment,
+            "'-- ' có khoảng trắng theo sau vẫn phải là comment"
+        );
+    }
+
+    /**
+     * Canary mở rộng: mọi file migration THẬT trong repo phải tách ra ít nhất
+     * một statement thi hành được, và không statement nào rỗng. Đọc file thật
+     * nên bắt được mọi lần bộ quét tái phát bệnh nuốt statement.
+     */
+    public function test_canary_moi_file_migration_that_tach_ra_statement_hop_le(): void
+    {
+        $files = glob(__DIR__ . '/../../database/migrations/*.sql') ?: [];
+        self::assertCount(5, $files, 'mong đợi đúng 5 file migration đang được track');
+
+        foreach ($files as $file) {
+            $statements = \splitSqlStatements((string)file_get_contents($file));
+            self::assertNotEmpty($statements, 'file migration ' . basename($file) . ' phải tách ra ít nhất 1 statement');
+            foreach ($statements as $statement) {
+                self::assertNotSame('', trim($statement), 'không statement nào được rỗng: ' . basename($file));
+            }
+        }
+    }
 }

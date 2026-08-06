@@ -21,18 +21,35 @@ function migrationErrorIsBenign(PDOException $e): bool
 /**
  * Duyệt một chuỗi SQL đúng một lượt, gán cho MỖI ký tự một trong ba trạng
  * thái: 'code' (SQL thật, đáng để phân tích cấu trúc — dấu `;`, `,`, `(`,
- * `)`...), 'string' (bên trong chuỗi literal `'...'`, escape `''` được xử
- * lý đúng), 'comment' (bên trong `-- ...`, `# ...` hoặc `/* ... * /`, kể cả
+ * `)`...), 'string' (bên trong một vùng có trích dẫn — xem bên dưới),
+ * 'comment' (bên trong `-- ...`, `# ...` hoặc `/* ... * /` thuần tuý, kể cả
  * khối nhiều dòng — bỏ khoảng trắng giữa `*` và `/` khi đọc, viết liền ở
  * đây sẽ tự đóng luôn docblock này).
  *
  * Đây là bộ quét DUY NHẤT, dùng chung cho cả splitSqlStatements() (tách
- * statement) lẫn statementHasSingleDdlClause() (đếm clause) — trước đây hai
- * nơi này quét SQL độc lập bằng cách "mù" (không phân biệt code/string/
- * comment), nên cùng một gốc bệnh gây ra 2 lỗi khác nhau: bộ tách cắt sai
- * tại `;` nằm trong literal/comment khối, còn bộ đếm đếm sai `(`/`)`/`,`
- * nằm trong literal. Sửa một chỗ, dùng chung, để hai bên không thể lệch
- * pha với nhau nữa.
+ * statement) lẫn statementHasSingleDdlClause() (đếm clause), nên hai bên
+ * không thể lệch pha với nhau.
+ *
+ * MÔ HÌNH TỪ VỰNG (theo đúng MariaDB, đã xác minh trên 10.4.28 của dự án):
+ *
+ * - Ba loại trích dẫn `'...'`, `"..."`, `` `...` `` đi chung MỘT nhánh, chỉ
+ *   khác ký tự đóng. Gán tất cả vào state 'string' vì với bộ quét thì vai
+ *   trò của chúng giống hệt nhau: nội dung bên trong PHẢI được nhảy qua, bất
+ *   kể nó là dữ liệu hay định danh. (`"..."` mặc định là string literal;
+ *   bật `ANSI_QUOTES` thì thành định danh — nhưng dù nghĩa nào, một dấu nháy
+ *   đơn lạc bên trong cũng không được phép mở state 'string' và đảo pha toàn
+ *   bộ phần SQL đứng sau.)
+ * - Backslash escape: MariaDB mặc định BẬT (`sql_mode` không chứa
+ *   `NO_BACKSLASH_ESCAPES`), nên `'M\'gar'` là MỘT chuỗi — bỏ qua 2 ký tự.
+ *   NGOẠI LỆ: bên trong backtick, `\` là ký tự thường, không escape.
+ * - Escape kiểu nhân đôi ký tự đóng (`''`, `""`, ` `` `) vẫn hoạt động cho
+ *   cả ba loại.
+ * - `--` CHỈ mở comment khi theo sau là khoảng trắng, tab hoặc xuống dòng.
+ *   `DEFAULT 1--1` là `1 - (-1)`, không phải comment.
+ * - `/*!...* /` và `/*M!...* /` là MÃ THI HÀNH THẬT với MariaDB, không phải
+ *   comment: mở ra state 'code' để nội dung bên trong được quét như SQL bình
+ *   thường (kể cả chuỗi lồng bên trong), và `*` `/` đóng khối tự rơi vào
+ *   nhánh 'code' mặc định.
  *
  * @return array<int, 'code'|'string'|'comment'>
  */
@@ -46,34 +63,25 @@ function sqlCharStates(string $sql): array
         $char = $sql[$i];
         $next = $i + 1 < $length ? $sql[$i + 1] : '';
 
-        if ($char === "'") {
-            // Chuỗi literal '...'; '' bên trong chuỗi là escape của chính
-            // dấu nháy đơn (chuẩn SQL), không kết thúc chuỗi.
-            $states[$i] = 'string';
-            $i++;
-            while ($i < $length) {
-                if ($sql[$i] === "'" && ($i + 1 < $length) && $sql[$i + 1] === "'") {
-                    $states[$i] = 'string';
-                    $states[$i + 1] = 'string';
-                    $i += 2;
-                    continue;
-                }
-                $states[$i] = 'string';
-                $i++;
-                if ($sql[$i - 1] === "'") {
-                    break;
-                }
-            }
+        if ($char === "'" || $char === '"' || $char === '`') {
+            // Một nhánh chung cho cả ba loại trích dẫn, tham số hoá bằng ký
+            // tự đóng. Backslash chỉ là ký tự escape ở `'...'` và `"..."`.
+            $i = sqlScanQuoted($sql, $i, $char, $states);
             continue;
         }
 
         if ($char === '-' && $next === '-') {
-            // Comment dòng đơn `-- ...`, kết thúc ở cuối dòng.
-            while ($i < $length && $sql[$i] !== "\n") {
-                $states[$i] = 'comment';
-                $i++;
+            // `--` chỉ mở comment khi theo sau là khoảng trắng/tab/xuống
+            // dòng (hoặc hết chuỗi). Ngược lại nó là toán tử trừ, rơi xuống
+            // nhánh 'code' mặc định ở cuối vòng lặp.
+            $after = $i + 2 < $length ? $sql[$i + 2] : "\n";
+            if ($after === ' ' || $after === "\t" || $after === "\n" || $after === "\r") {
+                while ($i < $length && $sql[$i] !== "\n") {
+                    $states[$i] = 'comment';
+                    $i++;
+                }
+                continue;
             }
-            continue;
         }
 
         if ($char === '#') {
@@ -86,7 +94,23 @@ function sqlCharStates(string $sql): array
         }
 
         if ($char === '/' && $next === '*') {
-            // Comment khối `/* ... */`, có thể trải nhiều dòng.
+            $third = $i + 2 < $length ? $sql[$i + 2] : '';
+            $fourth = $i + 3 < $length ? $sql[$i + 3] : '';
+            $isExecutable = $third === '!' || ($third === 'M' && $fourth === '!');
+
+            if ($isExecutable) {
+                // `/*!` (hoặc `/*M!`) — mã thi hành thật. Đánh dấu ký tự mở
+                // là 'code' rồi TRẢ VỀ vòng lặp chính để phần thân được quét
+                // như SQL bình thường; `*` `/` đóng khối cũng thành 'code'.
+                $markerLength = $third === '!' ? 3 : 4;
+                for ($offset = 0; $offset < $markerLength && $i + $offset < $length; $offset++) {
+                    $states[$i + $offset] = 'code';
+                }
+                $i += $markerLength;
+                continue;
+            }
+
+            // Comment khối thuần tuý `/* ... */`, có thể trải nhiều dòng.
             $states[$i] = 'comment';
             $states[$i + 1] = 'comment';
             $i += 2;
@@ -108,6 +132,58 @@ function sqlCharStates(string $sql): array
     }
 
     return $states;
+}
+
+/**
+ * Quét một vùng có trích dẫn bắt đầu tại $start (ký tự mở nằm ở $start), gán
+ * state 'string' cho mọi ký tự thuộc vùng đó vào $states (tham chiếu), và trả
+ * về chỉ số ngay SAU ký tự đóng.
+ *
+ * $closer là ký tự đóng, đồng thời là ký tự mở — `'`, `"` hoặc `` ` ``.
+ * Backslash chỉ được coi là ký tự escape khi $closer KHÁC backtick: bên trong
+ * `` `...` `` MariaDB không xử lý `\` như escape (đã xác minh: `` SELECT `a\` ``
+ * là định danh hợp lệ). Escape kiểu nhân đôi ký tự đóng luôn được hỗ trợ.
+ *
+ * Vùng không được đóng cho tới hết chuỗi (SQL cụt) được coi là kéo dài tới
+ * hết — an toàn hơn là đoán nó kết thúc sớm.
+ *
+ * @param array<int, 'code'|'string'|'comment'> $states
+ */
+function sqlScanQuoted(string $sql, int $start, string $closer, array &$states): int
+{
+    $length = strlen($sql);
+    $backslashEscapes = $closer !== '`';
+
+    $states[$start] = 'string';
+    $i = $start + 1;
+
+    while ($i < $length) {
+        $char = $sql[$i];
+
+        if ($backslashEscapes && $char === '\\' && $i + 1 < $length) {
+            $states[$i] = 'string';
+            $states[$i + 1] = 'string';
+            $i += 2;
+            continue;
+        }
+
+        if ($char === $closer) {
+            if ($i + 1 < $length && $sql[$i + 1] === $closer) {
+                // Nhân đôi ký tự đóng = escape của chính nó, chưa kết thúc.
+                $states[$i] = 'string';
+                $states[$i + 1] = 'string';
+                $i += 2;
+                continue;
+            }
+            $states[$i] = 'string';
+            return $i + 1;
+        }
+
+        $states[$i] = 'string';
+        $i++;
+    }
+
+    return $i;
 }
 
 /**
@@ -244,6 +320,24 @@ function statementHasSingleDdlClause(string $statement): bool
 {
     [$codeOnly, $codeOnlyStates] = sqlCodeOnlyView($statement);
 
+    // Statement nguyên tử KHÔNG phải ALTER TABLE, nhưng vẫn tạo/đổi nhiều đối
+    // tượng trong một thao tác — lỗi "đã tồn tại" ở đây cũng huỷ toàn bộ
+    // statement, nên tuyệt đối không được nuốt.
+    //
+    // - `RENAME TABLE a TO b, c TO d`: nhiều cặp trong một thao tác nguyên tử.
+    // - `CREATE TABLE` KHÔNG có `IF NOT EXISTS`: lỗi 1050 nghĩa là bảng cũ vẫn
+    //   nguyên trạng, có thể khác hẳn định nghĩa trong migration — nuốt lỗi
+    //   này là đánh dấu "xong" trên một lược đồ sai.
+    //
+    // `CREATE INDEX`/`DROP INDEX` chỉ đụng MỘT đối tượng nên nhánh mặc định
+    // `return true` bên dưới vẫn đúng với chúng.
+    if (preg_match('/^\s*RENAME\s+TABLE\b/i', $codeOnly)) {
+        return false;
+    }
+    if (preg_match('/^\s*CREATE\s+(?:OR\s+REPLACE\s+)?(?:TEMPORARY\s+)?TABLE\s+(?!IF\s+NOT\s+EXISTS\b)/i', $codeOnly)) {
+        return false;
+    }
+
     if (!preg_match('/^\s*ALTER\s+TABLE\b/i', $codeOnly)) {
         return true;
     }
@@ -262,6 +356,14 @@ function statementHasSingleDdlClause(string $statement): bool
         } elseif ($char === ')') {
             $depth--;
         } elseif ($char === ',' && $depth === 0) {
+            // `ALGORITHM=`, `LOCK=`, `WAIT n`, `NOWAIT` là TUỲ CHỌN của ALTER
+            // TABLE, không phải clause DDL — nhưng vẫn ngăn cách bằng dấu
+            // phẩy ở độ sâu 0. Đếm chúng như clause làm một statement 1-clause
+            // thật bị coi là nhiều clause, phá tính idempotent (lần chạy thứ
+            // hai ném lỗi thay vì được nuốt như thiết kế).
+            if (preg_match('/^\s*(?:ALGORITHM\s*=|LOCK\s*=|WAIT\b|NOWAIT\b)/i', substr($codeOnly, $i + 1))) {
+                continue;
+            }
             $clauseCount++;
         }
     }
@@ -321,7 +423,20 @@ function runMigrationFile(PDO $db, string $path, string $version): bool
         throw new RuntimeException("Không đọc được migration: {$path}");
     }
 
-    foreach (splitSqlStatements($sql) as $statement) {
+    $statements = splitSqlStatements($sql);
+    if ($statements === []) {
+        // Một file tách ra 0 statement thi hành được là LỖI, không phải thành
+        // công: trước đây `foreach` chạy 0 vòng rồi vẫn ghi schema_migrations,
+        // nên một migration mà mọi DDL đều bị bộ quét nuốt (vd. gate toàn bộ
+        // bằng `/*!100200 ... */` — kỹ thuật MariaDB phổ thông) được đánh dấu
+        // "đã áp dụng" trong khi không câu lệnh nào từng chạy.
+        throw new RuntimeException(
+            "Migration không có statement thi hành được: {$path}. "
+            . "Không đánh dấu là đã áp dụng — kiểm tra lại nội dung file."
+        );
+    }
+
+    foreach ($statements as $statement) {
         try {
             $db->exec($statement);
         } catch (PDOException $e) {
