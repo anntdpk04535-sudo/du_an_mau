@@ -190,22 +190,73 @@ function splitSqlStatements(string $sql): array
  * tưởng một), literal chứa `,` bị đếm nhầm thành ranh giới clause (một
  * clause tưởng nhiều, phá tính idempotent).
  */
+/**
+ * Dựng bản sao "chỉ-chứa-code" của một chuỗi SQL: bỏ hẳn mọi ký tự ở trạng
+ * thái 'comment' (theo sqlCharStates()), GIỮ NGUYÊN ký tự ở trạng thái
+ * 'code' và 'string'. Trả về cặp [chuỗi đã bỏ comment, mảng trạng thái ứng
+ * với từng ký tự của chuỗi đó].
+ *
+ * Dùng riêng cho việc PHÂN LOẠI statement (nhận diện `ALTER TABLE`, đếm
+ * clause) — KHÔNG dùng cho chuỗi thật gửi tới $db->exec(). Một base dump
+ * có thể chứa comment điều kiện kiểu MySQL `/*!40101 ... * /` là cú pháp
+ * thật cần thực thi, không phải comment thuần túy, nên tuyệt đối không
+ * được đụng vào chuỗi thực thi.
+ *
+ * @return array{0: string, 1: array<int, 'code'|'string'>}
+ */
+function sqlCodeOnlyView(string $sql): array
+{
+    $states = sqlCharStates($sql);
+    $length = strlen($sql);
+    $codeOnly = '';
+    $codeOnlyStates = [];
+
+    for ($i = 0; $i < $length; $i++) {
+        $state = $states[$i] ?? 'code';
+        if ($state === 'comment') {
+            continue;
+        }
+        $codeOnly .= $sql[$i];
+        $codeOnlyStates[] = $state;
+    }
+
+    return [$codeOnly, $codeOnlyStates];
+}
+
+/**
+ * Statement nhiều clause (vd. ALTER TABLE ... ADD COLUMN a, ADD COLUMN b)
+ * không được coi là an toàn để bỏ qua lỗi "already exists" — vì MariaDB
+ * chạy nguyên statement như MỘT thao tác atomic, lỗi ở một clause sẽ
+ * rollback toàn bộ statement.
+ *
+ * QUAN TRỌNG: cả việc nhận diện `ALTER TABLE` lẫn việc đếm clause đều phải
+ * chạy trên bản sao "chỉ-chứa-code" (comment đã bị lược bỏ, string literal
+ * giữ nguyên) do sqlCodeOnlyView() dựng ra — KHÔNG chạy trực tiếp trên
+ * $statement gốc. Lý do: statement thật lấy từ splitSqlStatements() có thể
+ * bắt đầu bằng một comment `--`/`/ * * /` đứng ngay trước, không có `;` xen
+ * giữa (vd. dòng đầu của database/migrations/20260807_place_facts.sql).
+ * Nếu regex chạy trên chuỗi gốc, comment đứng chắn phía trước sẽ làm
+ * `preg_match('/^\s*ALTER\s+TABLE\b/i', ...)` không khớp, rơi vào nhánh
+ * `return true` mặc định — bỏ qua đếm clause hoàn toàn, coi statement
+ * nhiều clause là an toàn một cách sai lệch.
+ */
 function statementHasSingleDdlClause(string $statement): bool
 {
-    if (!preg_match('/^\s*ALTER\s+TABLE\b/i', $statement)) {
+    [$codeOnly, $codeOnlyStates] = sqlCodeOnlyView($statement);
+
+    if (!preg_match('/^\s*ALTER\s+TABLE\b/i', $codeOnly)) {
         return true;
     }
 
-    $states = sqlCharStates($statement);
     $depth = 0;
     $clauseCount = 1;
-    $length = strlen($statement);
+    $length = strlen($codeOnly);
 
     for ($i = 0; $i < $length; $i++) {
-        if (($states[$i] ?? 'code') !== 'code') {
+        if (($codeOnlyStates[$i] ?? 'code') !== 'code') {
             continue;
         }
-        $char = $statement[$i];
+        $char = $codeOnly[$i];
         if ($char === '(') {
             $depth++;
         } elseif ($char === ')') {

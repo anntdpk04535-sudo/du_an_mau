@@ -393,4 +393,139 @@ final class MigrationTest extends TestCase
             $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version2));
         }
     }
+
+    /**
+     * Important vòng 3 reviewer nêu: statementHasSingleDdlClause() dùng
+     * sqlCharStates() để đếm '('/')'/',' nhưng regex `^\s*ALTER\s+TABLE\b`
+     * vẫn chạy trên $statement GỐC — nếu statement (lấy từ splitSqlStatements())
+     * có một comment `--` đứng ngay trước, không có ';' xen giữa (đúng như
+     * dòng đầu database/migrations/20260807_place_facts.sql), regex không
+     * khớp vì comment đứng chắn phía trước, rơi vào nhánh `return true` mặc
+     * định — bỏ qua đếm clause hoàn toàn. Case dưới đây tái hiện đúng dạng đó:
+     * comment dòng ngay trước ALTER TABLE 2-clause, một clause lỗi "đã tồn
+     * tại" — lỗi phải vẫn được ném ra ngoài, KHÔNG được nuốt sai.
+     */
+    public function test_comment_dong_ngay_truoc_alter_table_nhieu_clause_khong_bi_nuot_loi(): void
+    {
+        $table = 'test_leadcomment_dash_' . bin2hex(random_bytes(4));
+        $version = 'test_leadcomment_dash_' . bin2hex(random_bytes(4));
+        $path = sys_get_temp_dir() . '/' . $version . '.sql';
+
+        try {
+            $this->db->exec("CREATE TABLE `{$table}` (id int PRIMARY KEY, col_a varchar(10) DEFAULT NULL)");
+            // `col_a` đã tồn tại (lỗi 1060 ở clause đầu) — comment `--` đứng
+            // ngay trước ALTER TABLE, không có ';' xen giữa, đúng hình dạng
+            // thật của 20260807_place_facts.sql.
+            file_put_contents(
+                $path,
+                "-- comment ngay truoc ALTER TABLE, khong co ';' xen giua\n"
+                . "ALTER TABLE `{$table}` ADD COLUMN col_a varchar(10) DEFAULT NULL, ADD COLUMN col_b varchar(10) DEFAULT NULL;"
+            );
+
+            $threw = false;
+            try {
+                \runMigrationFile($this->db, $path, $version);
+            } catch (\PDOException $e) {
+                $threw = true;
+            }
+            self::assertTrue(
+                $threw,
+                'ALTER TABLE nhiều clause đứng ngay sau comment dòng "--" vẫn phải bị nhận diện đúng và ném lỗi, không được nuốt'
+            );
+
+            $seen = $this->db->prepare('SELECT COUNT(*) FROM schema_migrations WHERE version = ?');
+            $seen->execute([$version]);
+            self::assertSame(0, (int)$seen->fetchColumn(), 'version KHÔNG được ghi vào schema_migrations khi migration chưa thật sự xong');
+        } finally {
+            @unlink($path);
+            $this->db->exec("DROP TABLE IF EXISTS `{$table}`");
+            $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version));
+        }
+    }
+
+    /**
+     * Biến thể của test trên, dùng comment khối `/ * ... * /` nhiều dòng thay
+     * vì `--`, cũng đứng ngay trước ALTER TABLE không có ';' xen giữa. Cùng
+     * gốc bug, khác dạng comment.
+     */
+    public function test_comment_khoi_ngay_truoc_alter_table_nhieu_clause_khong_bi_nuot_loi(): void
+    {
+        $table = 'test_leadcomment_block_' . bin2hex(random_bytes(4));
+        $version = 'test_leadcomment_block_' . bin2hex(random_bytes(4));
+        $path = sys_get_temp_dir() . '/' . $version . '.sql';
+
+        try {
+            $this->db->exec("CREATE TABLE `{$table}` (id int PRIMARY KEY, col_a varchar(10) DEFAULT NULL)");
+            file_put_contents(
+                $path,
+                "/* comment khoi nhieu dong\n   ngay truoc ALTER TABLE, khong co ';' xen giua */\n"
+                . "ALTER TABLE `{$table}` ADD COLUMN col_a varchar(10) DEFAULT NULL, ADD COLUMN col_b varchar(10) DEFAULT NULL;"
+            );
+
+            $threw = false;
+            try {
+                \runMigrationFile($this->db, $path, $version);
+            } catch (\PDOException $e) {
+                $threw = true;
+            }
+            self::assertTrue(
+                $threw,
+                'ALTER TABLE nhiều clause đứng ngay sau comment khối "/* */" vẫn phải bị nhận diện đúng và ném lỗi, không được nuốt'
+            );
+
+            $seen = $this->db->prepare('SELECT COUNT(*) FROM schema_migrations WHERE version = ?');
+            $seen->execute([$version]);
+            self::assertSame(0, (int)$seen->fetchColumn(), 'version KHÔNG được ghi vào schema_migrations khi migration chưa thật sự xong');
+        } finally {
+            @unlink($path);
+            $this->db->exec("DROP TABLE IF EXISTS `{$table}`");
+            $this->db->exec('DELETE FROM schema_migrations WHERE version = ' . $this->db->quote($version));
+        }
+    }
+
+    /**
+     * Test canary: chạy statementHasSingleDdlClause() trực tiếp trên văn bản
+     * statement THẬT trích từ các file migration đang được track trong repo
+     * (không phải chuỗi tự bịa trong test) — bắt mọi lần tái phát cùng loại
+     * bug về sau, vì nó đọc thẳng file thật thay vì mô phỏng.
+     *
+     * (a) Statement đầu của 20260807_place_facts.sql: comment "--" đứng ngay
+     *     trước, ALTER TABLE accommodations có 6 clause ADD COLUMN.
+     * (b) Statement ALTER TABLE itinerary_items trong 20260806_upgrade.sql:
+     *     đứng sau dấu ';' thật (không phải comment), 10 clause (8 ADD COLUMN
+     *     + 2 ADD KEY) — ca hồi quy đối chứng cho (a).
+     */
+    public function test_canary_cac_statement_alter_table_nhieu_clause_that_trong_file_migration(): void
+    {
+        $migrationsDir = __DIR__ . '/../../database/migrations';
+
+        $placeFactsSql = (string)file_get_contents($migrationsDir . '/20260807_place_facts.sql');
+        self::assertNotSame('', $placeFactsSql, 'không đọc được 20260807_place_facts.sql');
+        $placeFactsStatements = \splitSqlStatements($placeFactsSql);
+        self::assertStringContainsString(
+            'ALTER TABLE accommodations',
+            $placeFactsStatements[0],
+            'statement đầu tiên của 20260807_place_facts.sql phải là ALTER TABLE accommodations'
+        );
+        self::assertFalse(
+            \statementHasSingleDdlClause($placeFactsStatements[0]),
+            'ALTER TABLE accommodations (6 clause, đứng ngay sau comment "--") phải được nhận diện là nhiều clause'
+        );
+
+        $upgradeSql = (string)file_get_contents($migrationsDir . '/20260806_upgrade.sql');
+        self::assertNotSame('', $upgradeSql, 'không đọc được 20260806_upgrade.sql');
+        $upgradeStatements = \splitSqlStatements($upgradeSql);
+        $itineraryItemsStatement = null;
+        foreach ($upgradeStatements as $statement) {
+            if (preg_match('/^\s*ALTER\s+TABLE\s+itinerary_items\b/i', $statement)) {
+                $itineraryItemsStatement = $statement;
+                break;
+            }
+        }
+        self::assertNotNull($itineraryItemsStatement, 'không tìm thấy statement ALTER TABLE itinerary_items trong 20260806_upgrade.sql');
+        self::assertFalse(
+            \statementHasSingleDdlClause($itineraryItemsStatement),
+            'ALTER TABLE itinerary_items (10 clause: 8 ADD COLUMN + 2 ADD KEY) phải được nhận diện là nhiều clause'
+        );
+    }
 }
