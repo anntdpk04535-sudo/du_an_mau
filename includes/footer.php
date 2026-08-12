@@ -47,7 +47,7 @@
 
   <div class="footer-bottom">
     <div class="container">
-      <p>© <?= date('Y') ?> Đắk Lắk Travel AI. Tất cả quyền được bảo lưu. Phát triển với trí tuệ nhân tạo.</p>
+      <p>© <?= date('Y') ?> Biệt đội Báo Đốm</p>
     </div>
   </div>
 </footer>

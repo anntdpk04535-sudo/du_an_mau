@@ -68,7 +68,7 @@ include __DIR__ . '/../includes/header.php';
   }
   .auth-image {
     flex: 1;
-    background: linear-gradient(135deg, rgba(45, 106, 79, 0.8), rgba(27, 67, 50, 0.9)), url('https://images.unsplash.com/photo-1528127269322-539801943592?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80') center/cover;
+    background: linear-gradient(135deg, rgba(27, 67, 50, 0.45), rgba(40, 145, 108, 0.55)), url('<?= url('/assets/images/auth-banner-bg.png') ?>') center/cover no-repeat;
     display: flex;
     flex-direction: column;
     justify-content: center;

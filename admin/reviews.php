@@ -88,8 +88,8 @@ include __DIR__ . '/../includes/header.php';
   display:flex; flex-direction:column; align-items:flex-start; gap:4px;
 }
 .stat-card .stat-icon { font-size:26px; }
-.stat-card .stat-num { font-size:28px; font-weight:800; color:var(--green-900); line-height:1; }
-.stat-card .stat-label { font-size:12px; color:#888; }
+.stat-card .stat-num { font-size:28px; font-weight:800; color:#1b4332; line-height:1; }
+.stat-card .stat-label { font-size:12px; color:#475569; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
 .stat-card.highlight { background:linear-gradient(135deg,#1b4332,#2d6a4f); color:white; }
 .stat-card.highlight .stat-num, .stat-card.highlight .stat-label { color:white; }
 
@@ -99,18 +99,18 @@ include __DIR__ . '/../includes/header.php';
   background:white; padding:14px 18px; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.06);
 }
 .filter-btn {
-  padding:7px 16px; border-radius:8px; border:1.5px solid #e5e7eb;
-  background:white; color:#555; font-size:13px; font-weight:600; cursor:pointer;
+  padding:8px 16px; border-radius:8px; border:1.5px solid #cbd5e1;
+  background:#f8fafc; color:#334155; font-size:13px; font-weight:700; cursor:pointer;
   transition:all .15s; text-decoration:none; display:inline-flex; align-items:center; gap:5px;
 }
-.filter-btn:hover { border-color:var(--green-500); color:var(--green-700); }
-.filter-btn.active { background:var(--green-700); border-color:var(--green-700); color:white; }
+.filter-btn:hover { border-color:#2d6a4f; color:#2d6a4f; background:#f0fdf4; }
+.filter-btn.active { background:#1b4332 !important; border-color:#1b4332 !important; color:white !important; box-shadow:0 4px 12px rgba(27,67,50,.25); }
 .filter-search {
-  flex:1; min-width:180px; border:1.5px solid #e5e7eb; border-radius:8px;
-  padding:7px 12px; font-size:13px; font-family:inherit;
+  flex:1; min-width:180px; border:1.5px solid #cbd5e1; border-radius:8px;
+  padding:8px 14px; font-size:13px; font-family:inherit; color:#1e293b; font-weight:500;
   transition:border-color .2s;
 }
-.filter-search:focus { outline:none; border-color:var(--green-500); }
+.filter-search:focus { outline:none; border-color:#2d6a4f; box-shadow:0 0 0 3px rgba(45,106,79,.12); }
 
 /* Table */
 .reviews-table-wrap {
@@ -119,8 +119,8 @@ include __DIR__ . '/../includes/header.php';
 }
 .reviews-table { width:100%; border-collapse:collapse; }
 .reviews-table thead tr { background:#1b4332; color:white; }
-.reviews-table th { padding:11px 14px; font-size:12px; font-weight:700; text-align:left; letter-spacing:.4px; text-transform:uppercase; }
-.reviews-table tbody tr { border-bottom:1px solid #f0f0f0; transition:background .12s; }
+.reviews-table th { padding:12px 14px; font-size:12px; font-weight:700; text-align:left; letter-spacing:.4px; text-transform:uppercase; color:#ffffff; }
+.reviews-table tbody tr { border-bottom:1px solid #f1f5f9; transition:background .12s; }
 .reviews-table tbody tr:hover { background:#f0fdf4; }
 .reviews-table td { padding:12px 14px; font-size:13px; vertical-align:top; }
 .reviewer-cell { display:flex; align-items:center; gap:9px; }
@@ -130,21 +130,22 @@ include __DIR__ . '/../includes/header.php';
   color:white; font-weight:700; font-size:14px;
   display:flex; align-items:center; justify-content:center; flex-shrink:0;
 }
-.rev-name { font-weight:700; color:#111827; }
-.rev-email { font-size:11px; color:#9ca3af; }
+.rev-name { font-weight:700; color:#0f172a; }
+.rev-email { font-size:12px; color:#475569; font-weight:600; margin-top:2px; }
 .stars-display { color:#f59e0b; letter-spacing:1px; font-size:16px; }
-.rating-num { font-size:11px; color:#888; margin-top:2px; }
-.badge-dest { background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
-.badge-web  { background:#d8f3dc; color:#1b4332; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:700; }
-.comment-cell { color:#444; line-height:1.5; max-width:280px; }
-.comment-cell em { color:#bbb; font-style:italic; }
-.time-cell { color:#aaa; font-size:12px; white-space:nowrap; }
+.rating-num { font-size:11px; color:#475569; font-weight:600; margin-top:2px; }
+.badge-dest { background:#dbeafe; color:#1e40af; padding:3px 10px; border-radius:10px; font-size:12px; font-weight:700; }
+.badge-web  { background:#dcfce7; color:#166534; padding:3px 10px; border-radius:10px; font-size:12px; font-weight:700; }
+.comment-cell { color:#0f172a; font-weight:600; line-height:1.5; max-width:280px; }
+.comment-cell em { color:#94a3b8; font-style:italic; }
+.time-cell { color:#334155; font-size:13px; font-weight:600; white-space:nowrap; }
 .btn-del {
   display:inline-flex; align-items:center; gap:4px;
   background:#fee2e2; color:#991b1b; border:none; border-radius:7px;
-  padding:5px 11px; font-size:12px; font-weight:700; cursor:pointer;
+  padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer;
   transition:background .15s;
 }
+.btn-del:hover { background:#fca5a5; }
 .btn-del:hover { background:#fca5a5; }
 .empty-state { text-align:center; padding:48px; color:#aaa; }
 .empty-state .icon { font-size:48px; margin-bottom:12px; }
@@ -386,7 +387,7 @@ include __DIR__ . '/../includes/header.php';
       <?php endforeach; ?>
     </tbody>
   </table>
-  <div style="padding:12px 16px; font-size:12px; color:#aaa; border-top:1px solid #f0f0f0;">
+  <div style="padding:14px 18px; font-size:13px; font-weight:700; color:#334155; border-top:1px solid #f1f5f9; background:#f8fafc;">
     <?= __('admin_reviews_showing') ?><?= count($reviews) ?><?= __('admin_reviews_total_reviews') ?><?= $totalReviews ?>
   </div>
   <?php endif; ?>
