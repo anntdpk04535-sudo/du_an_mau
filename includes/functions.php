@@ -304,6 +304,19 @@ function getDestinationsSummaryForAI(): string
 function currentUser(): ?array
 {
     if (isset($_SESSION['user'])) {
+        if (!empty($_SESSION['user']['id'])) {
+            try {
+                $db = getDB();
+                $stmt = $db->prepare("SELECT full_name, role, avatar, status FROM users WHERE id = ?");
+                $stmt->execute([$_SESSION['user']['id']]);
+                $u = $stmt->fetch();
+                if ($u && $u['status'] !== 'banned') {
+                    $_SESSION['user']['full_name'] = $u['full_name'];
+                    $_SESSION['user']['role'] = $u['role'];
+                    $_SESSION['user']['avatar'] = $u['avatar'] ?? null;
+                }
+            } catch (Exception $e) {}
+        }
         return $_SESSION['user'];
     }
 

@@ -72,11 +72,8 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
       <?php $__u = currentUser(); ?>
       <?php if ($__u): ?>
         <span class="auth-greeting" style="display:flex; align-items:center; gap:8px;">
-            <?php if (!empty($__u['avatar'])): ?>
-                <img src="<?= e(get_avatar($__u['avatar'])) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
-            <?php else: ?>
-                <img src="<?= e(get_avatar(null)) ?>" alt="Avatar" referrerpolicy="no-referrer" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
-            <?php endif; ?>
+            <?php $avatarSrc = !empty($__u['avatar']) ? get_avatar($__u['avatar']) : url('/assets/images/default-avatar.png'); ?>
+            <img src="<?= e($avatarSrc) ?>" alt="Avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
             <?= __('hello') ?>, <a href="<?= url('/public/profile.php') ?>" style="color:#fde68a;text-decoration:none;border-bottom:1px dashed #fde68a;" title="Profile"><strong><?= e($__u['full_name']) ?></strong></a>
         </span>
         <?php if ($__u['role'] === 'admin'): ?>
@@ -91,4 +88,13 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
     </div>
   </div>
 </header>
+<script>
+if (window.location.hash === '#_=_') {
+    if (history.replaceState) {
+        history.replaceState(null, null, window.location.href.split('#')[0]);
+    } else {
+        window.location.hash = '';
+    }
+}
+</script>
 <main class="container main-content">

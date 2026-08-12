@@ -37,17 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (sendEmail($email, "Khôi phục mật khẩu - Đắk Lắk Travel AI", $body)) {
                 $message = __('forgot_email_sent');
             } else {
-                // If SMTP is not configured, we'll simulate it for local testing if needed,
-                // but let's just output an error or the link directly for testing purposes
-                if (empty(getenv('SMTP_USER'))) {
-                    $message = __('forgot_smtp_test') . ' <a href="'.$resetLink.'">' . __('forgot_click_reset') . '</a>';
-                } else {
-                    $error = __('forgot_smtp_error');
-                }
+                $error = 'Chưa gửi được email thực tế do Mật khẩu ứng dụng (App Password) Gmail trong file .env chưa hợp lệ hoặc đã bị hủy.<div style="margin-top:12px; padding:12px; background:#ffffff; border:1px dashed #f43f5e; border-radius:10px; font-size:13px; color:#be123c;"><strong>🛠️ Thử nghiệm Môi trường Dev/Demo:</strong><br><a href="'.$resetLink.'" style="color:#e11d48; font-weight:bold; text-decoration:underline; display:inline-block; margin-top:4px;">Click vào đây để đặt lại mật khẩu ngay ➔</a></div>';
             }
         } else {
             // Đừng tiết lộ email có tồn tại hay không vì lý do bảo mật, cứ báo thành công
-            $message = __('forgot_email_if_exists');
+            $message = __('forgot_email_sent');
         }
     }
 }
@@ -186,14 +180,14 @@ include __DIR__ . '/../includes/header.php';
       <p class="section-sub"><?= __('forgot_password_sub') ?></p>
 
       <?php if ($message): ?>
-          <div style="background:#dcfce7; color:#166534; padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px; text-align:center;">
+          <div style="background:#dcfce7; color:#166534; padding:14px; border-radius:12px; margin-bottom:20px; font-size:14px; text-align:center; border:1px solid #86efac;">
               ✅ <?= $message ?>
           </div>
       <?php endif; ?>
       
       <?php if ($error): ?>
-          <div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px; text-align:center;">
-              ❌ <?= e($error) ?>
+          <div style="background:#fee2e2; color:#991b1b; padding:14px; border-radius:12px; margin-bottom:20px; font-size:14px; text-align:left; border:1px solid #fca5a5;">
+              ❌ <?= $error ?>
           </div>
       <?php endif; ?>
 

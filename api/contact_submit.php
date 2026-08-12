@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . "/../includes/functions.php";
 header("Content-Type: application/json; charset=utf-8");
 
@@ -16,6 +16,7 @@ $userId   = $user["id"] ?? null;
 $guestName  = $userId ? null : trim($input["name"] ?? "");
 $guestEmail = $userId ? null : trim($input["email"] ?? "");
 if (!$userId && !$guestEmail) { echo json_encode(["success" => false, "message" => "Vui lòng nhập email."]); exit; }
+if (!$userId && !filter_var($guestEmail, FILTER_VALIDATE_EMAIL)) { echo json_encode(["success" => false, "message" => "Vui lòng nhập địa chỉ email hợp lệ."]); exit; }
 
 try {
     $db = getDB();

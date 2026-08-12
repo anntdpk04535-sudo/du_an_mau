@@ -26,7 +26,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="detail-hero">
   <?php if (!empty($d['image_url'])): ?>
     <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>"
-      style="width:100%;height:100%;object-fit:cover;border-radius:16px;">
+      style="width:100%;height:100%;object-fit:cover;border-radius:16px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542323631-0d3ab5d496a8?q=80&w=1000&auto=format&fit=crop';">
   <?php else: ?>
     🌄
   <?php endif; ?>

@@ -16,6 +16,7 @@ if (empty($_GET['state']) || $_GET['state'] !== ($_SESSION['oauth_state'] ?? '')
 // 1. Đổi code lấy Access Token
 $ch = curl_init('https://oauth2.googleapis.com/token');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'client_id'     => $clientId,
     'client_secret' => $clientSecret,
@@ -34,6 +35,7 @@ if (empty($tokenData['access_token'])) {
 // 2. Lấy thông tin người dùng
 $ch = curl_init('https://www.googleapis.com/oauth2/v2/userinfo');
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $tokenData['access_token']]);
 $userInfoResponse = curl_exec($ch);
 curl_close($ch);

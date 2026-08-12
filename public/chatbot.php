@@ -102,20 +102,54 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <!-- Lightbox xem ảnh trong chat -->
-<!-- Lightbox xem ảnh trong chat -->
 <div id="img-lightbox" style="display:none;">
   <span onclick="closeLightbox()">✕</span>
   <img id="lightbox-img" src="" alt="Xem ảnh phóng to">
 </div>
 
 <script>
+function formatMarkdown(text) {
+    if (!text) return '';
+    if (typeof text !== 'string') return text;
+    if (text.includes('class="loading-dots"')) return text;
+
+    let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+    // Clean up multiple asterisks artifacts like ***** or ****
+    html = html.replace(/\*{3,5}/g, '\n');
+
+    // Parse bold markdown: **text**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Parse italic markdown: *text*
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Parse Headers: ### Header / ## Header
+    html = html.replace(/^### (.*$)/gim, '<strong style="display:block; font-size:1.1em; color:#047857; margin-top:8px;">$1</strong>');
+    html = html.replace(/^## (.*$)/gim, '<strong style="display:block; font-size:1.2em; color:#047857; margin-top:10px;">$1</strong>');
+
+    // Convert bullet points: - item or * item
+    html = html.replace(/^\s*[-•]\s+(.*$)/gim, '<div style="margin-left:12px; position:relative; padding-left:12px;"><span style="position:absolute; left:0;">•</span> $1</div>');
+
+    // Convert newlines to <br>
+    html = html.replace(/\n/g, '<br>');
+
+    // Clean up excessive <br>
+    html = html.replace(/(<br>\s*){3,}/g, '<br><br>');
+
+    return html;
+}
+
 function restartChat() {
   if (confirm('Bạn có muốn làm mới cuộc trò chuyện?')) {
     const chatWindow = document.getElementById('chat-window');
     chatWindow.innerHTML = `
       <div class="msg-row bot-row">
         <div class="msg-avatar">🤖</div>
-        <div class="msg bot" id="chat-greeting-bubble"><?= __('chat_greeting') ?></div>
+        <div class="msg bot" id="chat-greeting-bubble">${formatMarkdown(<?= json_encode(__('chat_greeting')) ?>)}</div>
       </div>
     `;
   }
@@ -153,7 +187,7 @@ if (!window.chatbotEventsAttached) {
         appendMsg('user', text);
         input.value = '';
 
-        const typingId = appendMsg('bot', '<span class="loading-dots">🤖 <?= __('bot_thinking') ?></span>');
+        const typingId = appendMsg('bot', '<span class="loading-dots">🤖 <?= __('bot_thinking') ?></span>', true);
 
         fetch('<?= url('/api/chat.php') ?>', {
             method: 'POST',
@@ -164,11 +198,11 @@ if (!window.chatbotEventsAttached) {
         .then(data => {
             const typEl = document.getElementById(typingId);
             if (data.reply) {
-                let html = data.reply;
+                let html = formatMarkdown(data.reply);
                 if (data.images && data.images.length > 0) {
-                    html += '<div class="chat-images">';
+                    html += '<div class="chat-images" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">';
                     data.images.forEach(img => {
-                        html += `<img src="${img.url}" alt="${img.name}" onclick="openLightbox('${img.url}')">`;
+                        html += `<img src="${img.url}" alt="${img.name}" onclick="openLightbox('${img.url}')" style="width:100px; height:80px; object-fit:cover; border-radius:10px; cursor:pointer; border:1px solid #e2e8f0;">`;
                     });
                     html += '</div>';
                 }
@@ -186,6 +220,10 @@ if (!window.chatbotEventsAttached) {
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        const greetingEl = document.getElementById('chat-greeting-bubble');
+        if (greetingEl) {
+            greetingEl.innerHTML = formatMarkdown(greetingEl.textContent || greetingEl.innerText);
+        }
         const chatForm = document.getElementById('chat-form');
         if (chatForm) {
             chatForm.addEventListener('submit', handleChatSubmit);
@@ -194,7 +232,7 @@ if (!window.chatbotEventsAttached) {
 }
 
 let msgCount = 0;
-function appendMsg(role, content) {
+function appendMsg(role, content, isRaw = false) {
     msgCount++;
     const id = 'msg-' + msgCount;
     const chatWin = document.getElementById('chat-window');
@@ -210,11 +248,16 @@ function appendMsg(role, content) {
     const msg = document.createElement('div');
     msg.className = 'msg ' + role;
     msg.id = id;
-    msg.innerHTML = content;
+    
+    if (isBot && !isRaw) {
+        msg.innerHTML = formatMarkdown(content);
+    } else {
+        msg.innerHTML = content;
+    }
 
     if (isBot) {
         row.appendChild(avatar);
-row.appendChild(msg);
+        row.appendChild(msg);
     } else {
         row.appendChild(msg);
         row.appendChild(avatar);

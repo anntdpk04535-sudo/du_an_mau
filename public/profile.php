@@ -186,11 +186,8 @@ include __DIR__ . '/../includes/header.php';
     <!-- Cột thông tin cá nhân -->
     <div>
         <div class="profile-card">
-            <?php if (!empty($user['avatar'])): ?>
-                <img src="<?= e(get_avatar($user['avatar'])) ?>" alt="Avatar" class="profile-avatar" style="object-fit: cover;">
-            <?php else: ?>
-                <img src="<?= e(get_avatar(null)) ?>" alt="Avatar" class="profile-avatar" style="object-fit: cover;">
-            <?php endif; ?>
+            <?php $profAvatar = !empty($user['avatar']) ? get_avatar($user['avatar']) : url('/assets/images/default-avatar.png'); ?>
+            <img src="<?= e($profAvatar) ?>" alt="Avatar" class="profile-avatar" style="object-fit: cover;" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';">
             <h2 style="margin: 0 0 4px;"><?= e($user['full_name']) ?></h2>
             <p style="color: #666; font-size: 14px; margin-bottom: 24px;"><?= e($user['email']) ?></p>
             

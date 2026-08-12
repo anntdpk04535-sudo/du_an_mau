@@ -18,8 +18,17 @@ function sendEmail($to, $subject, $body) {
         $mail->Username   = getenv('SMTP_USER') ?: '';
         $mail->Password   = getenv('SMTP_PASS') ?: '';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = getenv('SMTP_PORT') ?: 587;
+        $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
         
+        // Bỏ qua xác thực SSL peer trên môi trường localhost / XAMPP Windows
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'allow_self_signed' => true
+            )
+        );
+
         $mail->CharSet = 'UTF-8';
 
         if (empty($mail->Username)) {

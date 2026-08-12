@@ -136,7 +136,7 @@ include __DIR__ . '/../includes/header.php';
             <?php foreach ($checkins as $c): ?>
                 <div class="post-card" id="post-<?= $c['id'] ?>">
                     <div class="post-header">
-                        <img src="<?= e(get_avatar($c['avatar'])) ?>" alt="Avatar" class="post-avatar">
+                        <img src="<?= e(get_avatar($c['avatar'])) ?>" alt="Avatar" class="post-avatar" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';">
                         <div class="post-user-info">
                             <span class="post-author">
                                 <?= e($c['full_name']) ?>
@@ -222,7 +222,7 @@ include __DIR__ . '/../includes/header.php';
                             foreach ($comments as $cm):
                             ?>
                                 <div class="comment-item">
-                                    <img src="<?= e(get_avatar($cm['avatar'])) ?>" class="comment-avatar">
+                                    <img src="<?= e(get_avatar($cm['avatar'])) ?>" alt="Avatar" class="comment-avatar" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';">
                                     <div class="comment-bubble">
                                         <div class="comment-author"><?= e($cm['full_name']) ?></div>
                                         <div class="comment-text"><?= nl2br(e($cm['content'])) ?></div>
@@ -365,7 +365,7 @@ async function submitComment(e, checkinId) {
             const div = document.createElement('div');
             div.className = 'comment-item';
             div.innerHTML = `
-                <img src="<?= e(get_avatar($user['avatar'] ?? null)) ?>" class="comment-avatar">
+                <img src="<?= e(get_avatar($user['avatar'] ?? null)) ?>" alt="Avatar" class="comment-avatar" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';">
                 <div class="comment-bubble">
                     <div class="comment-author"><?= e($user['full_name'] ?? 'Tôi') ?></div>
                     <div class="comment-text">${content.replace(/\n/g, '<br>')}</div>

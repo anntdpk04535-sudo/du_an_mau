@@ -146,6 +146,62 @@ include __DIR__ . '/../includes/header.php';
   .auth-form-container .btn:hover {
     transform: translateY(-2px);
   }
+  .auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0 16px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .auth-divider::before,
+  .auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .auth-divider::before {
+    margin-right: 12px;
+  }
+  .auth-divider::after {
+    margin-left: 12px;
+  }
+  .btn-oauth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  .btn-google {
+    background: #ffffff;
+    color: #374151 !important;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .btn-google:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    color: #111827 !important;
+  }
+  .btn-facebook {
+    background: #1877f2;
+    color: #ffffff !important;
+    border: 1px solid #1877f2;
+  }
+  .btn-facebook:hover {
+    background: #166fe5;
+    color: #ffffff !important;
+  }
   @media (max-width: 768px) {
     .auth-card {
       flex-direction: column;

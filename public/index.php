@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       <a href="<?= url('/diem-den/' . $d['slug']) ?>" class="card">
         <div class="card-img">
           <?php if (!empty($d['image_url'])): ?>
-            <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" loading="lazy">
+            <img src="<?= e($d['image_url']) ?>" alt="<?= e($d['name']) ?>" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1542323631-0d3ab5d496a8?q=80&w=1000&auto=format&fit=crop';">
           <?php else: ?>
             🌄
           <?php endif; ?>

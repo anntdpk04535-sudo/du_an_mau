@@ -39,22 +39,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $latitude = ($_POST['latitude'] ?? '') !== '' ? (float) $_POST['latitude'] : null;
   $longitude = ($_POST['longitude'] ?? '') !== '' ? (float) $_POST['longitude'] : null;
 
-  if ($id > 0) {
-    // ✅ $id > 0 → đang SỬA → dùng UPDATE
-    $stmt = $db->prepare(
-      "UPDATE destinations SET name=?, slug=?, short_desc=?, description=?, category_id=?, avg_visit_hours=?, price_level=?, tags=?, image_url=?, latitude=?, longitude=? WHERE id=?"
-    );
-    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude, $id]);
+  if (empty($name)) {
+    $error = 'Tên điểm đến không được để trống.';
   } else {
-    // ✅ $id == 0 → đang THÊM MỚI → dùng INSERT
-    $stmt = $db->prepare(
-      "INSERT INTO destinations (name, slug, short_desc, description, category_id, avg_visit_hours, price_level, tags, image_url, latitude, longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
-    );
-    $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude]);
-  }
+    if ($id > 0) {
+      // ✅ $id > 0 → đang SỬA → dùng UPDATE
+      $stmt = $db->prepare(
+        "UPDATE destinations SET name=?, slug=?, short_desc=?, description=?, category_id=?, avg_visit_hours=?, price_level=?, tags=?, image_url=?, latitude=?, longitude=? WHERE id=?"
+      );
+      $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude, $id]);
+    } else {
+      // ✅ $id == 0 → đang THÊM MỚI → dùng INSERT
+      $stmt = $db->prepare(
+        "INSERT INTO destinations (name, slug, short_desc, description, category_id, avg_visit_hours, price_level, tags, image_url, latitude, longitude) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+      );
+      $stmt->execute([$name, $slug, $shortDesc, $description, $categoryId, $avgHours, $priceLevel, $tags, $imageUrl, $latitude, $longitude]);
+    }
 
-  header('Location: ' . url('/admin/destinations.php'));
-  exit;
+    header('Location: ' . url('/admin/destinations.php'));
+    exit;
+  }
 }
 
 if (isset($_GET['edit'])) {
@@ -95,6 +99,11 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="form-box">
   <h3><?= $editing ? __('admin_destinations_edit') : __('admin_destinations_add') ?></h3>
+  <?php if (!empty($error)): ?>
+    <div style="background:#fee2e2; color:#991b1b; padding:12px; border-radius:8px; margin-bottom:16px; font-size:14px;">
+      ❌ <?= e($error) ?>
+    </div>
+  <?php endif; ?>
   <form method="post" enctype="multipart/form-data">
     <input type="hidden" name="id" value="<?= e((string) ($editing['id'] ?? '')) ?>">
     <div class="form-group">

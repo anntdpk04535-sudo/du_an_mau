@@ -23,6 +23,7 @@ $tokenUrl = "https://graph.facebook.com/v18.0/oauth/access_token?" . http_build_
 
 $ch = curl_init($tokenUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $response = curl_exec($ch);
 curl_close($ch);
 
@@ -39,6 +40,7 @@ $profileUrl = "https://graph.facebook.com/me?" . http_build_query([
 
 $ch = curl_init($profileUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 $userInfoResponse = curl_exec($ch);
 curl_close($ch);
 
@@ -69,10 +71,8 @@ $stmt->execute($params);
 $user = $stmt->fetch();
 
 if ($user) {
-    if (empty($user['facebook_id'])) {
-        $updateStmt = $db->prepare("UPDATE users SET facebook_id = ?, avatar = IFNULL(avatar, ?) WHERE id = ?");
-        $updateStmt->execute([$facebookId, $avatar, $user['id']]);
-    }
+    $updateStmt = $db->prepare("UPDATE users SET facebook_id = ?, avatar = COALESCE(?, avatar) WHERE id = ?");
+    $updateStmt->execute([$facebookId, $avatar, $user['id']]);
     $userId = $user['id'];
 } else {
     // 4. Tạo tài khoản mới. Nếu Facebook không cấp email, ta sinh email ảo để bypass UNIQUE constraint.
