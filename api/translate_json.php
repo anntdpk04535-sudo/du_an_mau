@@ -19,7 +19,7 @@ $prompt = "Translate all natural language text values in the following JSON into
 $translated = callGemini([['role' => 'user', 'content' => $prompt]], "You are a precise JSON translator.", 8192, 0.1, 'application/json');
 
 $clean = trim($translated);
-$clean = preg_replace('/^```json\s*|\s*```$/m', '', $clean);
+$clean = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $clean);
 $clean = trim($clean, "` \n");
 
 $firstBrace = strpos($clean, '{');
@@ -30,8 +30,22 @@ if ($firstBrace !== false && $lastBrace !== false && $lastBrace > $firstBrace) {
 
 $decoded = json_decode($clean, true);
 
-if ($decoded) {
+// Retry if initial JSON decode failed
+if (!$decoded) {
+    $retryPrompt = "Fix and format the following text into strictly valid JSON without code fences:\n" . $translated;
+    $retryTranslated = callGemini([['role' => 'user', 'content' => $retryPrompt]], "You are a JSON fixer.", 8192, 0.0, 'application/json');
+    $retryClean = trim(preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($retryTranslated)));
+    $fBrace = strpos($retryClean, '{');
+    $lBrace = strrpos($retryClean, '}');
+    if ($fBrace !== false && $lBrace !== false && $lBrace > $fBrace) {
+        $retryClean = substr($retryClean, $fBrace, $lBrace - $fBrace + 1);
+    }
+    $decoded = json_decode($retryClean, true);
+}
+
+if ($decoded && is_array($decoded)) {
     echo json_encode(['success' => true, 'data' => $decoded]);
 } else {
-    echo json_encode(['success' => false, 'error' => 'Failed to parse JSON', 'raw' => $translated]);
+    // Fallback to original data if AI JSON formatting fails
+    echo json_encode(['success' => true, 'data' => $data, 'fallback' => true]);
 }

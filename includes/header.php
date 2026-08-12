@@ -71,15 +71,15 @@ if (!isset($pageTitle)) $pageTitle = 'Du lịch Đắk Lắk AI';
 
       <?php $__u = currentUser(); ?>
       <?php if ($__u): ?>
-        <span class="auth-greeting" style="display:flex; align-items:center; gap:8px;">
+        <span class="auth-greeting" style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
             <?php $avatarSrc = !empty($__u['avatar']) ? get_avatar($__u['avatar']) : url('/assets/images/default-avatar.png'); ?>
             <img src="<?= e($avatarSrc) ?>" alt="Avatar" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='<?= url('/assets/images/default-avatar.png') ?>';" style="width:28px; height:28px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">
-            <?= __('hello') ?>, <a href="<?= url('/public/profile.php') ?>" style="color:#fde68a;text-decoration:none;border-bottom:1px dashed #fde68a;" title="Profile"><strong><?= e($__u['full_name']) ?></strong></a>
+            <span><?= __('hello') ?>, <a href="<?= url('/public/profile.php') ?>" style="color:#fde68a;text-decoration:none;border-bottom:1px dashed #fde68a; white-space:nowrap;" title="Profile"><strong><?= e($__u['full_name']) ?></strong></a></span>
         </span>
         <?php if ($__u['role'] === 'admin'): ?>
-          <a href="<?= url('/admin/index.php') ?>" class="btn secondary"><?= __('admin') ?></a>
+          <a href="<?= url('/admin/index.php') ?>" class="btn secondary" style="white-space:nowrap;"><?= __('admin') ?></a>
         <?php endif; ?>
-        <a href="<?= url('/public/logout.php') ?>" class="btn secondary"><?= __('logout') ?></a>
+        <a href="<?= url('/public/logout.php') ?>" class="btn secondary" style="white-space:nowrap;"><?= __('logout') ?></a>
       <?php else: ?>
         <a href="<?= url('/public/login.php') ?>" class="btn secondary"><?= __('login') ?></a>
         <a href="<?= url('/public/register.php') ?>" class="btn"><?= __('register') ?></a>

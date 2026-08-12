@@ -106,8 +106,10 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <div class="chart-container">
-    <h3 style="margin-top:0;"><?= __('admin_top_destinations') ?></h3>
-    <canvas id="topDestinationsChart" height="100"></canvas>
+    <h3 style="margin-top:0; margin-bottom:20px;"><?= __('admin_top_destinations') ?></h3>
+    <div style="position: relative; height: 360px; width: 100%;">
+        <canvas id="topDestinationsChart"></canvas>
+    </div>
 </div>
 
 <script>
@@ -116,25 +118,47 @@ document.addEventListener("DOMContentLoaded", function() {
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: <?= json_encode($destNames) ?>,
+            labels: <?= json_encode($destNames, JSON_UNESCAPED_UNICODE) ?>,
             datasets: [{
                 label: '<?= __('admin_avg_rating_label') ?>',
                 data: <?= json_encode($destRatings) ?>,
-                backgroundColor: 'rgba(34, 197, 94, 0.6)',
+                backgroundColor: 'rgba(34, 197, 94, 0.65)',
                 borderColor: 'rgba(34, 197, 94, 1)',
-                borderWidth: 1,
-                borderRadius: 6
+                borderWidth: 2,
+                borderRadius: 8,
+                barPercentage: 0.55
             }]
         },
         options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ' Đánh giá: ' + context.parsed.y + ' / 5.0 ⭐';
+                        }
+                    }
+                }
+            },
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 5
+                    max: 5,
+                    ticks: {
+                        stepSize: 1,
+                        font: { size: 12, weight: '600' }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 13, weight: '600' },
+                        color: '#1e293b',
+                        maxRotation: 0,
+                        autoSkip: false
+                    }
                 }
-            },
-            plugins: {
-                legend: { display: false }
             }
         }
     });

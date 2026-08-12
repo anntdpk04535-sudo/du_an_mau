@@ -53,42 +53,56 @@ function callGemini(array $messages, string $system = '', int $maxTokens = 1024,
         ];
     }
 
-    $ch = curl_init(GEMINI_API_URL . '?key=' . GEMINI_API_KEY);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-        ],
-        CURLOPT_TIMEOUT => 120,
-    ]);
+    $modelsToTry = [
+        defined('GEMINI_MODEL') ? GEMINI_MODEL : 'gemini-3.5-flash',
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-1.5-flash',
+        'gemini-2.0-flash'
+    ];
+    $modelsToTry = array_values(array_unique($modelsToTry));
 
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
-    curl_close($ch);
+    $lastError = '';
+    foreach ($modelsToTry as $modelName) {
+        $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/' . $modelName . ':generateContent?key=' . GEMINI_API_KEY;
+        $ch = curl_init($apiUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_SSL_VERIFYPEER => false,
+        ]);
 
-    if ($curlError) {
-        return 'Lỗi kết nối AI: ' . $curlError;
-    }
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
 
-    $data = json_decode($response, true);
-
-    if ($httpCode !== 200) {
-        $msg = $data['error']['message'] ?? 'Lỗi không xác định từ API';
-        return 'Lỗi AI (' . $httpCode . '): ' . $msg;
-    }
-
-    $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
-    $finishReason = $data['candidates'][0]['finishReason'] ?? null;
-
-    if ($text === null) {
-        if ($finishReason === 'MAX_TOKENS') {
-            return 'Lỗi: AI bị cắt do vượt giới hạn token, hãy tăng maxTokens khi gọi callGemini().';
+        if ($curlError) {
+            $lastError = 'Lỗi kết nối AI: ' . $curlError;
+            continue;
         }
-        return 'AI không trả về nội dung hợp lệ.';
+
+        $data = json_decode($response, true);
+        if ($httpCode === 200) {
+            $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? null;
+            if ($text !== null) {
+                return $text;
+            }
+        }
+        
+        $msg = $data['error']['message'] ?? ('Lỗi ' . $httpCode);
+        $lastError = 'Lỗi AI (' . $httpCode . '): ' . $msg;
+        
+        // If 404 Not Found, retry with next model in array
+        if ($httpCode === 404) {
+            continue;
+        }
+        
+        break;
     }
 
-    return $text;
+    return $lastError;
 }

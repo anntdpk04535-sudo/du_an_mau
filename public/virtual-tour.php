@@ -18,14 +18,18 @@ $stmt = $db->prepare("SELECT * FROM destinations WHERE id = ? AND virtual_tour_e
 $stmt->execute([$destId]);
 $dest = $stmt->fetch();
 
-if (!$dest) {
+$sceneCheck = $db->prepare("SELECT COUNT(*) FROM virtual_tour_scenes WHERE destination_id = ?");
+$sceneCheck->execute([$destId]);
+$hasScenes = (int)$sceneCheck->fetchColumn();
+
+if (!$dest || $hasScenes === 0) {
     http_response_code(404);
-    $pageTitle = __('vt_not_found');
+    $pageTitle = ($hasScenes === 0 && $dest) ? 'Đang cập nhật Virtual Tour 360' : __('vt_not_found');
     include __DIR__ . '/../includes/header.php';
-    echo '<div class="vt-empty"><div class="vt-empty-icon">🔍</div>';
-    echo '<h2>' . __('vt_not_found') . '</h2>';
-    echo '<p>' . __('vt_not_found_desc') . '</p>';
-    echo '<a href="' . url('/public/destinations.php') . '" class="btn" style="margin-top:16px;">← ' . __('vt_back_list') . '</a></div>';
+    echo '<div class="vt-empty" style="text-align:center; padding:60px 20px;"><div class="vt-empty-icon" style="font-size:48px;">🔄</div>';
+    echo '<h2 style="margin-top:16px;">' . (($hasScenes === 0 && $dest) ? 'Đang cập nhật Virtual Tour 360' : __('vt_not_found')) . '</h2>';
+    echo '<p style="color:#666; max-width:500px; margin:8px auto 24px;">' . (($hasScenes === 0 && $dest) ? 'Điểm đến này hiện chưa có dữ liệu toàn cảnh 360°. Ban quản trị đang cập nhật thêm các hình ảnh chất lượng cao.' : __('vt_not_found_desc')) . '</p>';
+    echo '<a href="' . url('/public/destinations.php') . '" class="btn" style="display:inline-block; padding:10px 20px;">← ' . __('vt_back_list') . '</a></div>';
     include __DIR__ . '/../includes/footer.php';
     exit;
 }

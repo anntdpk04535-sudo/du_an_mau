@@ -501,6 +501,8 @@ function renderConversation() {
 }
 
 // ===== SSE =====
+let pollTimer = null;
+
 function startListening() {
   if (typeof EventSource !== "undefined") connectSSE();
   else fastPoll();
@@ -522,7 +524,7 @@ function connectSSE() {
   sseSource.addEventListener("reconnect", () => { sseSource.close(); setTimeout(connectSSE, 300); });
   sseSource.addEventListener("ping", () => {});
   sseSource.onerror = () => {
-    sseSource.close(); sseSource = null;
+    if (sseSource) { sseSource.close(); sseSource = null; }
     setConnStatus("🔄 Polling");
     setTimeout(fastPoll, 1000);
   };
@@ -530,6 +532,7 @@ function connectSSE() {
 
 async function fastPoll() {
   if (!contactId) return;
+  if (pollTimer) clearTimeout(pollTimer);
   try {
     const res  = await fetch(`${BASE_URL}/api/contact_check_reply.php?contact_id=${contactId}&last_id=${lastReplyId}`);
     const data = await res.json();
@@ -538,7 +541,7 @@ async function fastPoll() {
       lastReplyId = data.last_id || lastReplyId;
     }
   } catch {}
-  setTimeout(fastPoll, 1500);
+  pollTimer = setTimeout(fastPoll, 2000);
 }
 
 function appendReplies(newList) {
