@@ -31,10 +31,23 @@
   --primary-100: var(--emerald-light);
   --primary-50:  #f0fdf4;
 
+  --green-950: var(--emerald-midnight);
+  --green-900: var(--emerald-deep);
+  --green-800: var(--emerald-primary);
+  --green-700: var(--emerald-primary);
+  --green-600: var(--emerald-medium);
+  --green-500: var(--emerald-vibrant);
+  --green-400: #34d399;
+  --green-100: var(--emerald-light);
+  --green-50:  #f0fdf4;
+
   --accent-600: var(--sunset-amber);
   --accent-500: var(--sunset-gold);
   --accent-400: #fbbf24;
   --accent-100: var(--sunset-glow);
+
+  --orange-500: var(--sunset-gold);
+  --orange-600: var(--sunset-amber);
 
   /* Surfaces & Backgrounds */
   --bg-main:    #fdfbf7;

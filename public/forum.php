@@ -51,8 +51,29 @@ include __DIR__ . '/../includes/header.php';
 .post-actions { display: flex; gap: 15px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .action-left { display: flex; gap: 10px; align-items: center; flex: 1; }
 .action-left select, .action-left input[type="file"] { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #475569; max-width: 200px; }
-.btn-post { background: var(--green-700); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-.btn-post:hover { background: var(--green-900); }
+.btn-post { 
+    background: linear-gradient(135deg, var(--emerald-primary, #047857), var(--emerald-deep, #064e3b)); 
+    color: #ffffff !important; 
+    border: none; 
+    padding: 10px 24px; 
+    border-radius: 8px; 
+    font-weight: 700; 
+    cursor: pointer; 
+    transition: all 0.25s ease; 
+    box-shadow: 0 4px 14px rgba(4, 120, 87, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.btn-post:hover { 
+    background: linear-gradient(135deg, var(--emerald-medium, #059669), var(--emerald-primary, #047857)); 
+    box-shadow: 0 6px 20px rgba(4, 120, 87, 0.35);
+    transform: translateY(-1px);
+}
+.btn-post:active {
+    transform: translateY(0);
+}
 
 /* Bài viết */
 .post-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 25px; }
