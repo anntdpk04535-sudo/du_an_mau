@@ -266,11 +266,17 @@ include __DIR__ . "/../includes/header.php";
     
     <?php if (isset($totalPages) && $totalPages > 1): ?>
     <div style="padding: 10px; border-top: 1px solid #f0f0f0; display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
+        <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>" style="padding: 3px 8px; font-size: 11px; background: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: bold;">«</a>
+        <?php endif; ?>
         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?page=<?= $i ?>" style="padding: 3px 8px; font-size: 11px; background: <?= $i === $page ? '#1b4332' : '#f1f5f9' ?>; color: <?= $i === $page ? 'white' : '#475569' ?>; border-radius: 4px; text-decoration: none; font-weight: bold;">
+            <a href="?page=<?= $i ?>" style="padding: 3px 8px; font-size: 11px; background: <?= $i === $page ? '#047857' : '#f1f5f9' ?>; color: <?= $i === $page ? 'white' : '#475569' ?>; border-radius: 4px; text-decoration: none; font-weight: bold;">
                 <?= $i ?>
             </a>
         <?php endfor; ?>
+        <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?>" style="padding: 3px 8px; font-size: 11px; background: #f1f5f9; color: #475569; border-radius: 4px; text-decoration: none; font-weight: bold;">»</a>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
   </div>

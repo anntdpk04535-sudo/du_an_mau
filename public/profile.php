@@ -249,12 +249,18 @@ include __DIR__ . '/../includes/header.php';
             </div>
             
             <?php if (isset($totalItiPages) && $totalItiPages > 1): ?>
-            <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+            <div class="pagination-wrapper" style="margin-top: 20px; margin-bottom: 10px;">
+                <?php if ($itiPage > 1): ?>
+                    <a href="?iti_page=<?= $itiPage - 1 ?>&wish_page=<?= $wishPage ?>" class="page-link">«</a>
+                <?php endif; ?>
                 <?php for ($i = 1; $i <= $totalItiPages; $i++): ?>
-                    <a href="?iti_page=<?= $i ?>&wish_page=<?= $wishPage ?>" class="btn <?= $i === $itiPage ? '' : 'secondary' ?>" style="padding: 5px 12px; font-size: 14px;">
+                    <a href="?iti_page=<?= $i ?>&wish_page=<?= $wishPage ?>" class="page-link <?= $i === $itiPage ? 'active' : '' ?>">
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
+                <?php if ($itiPage < $totalItiPages): ?>
+                    <a href="?iti_page=<?= $itiPage + 1 ?>&wish_page=<?= $wishPage ?>" class="page-link">»</a>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         <?php endif; ?>
@@ -291,12 +297,18 @@ include __DIR__ . '/../includes/header.php';
             </div>
             
             <?php if (isset($totalWishPages) && $totalWishPages > 1): ?>
-            <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+            <div class="pagination-wrapper" style="margin-top: 20px; margin-bottom: 10px;">
+                <?php if ($wishPage > 1): ?>
+                    <a href="?iti_page=<?= $itiPage ?>&wish_page=<?= $wishPage - 1 ?>" class="page-link">«</a>
+                <?php endif; ?>
                 <?php for ($i = 1; $i <= $totalWishPages; $i++): ?>
-                    <a href="?iti_page=<?= $itiPage ?>&wish_page=<?= $i ?>" class="btn <?= $i === $wishPage ? '' : 'secondary' ?>" style="padding: 5px 12px; font-size: 14px;">
+                    <a href="?iti_page=<?= $itiPage ?>&wish_page=<?= $i ?>" class="page-link <?= $i === $wishPage ? 'active' : '' ?>">
                         <?= $i ?>
                     </a>
                 <?php endfor; ?>
+                <?php if ($wishPage < $totalWishPages): ?>
+                    <a href="?iti_page=<?= $itiPage ?>&wish_page=<?= $wishPage + 1 ?>" class="page-link">»</a>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         <?php endif; ?>

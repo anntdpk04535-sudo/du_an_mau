@@ -272,12 +272,18 @@ include __DIR__ . '/../includes/header.php';
     </div>
     
     <?php if (isset($totalPages) && $totalPages > 1): ?>
-    <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+    <div class="pagination-wrapper" style="margin-top: 25px; margin-bottom: 20px;">
+        <?php if ($page > 1): ?>
+            <a href="?slug=<?= urlencode($slug) ?>&page=<?= $page - 1 ?>#comments" class="page-link">«</a>
+        <?php endif; ?>
         <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-            <a href="?slug=<?= urlencode($slug) ?>&page=<?= $i ?>#comments" class="btn <?= $i === $page ? '' : 'secondary' ?>" style="padding: 5px 12px; font-size: 14px;">
+            <a href="?slug=<?= urlencode($slug) ?>&page=<?= $i ?>#comments" class="page-link <?= $i === $page ? 'active' : '' ?>">
                 <?= $i ?>
             </a>
         <?php endfor; ?>
+        <?php if ($page < $totalPages): ?>
+            <a href="?slug=<?= urlencode($slug) ?>&page=<?= $page + 1 ?>#comments" class="page-link">»</a>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 </div>

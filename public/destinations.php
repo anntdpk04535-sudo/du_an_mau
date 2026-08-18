@@ -260,16 +260,29 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <?php if ($totalPages > 1): ?>
-<div style="display:flex; gap:10px; justify-content:center; margin-top:30px; margin-bottom: 20px;">
+<div class="pagination-wrapper">
     <?php
-    // Preserve query parameters
     $queryParams = $_GET;
+    if ($page > 1):
+        $queryParams['page'] = $page - 1;
+    ?>
+        <a href="?<?= http_build_query($queryParams) ?>" class="page-link" title="<?= __('prev_page') ?? 'Trang trước' ?>">«</a>
+    <?php endif; ?>
+
+    <?php
     for ($i = 1; $i <= $totalPages; $i++): 
         $queryParams['page'] = $i;
         $queryString = http_build_query($queryParams);
     ?>
-        <a href="?<?= $queryString ?>" class="btn <?= $i === $page ? 'secondary' : '' ?>" style="padding: 8px 16px; font-size:15px; border-radius:8px;"><?= $i ?></a>
+        <a href="?<?= $queryString ?>" class="page-link <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
     <?php endfor; ?>
+
+    <?php
+    if ($page < $totalPages):
+        $queryParams['page'] = $page + 1;
+    ?>
+        <a href="?<?= http_build_query($queryParams) ?>" class="page-link" title="<?= __('next_page') ?? 'Trang sau' ?>">»</a>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

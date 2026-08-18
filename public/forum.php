@@ -27,6 +27,10 @@ $stmt->bindValue(2, $offset, PDO::PARAM_INT);
 $stmt->execute();
 $checkins = $stmt->fetchAll();
 
+$stmtTotal = $db->query("SELECT COUNT(*) FROM checkins WHERE status = 'published'");
+$totalCheckins = (int)$stmtTotal->fetchColumn();
+$totalPages = ceil($totalCheckins / $limit);
+
 // Lấy lượt thích của user hiện tại
 $userLikes = [];
 if ($user) {
@@ -264,6 +268,20 @@ include __DIR__ . '/../includes/header.php';
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <?php if (isset($totalPages) && $totalPages > 1): ?>
+    <div class="pagination-wrapper">
+        <?php if ($page > 1): ?>
+            <a href="?page=<?= $page - 1 ?>" class="page-link">«</a>
+        <?php endif; ?>
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="?page=<?= $i ?>" class="page-link <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
+        <?php endfor; ?>
+        <?php if ($page < $totalPages): ?>
+            <a href="?page=<?= $page + 1 ?>" class="page-link">»</a>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <style>

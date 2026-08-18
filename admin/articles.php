@@ -174,10 +174,16 @@ include __DIR__ . '/../includes/header.php';
 </table>
 
 <?php if ($totalPages > 1): ?>
-<div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+<div class="pagination-wrapper">
+    <?php if ($page > 1): ?>
+        <a href="?page=<?= $page - 1 ?>" class="page-link">«</a>
+    <?php endif; ?>
     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a href="?page=<?= $i ?>" class="btn <?= $i === $page ? 'secondary' : '' ?>" style="padding: 6px 12px; font-size:14px;"><?= $i ?></a>
+        <a href="?page=<?= $i ?>" class="page-link <?= $i === $page ? 'active' : '' ?>"><?= $i ?></a>
     <?php endfor; ?>
+    <?php if ($page < $totalPages): ?>
+        <a href="?page=<?= $page + 1 ?>" class="page-link">»</a>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

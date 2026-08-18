@@ -380,6 +380,20 @@ body {
 }
 
 .btn.secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: var(--emerald-midnight) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.btn.secondary:hover {
+  background: var(--emerald-light);
+  border-color: var(--emerald-medium);
+  color: var(--emerald-primary) !important;
+  transform: translateY(-2px);
+}
+
+.site-header .btn.secondary {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -387,7 +401,7 @@ body {
   box-shadow: none;
 }
 
-.btn.secondary:hover {
+.site-header .btn.secondary:hover {
   background: rgba(255, 255, 255, 0.3);
   color: #ffffff !important;
   transform: translateY(-2px);
@@ -865,7 +879,7 @@ a.card:hover .card-img img {
 }
 
 /* Pagination Bar Styles */
-.pagination-wrapper {
+.pagination-wrapper, .pagination {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -875,13 +889,13 @@ a.card:hover .card-img img {
   flex-wrap: wrap;
 }
 
-.page-link {
+.page-link, .pagination a, .pagination span {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 44px;
-  padding: 0 16px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 14px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 15px;
@@ -890,21 +904,35 @@ a.card:hover .card-img img {
   background: #ffffff;
   border: 1px solid #cbd5e1;
   color: var(--emerald-midnight) !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  user-select: none;
 }
 
-.page-link:hover {
+.page-link:hover, .pagination a:hover {
   background: var(--emerald-light);
   border-color: var(--emerald-medium);
   color: var(--emerald-primary) !important;
   transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(4, 120, 87, 0.15);
 }
 
-.page-link.active {
-  background: linear-gradient(135deg, var(--sunset-gold) 0%, var(--sunset-amber) 100%);
+.page-link.active, .pagination a.active, .pagination span.active,
+.pagination .page-link.active {
+  background: linear-gradient(135deg, var(--emerald-primary) 0%, var(--emerald-deep) 100%) !important;
   color: #ffffff !important;
-  border-color: var(--sunset-gold);
-  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
+  border-color: var(--emerald-deep) !important;
+  box-shadow: 0 6px 18px rgba(4, 120, 87, 0.35) !important;
+  transform: scale(1.05);
+}
+
+.page-link.disabled, .pagination a.disabled, .pagination span.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #94a3b8 !important;
 }
 
 /* Category Pills Bar & Links Fix */

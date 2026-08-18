@@ -394,12 +394,18 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if (isset($totalPages) && $totalPages > 1): ?>
-<div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
+<div class="pagination-wrapper">
+    <?php if ($page > 1): ?>
+        <a href="?filter=<?= urlencode($filter) ?>&q=<?= urlencode($search) ?>&page=<?= $page - 1 ?>" class="page-link">«</a>
+    <?php endif; ?>
     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-        <a href="?filter=<?= urlencode($filter) ?>&q=<?= urlencode($search) ?>&page=<?= $i ?>" class="filter-btn <?= $i === $page ? 'active' : '' ?>" style="padding: 5px 12px; font-size: 14px;">
+        <a href="?filter=<?= urlencode($filter) ?>&q=<?= urlencode($search) ?>&page=<?= $i ?>" class="page-link <?= $i === $page ? 'active' : '' ?>">
             <?= $i ?>
         </a>
     <?php endfor; ?>
+    <?php if ($page < $totalPages): ?>
+        <a href="?filter=<?= urlencode($filter) ?>&q=<?= urlencode($search) ?>&page=<?= $page + 1 ?>" class="page-link">»</a>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
